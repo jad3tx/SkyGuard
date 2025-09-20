@@ -1,0 +1,11 @@
+# SkyGuard - Notification Dependencies
+# Install these only for the notification features you want to use
+
+# SMS notifications (Twilio)
+twilio>=8.5.0
+
+# Push notifications (Pushbullet)
+pushbullet.py>=0.11.0
+
+# Email notifications (built into Python, but you might want these)
+# secure-smtplib>=0.1.1  # For secure email connections
