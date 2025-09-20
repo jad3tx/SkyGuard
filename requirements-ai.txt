@@ -1,0 +1,16 @@
+# SkyGuard - AI/ML Dependencies
+# Choose one of the following options based on your preference
+
+# Option 1: PyTorch + YOLO (Recommended)
+torch>=2.0.0
+torchvision>=0.15.0
+ultralytics>=8.0.0
+
+# Option 2: TensorFlow (Alternative)
+# Uncomment the following lines if you prefer TensorFlow
+# tensorflow>=2.13.0
+# tensorflow-object-detection-api
+
+# Option 3: ONNX Runtime (Lightweight alternative)
+# onnxruntime>=1.15.0
+# onnx>=1.14.0
