@@ -1,0 +1,26 @@
+# SkyGuard - Raspberry Pi 5 (8GB) Requirements
+# Core dependencies
+opencv-python>=4.8.0
+numpy>=1.24.0
+pillow>=10.0.0
+pyyaml>=6.0
+python-dotenv>=1.0.0
+requests>=2.31.0
+pygame>=2.5.0
+pandas>=2.0.0
+
+# AI/ML - Pi 5 can handle full PyTorch
+torch>=2.0.0
+torchvision>=0.15.0
+ultralytics>=8.0.0
+
+# Raspberry Pi 5 specific
+RPi.GPIO>=0.7.1
+picamera2>=0.3.0
+adafruit-circuitpython-neopixel>=6.3.0
+pyserial>=3.5
+imutils>=0.5.4
+
+# Optional notifications (Pi 5 can handle these)
+twilio>=8.5.0
+pushbullet.py>=0.11.0

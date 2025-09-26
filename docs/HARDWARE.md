@@ -7,7 +7,7 @@ This guide covers the hardware requirements, recommendations, and setup for the 
 ### Minimum Requirements
 
 **Controller:**
-- Raspberry Pi 4 (4GB RAM) or equivalent single-board computer
+- Raspberry Pi 4 (8GB RAM) or equivalent single-board computer
 - 32GB+ microSD card (Class 10 or better)
 - 5V/3A power supply with USB-C connector
 
@@ -26,32 +26,28 @@ This guide covers the hardware requirements, recommendations, and setup for the 
 ### Recommended Setup
 
 **Controller:**
-- Raspberry Pi 4 (8GB RAM) for better performance
+- Raspberry Pi 5 (8GB RAM) for better performance
 - 64GB+ microSD card (Class 10, A2 rating)
-- 5V/3A power supply with built-in cooling fan
+- 5V/2A Power supply with USB-C connector
 
 **Camera:**
 - High-quality USB webcam (1080p, 30fps)
 - Or Raspberry Pi HQ camera module
 - Wide-angle lens for better coverage
 
-**Additional Features:**
-- LED status indicators
-- Piezo buzzer for audio alerts
-- Motion sensor for activation
-- Solar panel and battery backup (optional)
+
 
 ## Hardware Components
 
 ### 1. Single Board Computer
 
-#### Raspberry Pi 4 (Recommended)
+#### Raspberry Pi 5 (Recommended)
 - **CPU:** Quad-core ARM Cortex-A72 @ 1.5GHz
 - **RAM:** 4GB or 8GB LPDDR4
 - **Storage:** microSD card slot
 - **Connectivity:** WiFi 802.11ac, Bluetooth 5.0, Gigabit Ethernet
 - **GPIO:** 40-pin header with I2C, SPI, UART
-- **Price:** $55-75
+- **Price:** $80-90
 
 #### Alternative Options
 - **Orange Pi 5:** More powerful, similar price
@@ -64,7 +60,7 @@ This guide covers the hardware requirements, recommendations, and setup for the 
 **Recommended Models:**
 - Logitech C920/C922: 1080p, good low-light performance
 - Logitech C270: 720p, budget option
-- Microsoft LifeCam HD-3000: Good value, reliable
+
 
 **Specifications:**
 - Resolution: 720p minimum, 1080p recommended
@@ -103,8 +99,8 @@ This guide covers the hardware requirements, recommendations, and setup for the 
 
 #### Requirements
 - **Voltage:** 5V DC
-- **Current:** 3A minimum
-- **Connector:** USB-C (Raspberry Pi 4)
+- **Current:** 2A minimum
+- **Connector:** USB-C (Raspberry Pi 4/5)
 - **Protection:** Overcurrent, overvoltage protection
 
 #### Recommended Options
@@ -193,32 +189,9 @@ This guide covers the hardware requirements, recommendations, and setup for the 
 2. Enable camera interface in raspi-config
 3. Test with: `libcamera-hello --list-cameras`
 
-### Step 3: Install Optional Components
 
-#### LED Indicators
-```python
-# Connect LEDs to GPIO pins with current limiting resistors
-# Green LED: GPIO 18 (220Ω resistor)
-# Red LED: GPIO 19 (220Ω resistor)
-# Blue LED: GPIO 20 (220Ω resistor)
-```
 
-#### Piezo Buzzer
-```python
-# Connect buzzer to GPIO pin with transistor driver
-# Buzzer: GPIO 19 (through NPN transistor)
-# Control with PWM for different tones
-```
-
-#### Motion Sensor
-```python
-# Connect PIR sensor to GPIO pin
-# PIR output: GPIO 20
-# VCC: 5V, GND: Ground
-# Enable pull-up resistor
-```
-
-### Step 4: Enclosure Assembly
+### Step 3: Enclosure Assembly
 
 1. **Prepare enclosure**
    - Drill holes for camera lens
@@ -332,12 +305,12 @@ camera:
 - 32GB microSD card: $10
 - Power supply: $10
 - USB webcam: $30
-- Enclosure: $20
+- Enclosure: $20 or 'free' if you 3d print
 - Cables and connectors: $10
 - Mounting hardware: $15
 
 ### Recommended Setup (~$200)
-- Raspberry Pi 4 (8GB): $75
+- Raspberry Pi 5 (8GB): $80
 - 64GB microSD card: $15
 - Power supply with fan: $15
 - High-quality webcam: $50
@@ -345,26 +318,11 @@ camera:
 - LED indicators and buzzer: $10
 - Cables and connectors: $15
 
-### Premium Setup (~$300)
-- Jetson Nano: $100
+### Premium Setup (~$400)
+- Jetson Orin Nano: $250
 - 128GB microSD card: $25
 - HQ camera module: $50
 - Professional enclosure: $50
-- Solar panel and battery: $50
-- Motion sensors: $15
 - Professional mounting: $25
 
-## Future Enhancements
 
-### Planned Hardware Features
-- **Multi-camera support:** Multiple detection zones
-- **PTZ cameras:** Pan-tilt-zoom for better coverage
-- **Thermal cameras:** Night vision capabilities
-- **Weather station:** Environmental monitoring
-- **Automated deterrents:** Sound cannons, lights
-
-### Integration Options
-- **Home automation:** Smart home integration
-- **Mobile app:** Remote monitoring and control
-- **Cloud storage:** Off-site data backup
-- **Machine learning:** Improved detection accuracy

@@ -7,7 +7,7 @@ This directory contains the AI models used by SkyGuard for raptor detection.
 ### Current Models
 
 - **raptor_detector.pt** - Main YOLO model for raptor detection (not included in repository due to size)
-- **raptor_detector.onnx** - ONNX format model for cross-platform compatibility (optional)
+
 
 ### Model Specifications
 
