@@ -1,0 +1,38 @@
+# SkyGuard Web Portal Requirements
+# Web interface dependencies
+
+# Flask web framework
+flask>=2.3.0
+flask-cors>=4.0.0
+
+# Template engine
+jinja2>=3.1.0
+
+# HTTP requests
+requests>=2.31.0
+
+# Image processing
+pillow>=10.0.0
+opencv-python>=4.8.0
+
+# Data processing
+pandas>=2.0.0
+numpy>=1.24.0
+
+# System monitoring
+psutil>=5.9.0
+
+# Configuration
+pyyaml>=6.0
+python-dotenv>=1.0.0
+
+# Optional: WebSocket support
+# flask-socketio>=5.3.0
+
+# Optional: Database support
+# sqlalchemy>=2.0.0
+# flask-sqlalchemy>=3.0.0
+
+# Optional: Authentication
+# flask-login>=0.6.0
+# flask-wtf>=1.1.0

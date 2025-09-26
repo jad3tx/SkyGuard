@@ -1,0 +1,11 @@
+# SkyGuard - Hardware Integration Dependencies
+# Install these only if you're using the specific hardware
+
+# Raspberry Pi specific
+RPi.GPIO>=0.7.1  # For Raspberry Pi GPIO control
+picamera2>=0.3.0  # For Raspberry Pi camera
+adafruit-circuitpython-neopixel>=6.3.0  # For LED indicators
+
+# General hardware
+pyserial>=3.5  # For serial communication
+imutils>=0.5.4  # Image processing utilities

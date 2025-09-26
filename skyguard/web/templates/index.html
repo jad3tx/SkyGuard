@@ -1,0 +1,791 @@
+{% extends "base.html" %}
+
+{% block title %}SkyGuard Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<!-- Dashboard Content -->
+<div id="dashboard-section" class="section">
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card stats-card">
+                <div class="card-body text-center">
+                    <div class="stats-number" id="total-detections">0</div>
+                    <div class="stats-label">Total Detections</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stats-card">
+                <div class="card-body text-center">
+                    <div class="stats-number" id="detections-today">0</div>
+                    <div class="stats-label">Today</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stats-card">
+                <div class="card-body text-center">
+                    <div class="stats-number" id="detections-week">0</div>
+                    <div class="stats-label">This Week</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stats-card">
+                <div class="card-body text-center">
+                    <div class="stats-number" id="detections-month">0</div>
+                    <div class="stats-label">This Month</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Detections -->
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-eye"></i> Recent Detections
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="recent-detections">
+                        <div class="text-center">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-pie"></i> Detection Statistics
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="detection-chart" width="400" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- System Information -->
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-info-circle"></i> System Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm">
+                        <tbody>
+                            <tr>
+                                <td><strong>Uptime:</strong></td>
+                                <td id="system-uptime">Loading...</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Last Detection:</strong></td>
+                                <td id="last-detection">None</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Camera Resolution:</strong></td>
+                                <td id="camera-resolution">Loading...</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Camera FPS:</strong></td>
+                                <td id="camera-fps">Loading...</td>
+                            </tr>
+                            <tr>
+                                <td><strong>AI Confidence:</strong></td>
+                                <td id="ai-confidence">Loading...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-cogs"></i> Quick Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-skyguard" onclick="testCamera()">
+                            <i class="fas fa-video"></i> Test Camera
+                        </button>
+                        <button class="btn btn-skyguard" onclick="testAI()">
+                            <i class="fas fa-brain"></i> Test AI Model
+                        </button>
+                        <button class="btn btn-skyguard" onclick="testAlerts()">
+                            <i class="fas fa-bell"></i> Test Alerts
+                        </button>
+                        <button class="btn btn-outline-primary" onclick="showSection('configuration')">
+                            <i class="fas fa-cog"></i> Configure System
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Detections Section -->
+<div id="detections-section" class="section" style="display: none;">
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="fas fa-eye"></i> All Detections
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fas fa-search"></i>
+                        </span>
+                        <input type="text" class="form-control" id="detection-search" placeholder="Search detections...">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fas fa-filter"></i>
+                        </span>
+                        <select class="form-select" id="detection-filter">
+                            <option value="all">All Detections</option>
+                            <option value="today">Today</option>
+                            <option value="week">This Week</option>
+                            <option value="month">This Month</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="detections-list">
+                <div class="text-center">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Configuration Section -->
+<div id="configuration-section" class="section" style="display: none;">
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="fas fa-cog"></i> System Configuration
+            </h5>
+        </div>
+        <div class="card-body">
+            <form id="config-form">
+                <!-- System Configuration -->
+                <div class="config-section">
+                    <h5>System Settings</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label for="detection-interval" class="form-label">Detection Interval (seconds)</label>
+                            <input type="number" class="form-control" id="detection-interval" min="0.1" max="10" step="0.1">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="max-history" class="form-label">Max Detection History</label>
+                            <input type="number" class="form-control" id="max-history" min="100" max="10000">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Camera Configuration -->
+                <div class="config-section">
+                    <h5>Camera Settings</h5>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <label for="camera-width" class="form-label">Width</label>
+                            <input type="number" class="form-control" id="camera-width" min="320" max="1920">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="camera-height" class="form-label">Height</label>
+                            <input type="number" class="form-control" id="camera-height" min="240" max="1080">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="camera-fps" class="form-label">FPS</label>
+                            <input type="number" class="form-control" id="camera-fps" min="1" max="60">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- AI Configuration -->
+                <div class="config-section">
+                    <h5>AI Model Settings</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label for="confidence-threshold" class="form-label">Confidence Threshold</label>
+                            <input type="range" class="form-range" id="confidence-threshold" min="0" max="1" step="0.01">
+                            <div class="form-text">Current value: <span id="confidence-value">0.5</span></div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="nms-threshold" class="form-label">NMS Threshold</label>
+                            <input type="range" class="form-range" id="nms-threshold" min="0" max="1" step="0.01">
+                            <div class="form-text">Current value: <span id="nms-value">0.4</span></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Notifications Configuration -->
+                <div class="config-section">
+                    <h5>Notification Settings</h5>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="audio-enabled">
+                                <label class="form-check-label" for="audio-enabled">
+                                    Audio Alerts
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="sms-enabled">
+                                <label class="form-check-label" for="sms-enabled">
+                                    SMS Alerts
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="email-enabled">
+                                <label class="form-check-label" for="email-enabled">
+                                    Email Alerts
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Save Button -->
+                <div class="text-end">
+                    <button type="button" class="btn btn-skyguard" onclick="saveConfiguration()">
+                        <i class="fas fa-save"></i> Save Configuration
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Camera Section -->
+<div id="camera-section" class="section" style="display: none;">
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="fas fa-video"></i> Camera Management
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Camera Status</h6>
+                    <div id="camera-info">
+                        <div class="text-center">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <h6>Camera Test</h6>
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-skyguard" onclick="testCamera()">
+                            <i class="fas fa-video"></i> Test Camera Connection
+                        </button>
+                        <button class="btn btn-outline-primary" onclick="captureTestImage()">
+                            <i class="fas fa-camera"></i> Capture Test Image
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- AI Section -->
+<div id="ai-section" class="section" style="display: none;">
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="fas fa-brain"></i> AI Model Management
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Model Status</h6>
+                    <div id="ai-info">
+                        <div class="text-center">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <h6>Model Testing</h6>
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-skyguard" onclick="testAI()">
+                            <i class="fas fa-brain"></i> Test AI Model
+                        </button>
+                        <button class="btn btn-outline-primary" onclick="loadModel()">
+                            <i class="fas fa-upload"></i> Load Model
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Alerts Section -->
+<div id="alerts-section" class="section" style="display: none;">
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="fas fa-bell"></i> Alert System Management
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Alert Status</h6>
+                    <div id="alerts-info">
+                        <div class="text-center">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <h6>Alert Testing</h6>
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-skyguard" onclick="testAlerts()">
+                            <i class="fas fa-bell"></i> Test Alert System
+                        </button>
+                        <button class="btn btn-outline-primary" onclick="configureAlerts()">
+                            <i class="fas fa-cog"></i> Configure Alerts
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Logs Section -->
+<div id="logs-section" class="section" style="display: none;">
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="fas fa-file-alt"></i> System Logs
+            </h5>
+        </div>
+        <div class="card-body">
+            <div id="logs-content">
+                <div class="text-center">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Section -->
+<div id="stats-section" class="section" style="display: none;">
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="fas fa-chart-bar"></i> System Statistics
+            </h5>
+        </div>
+        <div class="card-body">
+            <div id="stats-content">
+                <div class="text-center">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Load dashboard data
+    async function loadDashboardData() {
+        try {
+            // Load system status
+            const statusResponse = await fetch('/api/status');
+            const status = await statusResponse.json();
+            
+            // Update statistics
+            document.getElementById('total-detections').textContent = status.system.total_detections;
+            document.getElementById('system-uptime').textContent = status.system.uptime;
+            document.getElementById('last-detection').textContent = 
+                status.system.last_detection ? formatTimestamp(status.system.last_detection.timestamp) : 'None';
+            document.getElementById('camera-resolution').textContent = 
+                `${status.camera.resolution}x${status.camera.resolution * 0.75}`;
+            document.getElementById('camera-fps').textContent = status.camera.fps;
+            document.getElementById('ai-confidence').textContent = 
+                formatConfidence(status.ai.confidence_threshold);
+            
+            // Load recent detections
+            await loadRecentDetections();
+            
+            // Load detection chart
+            await loadDetectionChart();
+            
+        } catch (error) {
+            console.error('Failed to load dashboard data:', error);
+        }
+    }
+    
+    // Load recent detections
+    async function loadRecentDetections() {
+        try {
+            const response = await fetch('/api/detections?limit=5');
+            const detections = await response.json();
+            
+            const container = document.getElementById('recent-detections');
+            if (detections.length === 0) {
+                container.innerHTML = '<div class="text-center text-muted">No recent detections</div>';
+                return;
+            }
+            
+            let html = '';
+            detections.forEach(detection => {
+                html += `
+                    <div class="card detection-card mb-3">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <h6 class="card-title">
+                                        <i class="fas fa-eye"></i> Detection #${detection.id}
+                                    </h6>
+                                    <p class="card-text">
+                                        <strong>Class:</strong> ${detection.class || 'bird'}<br>
+                                        <strong>Confidence:</strong> ${formatConfidence(detection.confidence)}<br>
+                                        <strong>Time:</strong> ${formatTimestamp(detection.timestamp)}
+                                    </p>
+                                </div>
+                                <div class="col-md-4">
+                                    <img src="/api/detections/${detection.id}/image" 
+                                         class="detection-image" 
+                                         alt="Detection image"
+                                         onerror="this.style.display='none'">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+            
+        } catch (error) {
+            console.error('Failed to load recent detections:', error);
+        }
+    }
+    
+    // Load detection chart
+    async function loadDetectionChart() {
+        try {
+            const ctx = document.getElementById('detection-chart').getContext('2d');
+            
+            // This would load actual chart data
+            const chart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Birds', 'Other'],
+                    datasets: [{
+                        data: [85, 15],
+                        backgroundColor: ['#3498db', '#e74c3c']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+            
+        } catch (error) {
+            console.error('Failed to load detection chart:', error);
+        }
+    }
+    
+    // Load detections
+    async function loadDetections() {
+        try {
+            const response = await fetch('/api/detections?limit=50');
+            const detections = await response.json();
+            
+            const container = document.getElementById('detections-list');
+            if (detections.length === 0) {
+                container.innerHTML = '<div class="text-center text-muted">No detections found</div>';
+                return;
+            }
+            
+            let html = '';
+            detections.forEach(detection => {
+                html += `
+                    <div class="card detection-card mb-3">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <h6 class="card-title">
+                                        <i class="fas fa-eye"></i> Detection #${detection.id}
+                                    </h6>
+                                    <p class="card-text">
+                                        <strong>Class:</strong> ${detection.class || 'bird'}<br>
+                                        <strong>Confidence:</strong> ${formatConfidence(detection.confidence)}<br>
+                                        <strong>Time:</strong> ${formatTimestamp(detection.timestamp)}
+                                    </p>
+                                </div>
+                                <div class="col-md-4">
+                                    <img src="/api/detections/${detection.id}/image" 
+                                         class="detection-image" 
+                                         alt="Detection image"
+                                         onerror="this.style.display='none'">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+            
+        } catch (error) {
+            console.error('Failed to load detections:', error);
+        }
+    }
+    
+    // Load configuration
+    async function loadConfiguration() {
+        try {
+            const response = await fetch('/api/config');
+            const config = await response.json();
+            
+            // Populate form fields
+            document.getElementById('detection-interval').value = config.system.detection_interval;
+            document.getElementById('max-history').value = config.system.max_detection_history;
+            document.getElementById('camera-width').value = config.camera.width;
+            document.getElementById('camera-height').value = config.camera.height;
+            document.getElementById('camera-fps').value = config.camera.fps;
+            document.getElementById('confidence-threshold').value = config.ai.confidence_threshold;
+            document.getElementById('nms-threshold').value = config.ai.nms_threshold;
+            document.getElementById('audio-enabled').checked = config.notifications.audio.enabled;
+            document.getElementById('sms-enabled').checked = config.notifications.sms.enabled;
+            document.getElementById('email-enabled').checked = config.notifications.email.enabled;
+            
+            // Update range value displays
+            updateRangeValue('confidence-threshold', 'confidence-value');
+            updateRangeValue('nms-threshold', 'nms-value');
+            
+        } catch (error) {
+            console.error('Failed to load configuration:', error);
+        }
+    }
+    
+    // Update range value display
+    function updateRangeValue(rangeId, valueId) {
+        const range = document.getElementById(rangeId);
+        const value = document.getElementById(valueId);
+        range.addEventListener('input', function() {
+            value.textContent = this.value;
+        });
+    }
+    
+    // Save configuration
+    async function saveConfiguration() {
+        try {
+            const config = {
+                system: {
+                    detection_interval: parseFloat(document.getElementById('detection-interval').value),
+                    max_detection_history: parseInt(document.getElementById('max-history').value)
+                },
+                camera: {
+                    width: parseInt(document.getElementById('camera-width').value),
+                    height: parseInt(document.getElementById('camera-height').value),
+                    fps: parseInt(document.getElementById('camera-fps').value)
+                },
+                ai: {
+                    confidence_threshold: parseFloat(document.getElementById('confidence-threshold').value),
+                    nms_threshold: parseFloat(document.getElementById('nms-threshold').value)
+                },
+                notifications: {
+                    audio: {
+                        enabled: document.getElementById('audio-enabled').checked
+                    },
+                    sms: {
+                        enabled: document.getElementById('sms-enabled').checked
+                    },
+                    email: {
+                        enabled: document.getElementById('email-enabled').checked
+                    }
+                }
+            };
+            
+            const response = await fetch('/api/config', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(config)
+            });
+            
+            const result = await response.json();
+            
+            if (response.ok) {
+                alert('Configuration saved successfully!');
+            } else {
+                alert('Failed to save configuration: ' + result.error);
+            }
+            
+        } catch (error) {
+            alert('Failed to save configuration: ' + error.message);
+        }
+    }
+    
+    // Test camera
+    async function testCamera() {
+        try {
+            const response = await fetch('/api/camera/test');
+            const result = await response.json();
+            
+            if (response.ok) {
+                alert('Camera test successful!');
+            } else {
+                alert('Camera test failed: ' + result.error);
+            }
+        } catch (error) {
+            alert('Camera test failed: ' + error.message);
+        }
+    }
+    
+    // Test AI
+    async function testAI() {
+        try {
+            const response = await fetch('/api/ai/test');
+            const result = await response.json();
+            
+            if (response.ok) {
+                alert('AI model test successful!');
+            } else {
+                alert('AI model test failed: ' + result.error);
+            }
+        } catch (error) {
+            alert('AI model test failed: ' + error.message);
+        }
+    }
+    
+    // Test alerts
+    async function testAlerts() {
+        try {
+            const response = await fetch('/api/alerts/test');
+            const result = await response.json();
+            
+            if (response.ok) {
+                alert('Alert system test successful!');
+            } else {
+                alert('Alert system test failed: ' + result.error);
+            }
+        } catch (error) {
+            alert('Alert system test failed: ' + error.message);
+        }
+    }
+    
+    // Load section data functions
+    async function loadCameraStatus() {
+        // Implementation for camera status
+        document.getElementById('camera-info').innerHTML = '<div class="text-muted">Camera status loading...</div>';
+    }
+    
+    async function loadAIStatus() {
+        // Implementation for AI status
+        document.getElementById('ai-info').innerHTML = '<div class="text-muted">AI status loading...</div>';
+    }
+    
+    async function loadAlertsStatus() {
+        // Implementation for alerts status
+        document.getElementById('alerts-info').innerHTML = '<div class="text-muted">Alerts status loading...</div>';
+    }
+    
+    async function loadLogs() {
+        try {
+            const response = await fetch('/api/logs');
+            const logs = await response.json();
+            
+            const container = document.getElementById('logs-content');
+            if (logs.length === 0) {
+                container.innerHTML = '<div class="text-center text-muted">No logs available</div>';
+                return;
+            }
+            
+            let html = '<div class="table-responsive"><table class="table table-sm"><thead><tr><th>Time</th><th>Level</th><th>Message</th></tr></thead><tbody>';
+            logs.forEach(log => {
+                html += `<tr><td>${formatTimestamp(log.timestamp)}</td><td>${log.level}</td><td>${log.message}</td></tr>`;
+            });
+            html += '</tbody></table></div>';
+            
+            container.innerHTML = html;
+            
+        } catch (error) {
+            console.error('Failed to load logs:', error);
+        }
+    }
+    
+    async function loadStats() {
+        try {
+            const response = await fetch('/api/stats');
+            const stats = await response.json();
+            
+            const container = document.getElementById('stats-content');
+            let html = '<div class="row">';
+            html += `<div class="col-md-6"><h6>System Resources</h6><p>CPU: ${stats.cpu_percent}%<br>Memory: ${stats.memory_percent}%<br>Disk: ${stats.disk_percent}%</p></div>`;
+            html += `<div class="col-md-6"><h6>Detection Statistics</h6><p>Today: ${stats.detections_today}<br>This Week: ${stats.detections_this_week}<br>This Month: ${stats.detections_this_month}</p></div>`;
+            html += '</div>';
+            
+            container.innerHTML = html;
+            
+        } catch (error) {
+            console.error('Failed to load stats:', error);
+        }
+    }
+    
+    // Initialize dashboard
+    document.addEventListener('DOMContentLoaded', function() {
+        loadDashboardData();
+    });
+</script>
+{% endblock %}

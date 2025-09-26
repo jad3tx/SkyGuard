@@ -1,0 +1,61 @@
+ai:
+  classes:
+  - bird
+  confidence_threshold: 0.5
+  input_size:
+  - 640
+  - 640
+  model_path: models/airbirds_raptor_detector.pt
+  model_type: yolo
+  nms_threshold: 0.4
+camera:
+  flip_horizontal: false
+  flip_vertical: false
+  fps: 30
+  height: 720
+  rotation: 0
+  source: 0
+  width: 1280
+hardware:
+  buzzer_pin: 19
+  gpio_enabled: true
+  led_pin: 18
+  motion_sensor_pin: 20
+  platform: raspberry_pi5
+logging:
+  backup_count: 5
+  file: logs/skyguard.log
+  level: INFO
+  max_size_mb: 10
+notifications:
+  audio:
+    enabled: true
+    sound_file: sounds/raptor_alert.wav
+    volume: 0.8
+  email:
+    enabled: true
+    from_email: ''
+    password: ''
+    smtp_port: 587
+    smtp_server: ''
+    to_emails: []
+    username: ''
+  push:
+    api_key: ''
+    device_id: ''
+    enabled: true
+  sms:
+    account_sid: ''
+    auth_token: ''
+    enabled: true
+    from_number: ''
+    to_numbers: []
+storage:
+  database_path: data/skyguard.db
+  detection_images_path: data/detections
+  log_retention_days: 14
+system:
+  debug_mode: false
+  detection_interval: 1.0
+  max_detection_history: 1000
+  save_detection_frames: true
