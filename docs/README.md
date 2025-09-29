@@ -1,32 +1,34 @@
-# SkyGuard - Open-Source Raptor Alert System
+# SkyGuard Documentation
 
-![SkyGuard Logo](skyGuardShield.png)
+![SkyGuard Logo](../skyGuardShield.png)
 
-**Protecting Small Poultry Farms with AI-Powered Raptor Detection**
+Welcome to the comprehensive documentation for SkyGuard, the open-source raptor alert system that protects small poultry farms with AI-powered detection.
 
-SkyGuard is an open-source artificial intelligence solution that alerts small flock owners when raptors are circling above their coops. Built for affordability and accessibility, it uses low-cost hardware and modern computer vision to protect your poultry from airborne predators.
+## 📚 Documentation Overview
 
-## 🎯 Project Overview
+This documentation provides everything you need to understand, install, configure, and use SkyGuard effectively.
 
-**Author:** John Daughtridge  
+### 🚀 Getting Started
 
-### The Problem
+- **[Installation Guide](INSTALLATION.md)** - Complete setup instructions for all platforms
+- **[Hardware Guide](HARDWARE.md)** - Hardware requirements and recommendations
+- **[Web Portal Guide](WEB_PORTAL.md)** - Web interface management and monitoring
 
-- 49% of surveyed chicken owners cite hawks and other airborne predators as their #1 concern
-- Rising egg prices and supply concerns drive more families to backyard chicken farming
-- Existing deterrent systems are costly and sized for airports or industrial farms
-- Small-scale farmers lack affordable protective solutions
+### 🔧 Configuration & Integration
 
-### The Solution
+- **[API Documentation](API.md)** - REST API reference for integration
+- **[Model Integration Guide](MODEL_INTEGRATION.md)** - AI model setup and training
+- **[Testing Guide](TESTING.md)** - Comprehensive testing suite
 
-SkyGuard provides a low-cost, AI-driven alert system that:
-- Uses generic webcams and inexpensive microcontrollers (ESP32/Raspberry Pi)
-- Runs real-time computer vision models to detect raptors
-- Sends immediate alerts via audio, push notifications, or SMS
-- Logs detection events for analysis and improvement
-- Is completely open-source and self-contained
+## 🎯 Quick Start
 
-## 🚀 Features
+1. **Install SkyGuard**: Follow the [Installation Guide](INSTALLATION.md)
+2. **Configure Hardware**: Check the [Hardware Guide](HARDWARE.md)
+3. **Set Up AI Models**: Use the [Model Integration Guide](MODEL_INTEGRATION.md)
+4. **Access Web Portal**: See the [Web Portal Guide](WEB_PORTAL.md)
+5. **Test Your System**: Follow the [Testing Guide](TESTING.md)
+
+## 🌟 Key Features
 
 - **Real-time Detection**: AI-powered computer vision using YOLO models
 - **Multiple Alert Types**: Audio, push notifications, SMS, and email alerts
@@ -46,7 +48,6 @@ SkyGuard provides a low-cost, AI-driven alert system that:
 - **Controller**: Raspberry Pi 5 (recommended)
 - **Storage**: 32GB+ microSD card
 - **Power**: 5V/3A power supply
-
 
 ### Software
 - **OS**: Raspberry Pi OS (recommended) or Ubuntu 20.04+
@@ -81,7 +82,7 @@ SkyGuard provides a low-cost, AI-driven alert system that:
 
 ### Detailed Installation
 
-See [INSTALLATION.md](docs/INSTALLATION.md) for detailed setup instructions including:
+See [INSTALLATION.md](INSTALLATION.md) for detailed setup instructions including:
 - Hardware assembly
 - Software installation
 - Configuration options
@@ -96,8 +97,6 @@ SkyGuard is configured through the `config/skyguard.yaml` file. Key settings inc
 - **Notification preferences**: Audio, SMS, email, push notifications
 - **Storage options**: Database location, image retention
 - **Hardware configuration**: GPIO pins, platform-specific settings
-
-See [CONFIGURATION.md](docs/CONFIGURATION.md) for detailed configuration options.
 
 ## 🎮 Usage
 
@@ -133,14 +132,6 @@ See [CONFIGURATION.md](docs/CONFIGURATION.md) for detailed configuration options
 - **System Monitoring**: Test camera, AI model, and alert systems
 - **API Access**: REST API for integration and automation
 
-### Advanced Features
-
-- **Custom model training**: See [TRAINING.md](docs/TRAINING.md)
-- **Multi-camera setup**: Configure multiple detection zones
-- **Remote monitoring**: Web interface for remote system management
-- **Data export**: Export detection data for analysis
-- **API integration**: Use REST API for custom applications
-
 ## 📊 Performance Metrics
 
 SkyGuard is designed to achieve:
@@ -168,7 +159,7 @@ skyguard/
 
 ### Contributing
 
-We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+We welcome contributions! Please see [CONTRIBUTING.md](../CONTRIBUTING.md) for guidelines.
 
 ### Development Setup
 
@@ -219,15 +210,6 @@ We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guid
 - [ ] Machine learning improvements
 - [ ] Commercial deployment tools
 
-## 📚 Documentation
-
-- [Installation Guide](docs/INSTALLATION.md)
-- [Configuration Reference](docs/CONFIGURATION.md)
-- [Model Training](docs/TRAINING.md)
-- [API Documentation](docs/API.md)
-- [Troubleshooting](docs/TROUBLESHOOTING.md)
-- [Hardware Guide](docs/HARDWARE.md)
-
 ## 🤝 Support
 
 - **Issues**: [GitHub Issues](https://github.com/johndaughtridge/skyguard/issues)
@@ -236,7 +218,7 @@ We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guid
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](../LICENSE) file for details.
 
 ## 🙏 Acknowledgments
 

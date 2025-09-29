@@ -1,5 +1,7 @@
 # SkyGuard Testing Guide
 
+![SkyGuard Logo](../skyGuardShield.png)
+
 This guide covers the comprehensive testing suite for SkyGuard, including unit tests, integration tests, and UI regression tests.
 
 ## 🧪 Test Suite Overview

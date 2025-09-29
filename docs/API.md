@@ -1,5 +1,7 @@
 # SkyGuard API Documentation
 
+![SkyGuard Logo](../skyGuardShield.png)
+
 The SkyGuard web portal provides a comprehensive REST API for system management, monitoring, and integration.
 
 ## 🌐 Base URL

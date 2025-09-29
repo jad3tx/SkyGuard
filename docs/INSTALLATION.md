@@ -1,5 +1,7 @@
 # SkyGuard Installation Guide
 
+![SkyGuard Logo](../skyGuardShield.png)
+
 This guide will walk you through installing and setting up the SkyGuard raptor alert system.
 
 ## Prerequisites
