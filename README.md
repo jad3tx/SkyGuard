@@ -31,6 +31,9 @@ SkyGuard provides a low-cost, AI-driven alert system that:
 - **Real-time Detection**: AI-powered computer vision using YOLO models
 - **Multiple Alert Types**: Audio, push notifications, SMS, and email alerts
 - **Event Logging**: Comprehensive detection history and statistics
+- **Web Portal**: Full-featured web interface for system management
+- **REST API**: Complete API for integration and automation
+- **Comprehensive Testing**: Extensive test suite for reliability
 - **Low Cost**: ~$150 per unit using affordable hardware
 - **Easy Setup**: Complete documentation and automated configuration
 - **Open Source**: Full source code available on GitHub
@@ -105,15 +108,30 @@ See [CONFIGURATION.md](docs/CONFIGURATION.md) for detailed configuration options
    python -m skyguard.main
    ```
 
-2. **Monitor detections**
+2. **Access the web portal**
+   ```bash
+   python scripts/start_web_portal.py
+   # Open http://localhost:8080 in your browser
+   ```
+
+3. **Monitor detections**
    - View real-time detection feed
    - Check alert notifications
    - Review detection logs
+   - Use the web interface for easy management
 
-3. **Test alerts**
+4. **Test alerts**
    ```bash
    python -m skyguard.main --test-alerts
    ```
+
+### Web Portal Features
+
+- **Dashboard**: Real-time system status and statistics
+- **Detection Management**: Browse and export detection history
+- **Configuration**: Easy system configuration through web interface
+- **System Monitoring**: Test camera, AI model, and alert systems
+- **API Access**: REST API for integration and automation
 
 ### Advanced Features
 
@@ -121,6 +139,7 @@ See [CONFIGURATION.md](docs/CONFIGURATION.md) for detailed configuration options
 - **Multi-camera setup**: Configure multiple detection zones
 - **Remote monitoring**: Web interface for remote system management
 - **Data export**: Export detection data for analysis
+- **API integration**: Use REST API for custom applications
 
 ## 📊 Performance Metrics
 
@@ -161,7 +180,14 @@ We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guid
 
 2. **Run tests**
    ```bash
-   pytest tests/
+   # Run all tests
+   pytest tests/ -v
+   
+   # Run specific test suites
+   pytest tests/test_web_api.py -v      # API tests
+   pytest tests/test_web_ui.py -v      # UI tests
+   pytest tests/test_camera_connection.py -v  # Camera tests
+   pytest tests/test_core.py -v        # Core component tests
    ```
 
 3. **Code formatting**
@@ -177,12 +203,15 @@ We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guid
 - [x] Basic alert functionality
 - [x] Event logging
 - [x] Configuration management
+- [x] Web interface
+- [x] REST API
+- [x] Comprehensive testing suite
 
 ### Phase 2 (Q1 2026)
 - [ ] Model training pipeline
-- [ ] Web interface
 - [ ] Mobile app
 - [ ] Multi-camera support
+- [ ] Advanced analytics
 
 ### Phase 3 (Q2 2026)
 - [ ] Automated deterrents

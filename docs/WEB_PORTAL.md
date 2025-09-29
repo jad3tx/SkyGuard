@@ -37,7 +37,7 @@ A comprehensive web-based interface for managing and monitoring your SkyGuard ra
 
 ```bash
 # Install web portal dependencies
-python scripts/start_web_portal.py --install-deps
+pip install -r requirements-web.txt
 
 # Start the web portal
 python scripts/start_web_portal.py
@@ -68,7 +68,6 @@ Options:
   --port PORT          Port to bind to (default: 8080)
   --debug              Enable debug mode
   --config CONFIG      Configuration file path
-  --install-deps       Install web dependencies
 ```
 
 ### **Environment Variables**

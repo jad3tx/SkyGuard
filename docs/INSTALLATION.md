@@ -135,6 +135,12 @@ This guide will walk you through installing and setting up the SkyGuard raptor a
    skyguard --test-alerts
    ```
 
+4. **Start the web portal**
+   ```bash
+   python scripts/start_web_portal.py
+   # Open http://localhost:8080 in your browser
+   ```
+
 ## Platform-Specific Instructions
 
 ### Raspberry Pi Setup
@@ -228,6 +234,27 @@ skyguard --test-system
 ### Check System Status
 ```bash
 skyguard --status
+```
+
+### Web Portal Test
+```bash
+# Start web portal
+python scripts/start_web_portal.py
+
+# Test API endpoints
+curl http://localhost:8080/api/status
+curl http://localhost:8080/api/detections
+```
+
+### Run Test Suite
+```bash
+# Run all tests
+pytest tests/ -v
+
+# Run specific test suites
+pytest tests/test_web_api.py -v      # API tests
+pytest tests/test_web_ui.py -v      # UI tests
+pytest tests/test_camera_connection.py -v  # Camera tests
 ```
 
 ## Troubleshooting

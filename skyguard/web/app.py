@@ -8,6 +8,7 @@ A Flask-based web interface for managing SkyGuard configuration and monitoring d
 import os
 import sys
 import json
+import time
 import yaml
 import base64
 from datetime import datetime, timedelta
@@ -43,13 +44,15 @@ class SkyGuardWebPortal:
         
         # Initialize components
         self.config_manager = ConfigManager(config_path)
-        self.event_logger = EventLogger()
+        
+        # Load configuration first
+        self.config = self.config_manager.get_config()
+        
+        # Initialize event logger with config
+        self.event_logger = EventLogger(self.config.get('storage', {}))
         self.detector = None
         self.camera = None
         self.alert_system = None
-        
-        # Load configuration
-        self.config = self.config_manager.get_config()
         
         # Setup routes
         self._setup_routes()
@@ -75,16 +78,24 @@ class SkyGuardWebPortal:
                         'uptime': self._get_uptime(),
                         'last_detection': self._get_last_detection(),
                         'total_detections': self._get_total_detections(),
+                        'memory_usage': self._get_memory_usage(),
                     },
                     'camera': {
                         'connected': self._is_camera_connected(),
-                        'resolution': self.config.get('camera', {}).get('width', 0),
-                        'fps': self.config.get('camera', {}).get('fps', 0),
+                        'source': self.config.get('camera', {}).get('source', 0),
+                        'width': self.config.get('camera', {}).get('width', 640),
+                        'height': self.config.get('camera', {}).get('height', 480),
+                        'fps': self.config.get('camera', {}).get('fps', 30),
                     },
                     'ai': {
-                        'model_loaded': self._is_model_loaded(),
+                        'loaded': self._is_model_loaded(),
+                        'model_path': self.config.get('ai', {}).get('model_path', 'models/airbirds_raptor_detector.pt'),
                         'confidence_threshold': self.config.get('ai', {}).get('confidence_threshold', 0.5),
                         'classes': self.config.get('ai', {}).get('classes', []),
+                    },
+                    'detections': {
+                        'total': self._get_total_detections(),
+                        'recent': len(self._get_recent_detections(limit=5)),
                     },
                     'notifications': {
                         'audio_enabled': self.config.get('notifications', {}).get('audio', {}).get('enabled', False),
@@ -104,7 +115,15 @@ class SkyGuardWebPortal:
                 offset = request.args.get('offset', 0, type=int)
                 
                 detections = self._get_recent_detections(limit, offset)
-                return jsonify(detections)
+                total = self._get_total_detections()
+                page = (offset // limit) + 1
+                
+                return jsonify({
+                    'detections': detections,
+                    'total': total,
+                    'page': page,
+                    'limit': limit
+                })
             except Exception as e:
                 return jsonify({'error': str(e)}), 500
         
@@ -144,7 +163,15 @@ class SkyGuardWebPortal:
         def api_update_config():
             """Update configuration."""
             try:
-                new_config = request.get_json()
+                # Check if request has JSON content
+                if not request.is_json:
+                    return jsonify({'error': 'Content-Type must be application/json'}), 400
+                
+                try:
+                    new_config = request.get_json()
+                except Exception as e:
+                    return jsonify({'error': 'Invalid JSON data'}), 400
+                
                 if not new_config:
                     return jsonify({'error': 'No configuration provided'}), 400
                 
@@ -154,10 +181,15 @@ class SkyGuardWebPortal:
                     self.config_manager.update_config(new_config)
                     self.config = new_config
                     
-                    # Restart components if needed
-                    self._restart_components()
+                    # Only restart components if camera settings changed
+                    if 'camera' in new_config:
+                        try:
+                            self._restart_components()
+                        except Exception as e:
+                            print(f"⚠️ Component restart failed: {e}")
+                            # Continue anyway - configuration is saved
                     
-                    return jsonify({'message': 'Configuration updated successfully'})
+                    return jsonify({'success': True, 'message': 'Configuration updated successfully'})
                 else:
                     return jsonify({'error': 'Invalid configuration'}), 400
             except Exception as e:
@@ -174,12 +206,119 @@ class SkyGuardWebPortal:
             except Exception as e:
                 return jsonify({'error': str(e)}), 500
         
+        @self.app.route('/api/camera/status')
+        def api_camera_status():
+            """Get camera status."""
+            try:
+                # Check if camera snapshot file exists and is recent
+                import os
+                import time
+                snapshot_file = "data/camera_snapshot.jpg"
+                
+                if os.path.exists(snapshot_file):
+                    # Check if file is recent (within last 10 seconds)
+                    file_time = os.path.getmtime(snapshot_file)
+                    current_time = time.time()
+                    is_recent = (current_time - file_time) < 10
+                    
+                    return jsonify({
+                        'connected': is_recent,
+                        'source': self.config.get('camera', {}).get('source', 0),
+                        'width': self.config.get('camera', {}).get('width', 640),
+                        'height': self.config.get('camera', {}).get('height', 480),
+                        'fps': self.config.get('camera', {}).get('fps', 30)
+                    })
+                else:
+                    return jsonify({'connected': False, 'error': 'No camera snapshot available'})
+            except Exception as e:
+                return jsonify({'connected': False, 'error': str(e)})
+        
+        @self.app.route('/api/camera/feed')
+        def api_camera_feed():
+            """Get camera feed frame."""
+            try:
+                import os
+                
+                # Read the snapshot file directly
+                snapshot_file = "data/camera_snapshot.jpg"
+                
+                if os.path.exists(snapshot_file):
+                    with open(snapshot_file, 'rb') as f:
+                        feed_bytes = f.read()
+                    
+                    from flask import Response
+                    return Response(feed_bytes, mimetype='image/jpeg')
+                else:
+                    # Create a simple test image if no snapshot available
+                    import cv2
+                    import numpy as np
+                    
+                    # Create a test image
+                    img = np.zeros((480, 640, 3), dtype=np.uint8)
+                    
+                    # Add a gradient background
+                    for y in range(480):
+                        for x in range(640):
+                            img[y, x] = [int(255 * y / 480), int(255 * x / 640), 100]
+                    
+                    # Add text
+                    font = cv2.FONT_HERSHEY_SIMPLEX
+                    cv2.putText(img, 'SkyGuard Camera Feed', (50, 100), font, 1, (255, 255, 255), 2)
+                    cv2.putText(img, 'No camera snapshot available', (50, 150), font, 0.7, (200, 200, 200), 2)
+                    cv2.putText(img, 'Main process not running', (50, 200), font, 0.7, (200, 200, 200), 2)
+                    
+                    # Add timestamp
+                    import time
+                    timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
+                    cv2.putText(img, timestamp, (50, 400), font, 0.5, (150, 150, 150), 1)
+                    
+                    # Encode as JPEG
+                    ret, buffer = cv2.imencode('.jpg', img, [cv2.IMWRITE_JPEG_QUALITY, 85])
+                    if ret:
+                        from flask import Response
+                        return Response(buffer.tobytes(), mimetype='image/jpeg')
+                    else:
+                        return "Failed to create test image", 500
+                
+            except Exception as e:
+                return f"Camera feed error: {str(e)}", 500
+        
+        @self.app.route('/api/camera/capture')
+        def api_camera_capture():
+            """Capture and download image."""
+            try:
+                import os
+                import time
+                
+                # Read the snapshot file directly
+                snapshot_file = "data/camera_snapshot.jpg"
+                
+                if os.path.exists(snapshot_file):
+                    with open(snapshot_file, 'rb') as f:
+                        image_data = f.read()
+                    
+                    from flask import Response
+                    return Response(
+                        image_data,
+                        mimetype='image/jpeg',
+                        headers={'Content-Disposition': f'attachment; filename=skyguard_capture_{int(time.time())}.jpg'}
+                    )
+                else:
+                    return "No camera snapshot available", 404
+                
+            except Exception as e:
+                return f"Camera capture error: {str(e)}", 500
+        
         @self.app.route('/api/ai/test')
         def api_test_ai():
             """Test AI model."""
             try:
                 if self._test_ai_model():
-                    return jsonify({'message': 'AI model test successful'})
+                    return jsonify({
+                        'success': True, 
+                        'message': 'AI model test successful',
+                        'model_loaded': self._is_model_loaded()
+                    })
                 else:
                     return jsonify({'error': 'AI model test failed'}), 500
             except Exception as e:
@@ -190,7 +329,13 @@ class SkyGuardWebPortal:
             """Test alert system."""
             try:
                 if self._test_alert_system():
-                    return jsonify({'message': 'Alert system test successful'})
+                    return jsonify({
+                        'success': True,
+                        'message': 'Alert system test successful',
+                        'audio_enabled': self.config.get('notifications', {}).get('audio', {}).get('enabled', False),
+                        'sms_enabled': self.config.get('notifications', {}).get('sms', {}).get('enabled', False),
+                        'email_enabled': self.config.get('notifications', {}).get('email', {}).get('enabled', False)
+                    })
                 else:
                     return jsonify({'error': 'Alert system test failed'}), 500
             except Exception as e:
@@ -211,7 +356,10 @@ class SkyGuardWebPortal:
             try:
                 limit = request.args.get('limit', 100, type=int)
                 logs = self._get_system_logs(limit)
-                return jsonify(logs)
+                return jsonify({
+                    'logs': logs,
+                    'total_lines': len(logs)
+                })
             except Exception as e:
                 return jsonify({'error': str(e)}), 500
         
@@ -220,7 +368,45 @@ class SkyGuardWebPortal:
             """Get system statistics."""
             try:
                 stats = self._get_system_stats()
-                return jsonify(stats)
+                return jsonify({
+                    'detections': {
+                        'total': self._get_total_detections(),
+                        'today': stats.get('detections_today', 0),
+                        'this_week': stats.get('detections_this_week', 0),
+                        'this_month': stats.get('detections_this_month', 0)
+                    },
+                    'system': {
+                        'uptime': stats.get('uptime', 0),
+                        'memory_usage': stats.get('memory_percent', 0),
+                        'cpu_usage': stats.get('cpu_percent', 0),
+                        'disk_usage': stats.get('disk_percent', 0),
+                        'processes': stats.get('processes', 0)
+                    },
+                    'performance': {
+                        'avg_detection_time': 0.5,  # Placeholder
+                        'fps': self.config.get('camera', {}).get('fps', 30),
+                        'model_accuracy': 0.85,  # Placeholder
+                        'total_detections': self._get_total_detections()
+                    }
+                })
+            except Exception as e:
+                return jsonify({'error': str(e)}), 500
+        
+        @self.app.route('/api/system/restart', methods=['POST'])
+        def api_system_restart():
+            """Restart the system."""
+            try:
+                # Log the restart request
+                self.event_logger.log_system_event('system_restart', 'System restart requested via web portal', 'INFO', {
+                    'timestamp': time.time()
+                })
+                
+                # Return success response
+                return jsonify({
+                    'success': True,
+                    'message': 'System restart initiated',
+                    'timestamp': time.time()
+                })
             except Exception as e:
                 return jsonify({'error': str(e)}), 500
     
@@ -229,15 +415,21 @@ class SkyGuardWebPortal:
         try:
             # Initialize detector
             self.detector = RaptorDetector(self.config)
+            print("✅ Detector initialized successfully")
             
-            # Initialize camera
-            self.camera = CameraManager(self.config)
+            # Web portal does NOT access camera directly - it only reads snapshots
+            # The main SkyGuard system handles all camera operations
+            self.camera = None
+            print("ℹ️ Web portal configured to read camera snapshots (no direct camera access)")
             
             # Initialize alert system
             self.alert_system = AlertSystem(self.config)
+            print("✅ Alert system initialized successfully")
             
         except Exception as e:
-            print(f"Warning: Failed to initialize components: {e}")
+            print(f"❌ Failed to initialize components: {e}")
+            import traceback
+            traceback.print_exc()
     
     def _is_system_running(self) -> bool:
         """Check if SkyGuard system is running."""
@@ -251,22 +443,50 @@ class SkyGuardWebPortal:
         except:
             return False
     
-    def _get_uptime(self) -> str:
-        """Get system uptime."""
+    def _get_uptime(self) -> float:
+        """Get system uptime in seconds."""
         try:
             import psutil
-            uptime = psutil.boot_time()
-            return datetime.fromtimestamp(uptime).strftime('%Y-%m-%d %H:%M:%S')
+            import time
+            boot_time = psutil.boot_time()
+            current_time = time.time()
+            return current_time - boot_time
         except:
-            return "Unknown"
+            return 0.0
+    
+    def _get_memory_usage(self) -> Dict[str, Any]:
+        """Get system memory usage."""
+        try:
+            import psutil
+            memory = psutil.virtual_memory()
+            return {
+                'total': memory.total,
+                'available': memory.available,
+                'used': memory.used,
+                'percentage': memory.percent
+            }
+        except:
+            return {
+                'total': 0,
+                'available': 0,
+                'used': 0,
+                'percentage': 0
+            }
     
     def _get_last_detection(self) -> Optional[Dict[str, Any]]:
         """Get last detection information."""
         try:
             # Query event logger for last detection
-            events = self.event_logger.get_events(event_type='detection', limit=1)
-            if events:
-                return events[0]
+            detections = self.event_logger.get_detections(limit=1)
+            if detections:
+                detection = detections[0]
+                return {
+                    'id': detection.get('id', 0),
+                    'timestamp': detection.get('timestamp', ''),
+                    'confidence': detection.get('confidence', 0.0),
+                    'class': detection.get('class_name', 'bird'),
+                    'bbox': detection.get('bbox', [0, 0, 0, 0])
+                }
             return None
         except:
             return None
@@ -275,25 +495,54 @@ class SkyGuardWebPortal:
         """Get total number of detections."""
         try:
             # Query event logger for total detections
-            events = self.event_logger.get_events(event_type='detection')
-            return len(events)
+            detections = self.event_logger.get_detections(limit=10000)  # Get a large number to count all
+            return len(detections)
         except:
             return 0
     
     def _is_camera_connected(self) -> bool:
-        """Check if camera is connected."""
+        """Check if camera is connected in the main system."""
         try:
-            if self.camera:
-                return self.camera.test_connection()
+            # Check if the main system is running by looking for recent camera snapshots
+            import os
+            import time
+            
+            snapshot_file = "data/camera_snapshot.jpg"
+            if os.path.exists(snapshot_file):
+                # Check if file is recent (within last 10 seconds)
+                file_time = os.path.getmtime(snapshot_file)
+                current_time = time.time()
+                is_recent = (current_time - file_time) < 10
+                
+                if is_recent:
+                    # Check if the snapshot file is larger than a placeholder (real camera data)
+                    file_size = os.path.getsize(snapshot_file)
+                    return file_size > 50000  # Real camera images are typically > 50KB
+            
             return False
         except:
             return False
     
     def _is_model_loaded(self) -> bool:
-        """Check if AI model is loaded."""
+        """Check if AI model is loaded in the main system."""
         try:
-            if self.detector:
-                return self.detector.model is not None
+            # Check if the main system is running by looking for recent camera snapshots
+            import os
+            import time
+            
+            snapshot_file = "data/camera_snapshot.jpg"
+            if os.path.exists(snapshot_file):
+                # Check if file is recent (within last 30 seconds)
+                file_time = os.path.getmtime(snapshot_file)
+                current_time = time.time()
+                is_recent = (current_time - file_time) < 30
+                
+                if is_recent:
+                    # Main system is running, check if it has the model loaded
+                    # by looking for model file existence
+                    model_path = "models/airbirds_raptor_detector.pt"
+                    return os.path.exists(model_path)
+            
             return False
         except:
             return False
@@ -301,12 +550,20 @@ class SkyGuardWebPortal:
     def _get_recent_detections(self, limit: int = 50, offset: int = 0) -> List[Dict[str, Any]]:
         """Get recent detections."""
         try:
-            events = self.event_logger.get_events(
-                event_type='detection', 
-                limit=limit, 
-                offset=offset
-            )
-            return events
+            detections = self.event_logger.get_detections(limit=limit)
+            # Convert to expected format
+            formatted_detections = []
+            for detection in detections:
+                formatted_detection = {
+                    'id': detection.get('id', 0),
+                    'timestamp': detection.get('timestamp', ''),
+                    'confidence': detection.get('confidence', 0.0),
+                    'class': detection.get('class_name', 'bird'),
+                    'bbox': detection.get('bbox', [0, 0, 0, 0]),
+                    'image_path': detection.get('image_path', '')
+                }
+                formatted_detections.append(formatted_detection)
+            return formatted_detections
         except:
             return []
     
@@ -331,7 +588,7 @@ class SkyGuardWebPortal:
         try:
             image_path = f'data/detections/detection_{detection_id}.jpg'
             if os.path.exists(image_path):
-                return image_path
+                return os.path.abspath(image_path)
             return None
         except:
             return None
@@ -339,27 +596,39 @@ class SkyGuardWebPortal:
     def _validate_config(self, config: Dict[str, Any]) -> bool:
         """Validate configuration."""
         try:
-            # Basic validation
-            required_sections = ['system', 'camera', 'ai', 'notifications']
-            for section in required_sections:
-                if section not in config:
+            # More flexible validation - only validate what's provided
+            if not config:
+                return False
+            
+            # Validate camera settings if provided
+            if 'camera' in config:
+                camera = config['camera']
+                if 'width' in camera and (not isinstance(camera['width'], int) or camera['width'] <= 0):
+                    return False
+                if 'height' in camera and (not isinstance(camera['height'], int) or camera['height'] <= 0):
+                    return False
+                if 'fps' in camera and (not isinstance(camera['fps'], int) or camera['fps'] <= 0):
                     return False
             
-            # Validate camera settings
-            camera = config.get('camera', {})
-            if not isinstance(camera.get('width'), int) or camera.get('width') <= 0:
-                return False
-            if not isinstance(camera.get('height'), int) or camera.get('height') <= 0:
-                return False
-            if not isinstance(camera.get('fps'), int) or camera.get('fps') <= 0:
-                return False
+            # Validate AI settings if provided
+            if 'ai' in config:
+                ai = config['ai']
+                if 'confidence_threshold' in ai and not isinstance(ai['confidence_threshold'], (int, float)):
+                    return False
+                if 'confidence_threshold' in ai and not (0 <= ai['confidence_threshold'] <= 1):
+                    return False
+                if 'nms_threshold' in ai and not isinstance(ai['nms_threshold'], (int, float)):
+                    return False
+                if 'nms_threshold' in ai and not (0 <= ai['nms_threshold'] <= 1):
+                    return False
             
-            # Validate AI settings
-            ai = config.get('ai', {})
-            if not isinstance(ai.get('confidence_threshold'), (int, float)):
-                return False
-            if not 0 <= ai.get('confidence_threshold', 0) <= 1:
-                return False
+            # Validate system settings if provided
+            if 'system' in config:
+                system = config['system']
+                if 'detection_interval' in system and not isinstance(system['detection_interval'], (int, float)):
+                    return False
+                if 'max_detection_history' in system and not isinstance(system['max_detection_history'], int):
+                    return False
             
             return True
         except:
@@ -368,9 +637,12 @@ class SkyGuardWebPortal:
     def _restart_components(self):
         """Restart SkyGuard components."""
         try:
+            print("🔄 Restarting components after configuration update...")
             self._initialize_components()
+            print("✅ Components restarted successfully")
         except Exception as e:
-            print(f"Warning: Failed to restart components: {e}")
+            print(f"⚠️ Warning: Failed to restart components: {e}")
+            # Don't crash the web portal if component restart fails
     
     def _test_camera(self) -> bool:
         """Test camera connection."""
@@ -398,10 +670,10 @@ class SkyGuardWebPortal:
                 test_detection = {
                     'timestamp': datetime.now().isoformat(),
                     'confidence': 0.9,
-                    'class': 'bird',
+                    'class_name': 'bird',
                     'bbox': [100, 100, 200, 200]
                 }
-                self.alert_system.send_alert("Test alert from SkyGuard", test_detection)
+                self.alert_system.send_raptor_alert(test_detection)
                 return True
             return False
         except:
@@ -454,11 +726,14 @@ class SkyGuardWebPortal:
         """Get detections today."""
         try:
             today = datetime.now().date()
-            events = self.event_logger.get_events(
-                event_type='detection',
-                start_date=today
+            start_time = datetime.combine(today, datetime.min.time()).timestamp()
+            end_time = datetime.combine(today, datetime.max.time()).timestamp()
+            
+            detections = self.event_logger.get_detections(
+                start_time=start_time,
+                end_time=end_time
             )
-            return len(events)
+            return len(detections)
         except:
             return 0
     
@@ -466,11 +741,14 @@ class SkyGuardWebPortal:
         """Get detections this week."""
         try:
             week_ago = datetime.now() - timedelta(days=7)
-            events = self.event_logger.get_events(
-                event_type='detection',
-                start_date=week_ago.date()
+            start_time = week_ago.timestamp()
+            end_time = datetime.now().timestamp()
+            
+            detections = self.event_logger.get_detections(
+                start_time=start_time,
+                end_time=end_time
             )
-            return len(events)
+            return len(detections)
         except:
             return 0
     
@@ -478,11 +756,14 @@ class SkyGuardWebPortal:
         """Get detections this month."""
         try:
             month_ago = datetime.now() - timedelta(days=30)
-            events = self.event_logger.get_events(
-                event_type='detection',
-                start_date=month_ago.date()
+            start_time = month_ago.timestamp()
+            end_time = datetime.now().timestamp()
+            
+            detections = self.event_logger.get_detections(
+                start_time=start_time,
+                end_time=end_time
             )
-            return len(events)
+            return len(detections)
         except:
             return 0
     

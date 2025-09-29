@@ -18,11 +18,14 @@ Follow the following rules:
 - Please follow PEP 257 docstring conventions. Update existing docstrings as needed.
 - Make sure you keep any comments that exist in a file.
 - When writing tests, ONLY use pytest or pytest plugins (not unittest). All tests should have typing annotations. Place all tests under ./tests. Create any necessary directories. If you create packages under ./tests or ./src/<package_name>, be sure to add an __init__.py if one does not exist.
+- When writing tests for web pages, always create separate tests for the api layer and for the UI features. All tests should do more than just check for a "load" of a page or API. Validate the functionality.
+- when using tests to validate API endpoints use the real endpoint not mock interfaces
+- My objective is to have secure and bug free code. I'm not looking for easy solutions. I need to root cause problems, fix them and write tests that would detect the issue every time. I don't expect every test to pass, instead I want each test to validate the functionality of system components it tests. I should have tests for all components and features of the system. I need the code to be better.
 
 All tests should be fully annotated and should contain docstrings. Be sure to import the following if TYPE_CHECKING:
 from _pytest.capture import CaptureFixture
 from _pytest.fixtures import FixtureRequest
-from _pytest.logging import LogCaptureFixture
+from _pytest.logging import LogCaptureFixtu
 from _pytest.monkeypatch import MonkeyPatch
 from pytest_mock.plugin import MockerFixture
 
