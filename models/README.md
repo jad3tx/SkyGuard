@@ -10,7 +10,6 @@ This directory contains the AI models used by SkyGuard for raptor detection.
 
 
 ### Model Specifications
-
 - **Architecture**: YOLOv8 (Ultralytics)
 - **Input Size**: 640x640 pixels
 - **Classes**: raptor, hawk, eagle, owl, falcon, vulture

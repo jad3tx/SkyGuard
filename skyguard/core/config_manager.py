@@ -82,6 +82,41 @@ class ConfigManager:
             self.logger.error(f"Failed to save configuration: {e}")
             return False
     
+    def update_config(self, new_config: Dict[str, Any]) -> bool:
+        """Update configuration with new values.
+        
+        Args:
+            new_config: Dictionary containing new configuration values
+            
+        Returns:
+            True if update successful, False otherwise
+        """
+        try:
+            # Merge new configuration with existing
+            self._merge_config(self.config, new_config)
+            
+            # Save the updated configuration
+            return self.save_config()
+            
+        except Exception as e:
+            self.logger.error(f"Failed to update configuration: {e}")
+            return False
+    
+    def _merge_config(self, base_config: Dict[str, Any], new_config: Dict[str, Any]) -> None:
+        """Recursively merge new configuration into base configuration.
+        
+        Args:
+            base_config: Base configuration dictionary
+            new_config: New configuration values to merge
+        """
+        for key, value in new_config.items():
+            if key in base_config and isinstance(base_config[key], dict) and isinstance(value, dict):
+                # Recursively merge nested dictionaries
+                self._merge_config(base_config[key], value)
+            else:
+                # Update or add the value
+                base_config[key] = value
+    
     def _create_default_config(self):
         """Create a default configuration."""
         self.config = {

@@ -235,6 +235,17 @@ class AlertSystem:
         
         return message
     
+    def create_alert_message(self, detection: Dict[str, Any]) -> str:
+        """Create alert message from detection (public method).
+        
+        Args:
+            detection: Detection information
+            
+        Returns:
+            Formatted alert message
+        """
+        return self._create_alert_message(detection)
+    
     def _send_audio_alert(self):
         """Send audio alert."""
         try:

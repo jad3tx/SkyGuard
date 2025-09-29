@@ -1,7 +1,7 @@
 ai:
   classes:
   - bird
-  confidence_threshold: 0.3
+  confidence_threshold: 0.7
   input_size:
   - 1080
   - 1080
@@ -13,11 +13,12 @@ camera:
   contrast: 0
   flip_horizontal: false
   flip_vertical: false
-  fps: 30
-  height: 1080
-  rotation: 0
-  source: 0
-  width: 1920
+  fps: 25
+  height: 720
+  live_view: false
+  rotation: '0'
+  source: '0'
+  width: 1280
 hardware:
   gpio_enabled: false
   platform: desktop
@@ -64,8 +65,8 @@ storage:
   max_image_size_mb: 5
 system:
   debug_mode: false
-  detection_interval: 1.0
-  max_detection_history: 1000
+  detection_interval: 2.0
+  max_detection_history: 100
   save_detection_frames: true
 training:
   augmentations:

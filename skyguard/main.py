@@ -19,6 +19,7 @@ sys.path.insert(0, str(project_root))
 from skyguard.core.config_manager import ConfigManager
 from skyguard.core.detector import RaptorDetector
 from skyguard.core.camera import CameraManager
+from skyguard.core.camera_snapshot import CameraSnapshotService
 from skyguard.core.alert_system import AlertSystem
 from skyguard.storage.event_logger import EventLogger
 from skyguard.utils.logger import setup_logging
@@ -41,6 +42,7 @@ class SkyGuardSystem:
         self.detector = None
         self.alert_system = None
         self.event_logger = None
+        self.snapshot_service = CameraSnapshotService()
         
         self.running = False
         
@@ -85,6 +87,10 @@ class SkyGuardSystem:
         self.running = True
         self.logger.info("Starting SkyGuard detection loop...")
         
+        # Start snapshot service for web portal
+        if self.camera_manager:
+            self.snapshot_service.start(self.camera_manager)
+        
         try:
             while self.running:
                 # Capture frame from camera
@@ -110,6 +116,8 @@ class SkyGuardSystem:
         except Exception as e:
             self.logger.error(f"Error in main loop: {e}")
         finally:
+            # Stop snapshot service
+            self.snapshot_service.stop()
             self.shutdown()
             
         return True

@@ -92,6 +92,46 @@
             border-color: #2980b9;
             color: white;
         }
+        .camera-container {
+            position: relative;
+            background-color: #000;
+            border-radius: 0.375rem;
+            overflow: hidden;
+        }
+        .camera-overlay {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 10;
+        }
+        .camera-timestamp {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            z-index: 10;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.875rem;
+            text-align: center;
+        }
+        .camera-status {
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 0.5rem;
+            border-radius: 0.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .camera-controls {
+            background-color: #f8f9fa;
+            padding: 1rem;
+            border-radius: 0.375rem;
+            border: 1px solid #dee2e6;
+        }
         .navbar-brand {
             font-weight: 700;
             color: #2c3e50 !important;
@@ -145,8 +185,8 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="#" onclick="showSection('camera')">
-                                <i class="fas fa-video"></i> Camera
+                            <a class="nav-link" href="#" onclick="showSection('recent-captures')">
+                                <i class="fas fa-camera"></i> Recent Captures
                             </a>
                         </li>
                         <li class="nav-item">
@@ -306,6 +346,18 @@
             loadSectionData(section);
         }
         
+        // Update range value displays
+        function updateRangeValue(inputId, valueId) {
+            const input = document.getElementById(inputId);
+            const value = document.getElementById(valueId);
+            if (input && value) {
+                value.textContent = input.value;
+                input.addEventListener('input', function() {
+                    value.textContent = this.value;
+                });
+            }
+        }
+        
         // Load section data
         async function loadSectionData(section) {
             switch(section) {
@@ -315,8 +367,8 @@
                 case 'configuration':
                     await loadConfiguration();
                     break;
-                case 'camera':
-                    await loadCameraStatus();
+                case 'recent-captures':
+                    await loadRecentCaptures();
                     break;
                 case 'ai':
                     await loadAIStatus();

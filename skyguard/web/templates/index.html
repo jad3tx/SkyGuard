@@ -143,6 +143,57 @@
     </div>
 </div>
 
+    <!-- Recent Captures Section -->
+    <div id="recent-captures-section" class="section" style="display: none;">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-camera"></i> Recent Captures
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="camera-container">
+                            <img id="recent-capture-image" src="/api/camera/feed" alt="Recent Capture" class="img-fluid rounded">
+                            <div id="capture-overlay" class="camera-overlay">
+                                <div class="camera-status">
+                                    <span id="capture-status-indicator" class="status-indicator status-offline"></span>
+                                    <span id="capture-status-text">No Recent Capture</span>
+                                </div>
+                            </div>
+                            <div class="camera-timestamp">
+                                <span id="capture-timestamp">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="camera-controls">
+                            <h6>Capture Controls</h6>
+                            <div class="mb-3">
+                                <p class="text-muted">This shows the most recent image captured by the camera system.</p>
+                            </div>
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-skyguard" onclick="refreshRecentCapture()">
+                                    <i class="fas fa-sync"></i> Refresh Image
+                                </button>
+                                <button class="btn btn-outline-primary" onclick="downloadRecentCapture()">
+                                    <i class="fas fa-download"></i> Download Image
+                                </button>
+                            </div>
+                            <div class="mt-3">
+                                <small class="text-muted">
+                                    <i class="fas fa-info-circle"></i> 
+                                    Images are automatically updated every 3 seconds when the main system is running.
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
 <!-- Detections Section -->
 <div id="detections-section" class="section" style="display: none;">
     <div class="card">
@@ -216,17 +267,74 @@
                 <div class="config-section">
                     <h5>Camera Settings</h5>
                     <div class="row">
-                        <div class="col-md-4">
+                        <div class="col-md-3">
+                            <label for="camera-source" class="form-label">Camera Source</label>
+                            <select class="form-select" id="camera-source">
+                                <option value="0">Camera 0 (Default)</option>
+                                <option value="1">Camera 1</option>
+                                <option value="2">Camera 2</option>
+                                <option value="3">Camera 3</option>
+                                <option value="4">Camera 4</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
                             <label for="camera-width" class="form-label">Width</label>
                             <input type="number" class="form-control" id="camera-width" min="320" max="1920">
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <label for="camera-height" class="form-label">Height</label>
                             <input type="number" class="form-control" id="camera-height" min="240" max="1080">
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <label for="camera-fps" class="form-label">FPS</label>
                             <input type="number" class="form-control" id="camera-fps" min="1" max="60">
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-3">
+                            <label for="camera-rotation" class="form-label">Rotation</label>
+                            <select class="form-select" id="camera-rotation">
+                                <option value="0">0°</option>
+                                <option value="90">90°</option>
+                                <option value="180">180°</option>
+                                <option value="270">270°</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-check mt-4">
+                                <input class="form-check-input" type="checkbox" id="camera-flip-horizontal">
+                                <label class="form-check-label" for="camera-flip-horizontal">
+                                    Flip Horizontal
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-check mt-4">
+                                <input class="form-check-input" type="checkbox" id="camera-flip-vertical">
+                                <label class="form-check-label" for="camera-flip-vertical">
+                                    Flip Vertical
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="camera-brightness" class="form-label">Brightness</label>
+                            <input type="range" class="form-range" id="camera-brightness" min="-100" max="100" value="0">
+                            <div class="form-text">Current value: <span id="brightness-value">0</span></div>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-3">
+                            <label for="camera-contrast" class="form-label">Contrast</label>
+                            <input type="range" class="form-range" id="camera-contrast" min="-100" max="100" value="0">
+                            <div class="form-text">Current value: <span id="contrast-value">0</span></div>
+                        </div>
+                        <div class="col-md-9">
+                            <div class="form-check mt-4">
+                                <input class="form-check-input" type="checkbox" id="camera-live-view">
+                                <label class="form-check-label" for="camera-live-view">
+                                    Enable Live Camera View
+                                </label>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -599,9 +707,16 @@
             // Populate form fields
             document.getElementById('detection-interval').value = config.system.detection_interval;
             document.getElementById('max-history').value = config.system.max_detection_history;
+            document.getElementById('camera-source').value = config.camera.source || 0;
             document.getElementById('camera-width').value = config.camera.width;
             document.getElementById('camera-height').value = config.camera.height;
             document.getElementById('camera-fps').value = config.camera.fps;
+            document.getElementById('camera-rotation').value = config.camera.rotation || 0;
+            document.getElementById('camera-flip-horizontal').checked = config.camera.flip_horizontal || false;
+            document.getElementById('camera-flip-vertical').checked = config.camera.flip_vertical || false;
+            document.getElementById('camera-brightness').value = config.camera.brightness || 0;
+            document.getElementById('camera-contrast').value = config.camera.contrast || 0;
+            document.getElementById('camera-live-view').checked = config.camera.live_view || false;
             document.getElementById('confidence-threshold').value = config.ai.confidence_threshold;
             document.getElementById('nms-threshold').value = config.ai.nms_threshold;
             document.getElementById('audio-enabled').checked = config.notifications.audio.enabled;
@@ -635,9 +750,16 @@
                     max_detection_history: parseInt(document.getElementById('max-history').value)
                 },
                 camera: {
+                    source: parseInt(document.getElementById('camera-source').value),
                     width: parseInt(document.getElementById('camera-width').value),
                     height: parseInt(document.getElementById('camera-height').value),
-                    fps: parseInt(document.getElementById('camera-fps').value)
+                    fps: parseInt(document.getElementById('camera-fps').value),
+                    rotation: parseInt(document.getElementById('camera-rotation').value),
+                    flip_horizontal: document.getElementById('camera-flip-horizontal').checked,
+                    flip_vertical: document.getElementById('camera-flip-vertical').checked,
+                    brightness: parseInt(document.getElementById('camera-brightness').value),
+                    contrast: parseInt(document.getElementById('camera-contrast').value),
+                    live_view: document.getElementById('camera-live-view').checked
                 },
                 ai: {
                     confidence_threshold: parseFloat(document.getElementById('confidence-threshold').value),
@@ -783,9 +905,229 @@
         }
     }
     
+    // Recent Captures Functions
+    let recentCaptureInterval = null;
+    
+    async function loadRecentCaptures() {
+        // Load recent capture status and display
+        try {
+            const response = await fetch('/api/camera/status');
+            const status = await response.json();
+            
+            // Update capture status indicator
+            const indicator = document.getElementById('capture-status-indicator');
+            const text = document.getElementById('capture-status-text');
+            const timestampElement = document.getElementById('capture-timestamp');
+            
+            if (status.connected) {
+                indicator.className = 'status-indicator status-online';
+                text.textContent = 'Recent Capture Available';
+            } else {
+                indicator.className = 'status-indicator status-offline';
+                text.textContent = 'No Recent Capture';
+            }
+            
+            // Initialize timestamp
+            if (timestampElement) {
+                const now = new Date();
+                const timeString = now.toLocaleTimeString();
+                const dateString = now.toLocaleDateString();
+                timestampElement.textContent = `Last updated: ${dateString} ${timeString}`;
+            }
+            
+            // Start automatic refresh every 3 seconds
+            startAutoRefresh();
+            
+        } catch (error) {
+            console.error('Failed to load capture status:', error);
+        }
+    }
+    
+    function startAutoRefresh() {
+        // Clear any existing interval
+        if (recentCaptureInterval) {
+            clearInterval(recentCaptureInterval);
+        }
+        
+        // Set up automatic refresh every 3 seconds
+        recentCaptureInterval = setInterval(() => {
+            refreshRecentCapture();
+        }, 3000);
+        
+        // Initial load
+        refreshRecentCapture();
+    }
+    
+    function stopAutoRefresh() {
+        if (recentCaptureInterval) {
+            clearInterval(recentCaptureInterval);
+            recentCaptureInterval = null;
+        }
+    }
+    
+    function refreshRecentCapture() {
+        const captureImg = document.getElementById('recent-capture-image');
+        const timestampElement = document.getElementById('capture-timestamp');
+        
+        if (captureImg) {
+            // Add timestamp to prevent caching
+            const timestamp = new Date().getTime();
+            captureImg.src = `/api/camera/feed?t=${timestamp}`;
+            
+            // Update timestamp display
+            if (timestampElement) {
+                const now = new Date();
+                const timeString = now.toLocaleTimeString();
+                const dateString = now.toLocaleDateString();
+                timestampElement.textContent = `Last updated: ${dateString} ${timeString}`;
+            }
+        }
+    }
+    
+    function downloadRecentCapture() {
+        try {
+            const link = document.createElement('a');
+            link.href = '/api/camera/capture';
+            link.download = 'skyguard_recent_capture_' + new Date().getTime() + '.jpg';
+            link.click();
+        } catch (error) {
+            console.error('Failed to download recent capture:', error);
+            alert('Failed to download recent capture');
+        }
+    }
+    
+    // Update range value displays
+    function updateRangeValue(inputId, valueId) {
+        const input = document.getElementById(inputId);
+        const value = document.getElementById(valueId);
+        if (input && value) {
+            value.textContent = input.value;
+            input.addEventListener('input', function() {
+                value.textContent = this.value;
+            });
+        }
+    }
+    
+    // Update configuration in real-time
+    async function update_config() {
+        try {
+            // Helper function to safely get element values
+            function getValue(id, defaultValue = 0) {
+                const element = document.getElementById(id);
+                if (!element) return defaultValue;
+                if (element.type === 'checkbox') return element.checked;
+                if (element.type === 'number' || element.type === 'range') return parseFloat(element.value) || defaultValue;
+                return element.value || defaultValue;
+            }
+            
+            const config = {
+                system: {
+                    detection_interval: getValue('detection-interval', 1.0),
+                    max_detection_history: getValue('max-history', 1000)
+                },
+                camera: {
+                    source: getValue('camera-source', 0),
+                    width: getValue('camera-width', 1920),
+                    height: getValue('camera-height', 1080),
+                    fps: getValue('camera-fps', 30),
+                    rotation: getValue('camera-rotation', 0),
+                    flip_horizontal: getValue('camera-flip-horizontal', false),
+                    flip_vertical: getValue('camera-flip-vertical', false),
+                    brightness: getValue('camera-brightness', 0),
+                    contrast: getValue('camera-contrast', 0),
+                    live_view: getValue('camera-live-view', false)
+                },
+                ai: {
+                    confidence_threshold: getValue('confidence-threshold', 0.3),
+                    nms_threshold: getValue('nms-threshold', 0.4)
+                },
+                notifications: {
+                    audio: {
+                        enabled: getValue('audio-enabled', true)
+                    },
+                    sms: {
+                        enabled: getValue('sms-enabled', false)
+                    },
+                    email: {
+                        enabled: getValue('email-enabled', false)
+                    }
+                }
+            };
+            
+            // Validate configuration before sending
+            if (config.system.detection_interval <= 0 || config.system.max_detection_history <= 0) {
+                console.warn('Invalid system configuration, skipping update');
+                return;
+            }
+            
+            if (config.camera.width <= 0 || config.camera.height <= 0 || config.camera.fps <= 0) {
+                console.warn('Invalid camera configuration, skipping update');
+                return;
+            }
+            
+            if (config.ai.confidence_threshold < 0 || config.ai.confidence_threshold > 1) {
+                console.warn('Invalid AI configuration, skipping update');
+                return;
+            }
+            
+            const response = await fetch('/api/config', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(config)
+            });
+            
+            const result = await response.json();
+            
+            if (response.ok) {
+                console.log('Configuration updated successfully');
+                // Optionally show a success message
+                if (typeof showNotification === 'function') {
+                    showNotification('Configuration updated successfully!', 'success');
+                }
+            } else {
+                console.error('Failed to update configuration:', result.error);
+                if (typeof showNotification === 'function') {
+                    showNotification('Failed to update configuration: ' + result.error, 'error');
+                }
+            }
+        } catch (error) {
+            console.error('Failed to update configuration:', error);
+            if (typeof showNotification === 'function') {
+                showNotification('Failed to update configuration: ' + error.message, 'error');
+            }
+        }
+    }
+    
     // Initialize dashboard
     document.addEventListener('DOMContentLoaded', function() {
         loadDashboardData();
+        
+        // Initialize range value displays
+        updateRangeValue('confidence-threshold', 'confidence-value');
+        updateRangeValue('nms-threshold', 'nms-value');
+        updateRangeValue('camera-brightness', 'brightness-value');
+        updateRangeValue('camera-contrast', 'contrast-value');
+        updateRangeValue('live-brightness', 'live-brightness-value');
+        updateRangeValue('live-contrast', 'live-contrast-value');
+        
+        // Add event listeners for real-time configuration updates
+        const configInputs = [
+            'detection-interval', 'max-history', 'camera-source', 'camera-width', 
+            'camera-height', 'camera-fps', 'camera-rotation', 'camera-flip-horizontal',
+            'camera-flip-vertical', 'camera-brightness', 'camera-contrast', 
+            'camera-live-view', 'confidence-threshold', 'nms-threshold',
+            'audio-enabled', 'sms-enabled', 'email-enabled'
+        ];
+        
+        configInputs.forEach(inputId => {
+            const element = document.getElementById(inputId);
+            if (element) {
+                element.addEventListener('change', update_config);
+                element.addEventListener('input', update_config);
+            }
+        });
     });
 </script>
 {% endblock %}

@@ -35,8 +35,10 @@ class CameraManager:
             True if successful, False otherwise
         """
         try:
-            # Determine camera source
+            # Determine camera source (convert string to int if needed)
             source = self.config.get('source', 0)
+            if isinstance(source, str):
+                source = int(source)
             
             # Initialize camera
             self.cap = cv2.VideoCapture(source)
@@ -203,17 +205,46 @@ class CameraManager:
             self.logger.error(f"Error saving frame: {e}")
             return False
     
+    def test_connection(self) -> bool:
+        """Test camera connection.
+        
+        Returns:
+            True if camera is connected and working, False otherwise
+        """
+        try:
+            if self.cap is None:
+                # Try to initialize if not already done
+                return self.initialize()
+            
+            if not self.cap.isOpened():
+                self.logger.warning("Camera not opened, attempting to reinitialize")
+                return self.initialize()
+            
+            # Test capture
+            ret, frame = self.cap.read()
+            if not ret:
+                self.logger.warning("Failed to capture test frame")
+                return False
+                
+            self.logger.debug("Camera connection test successful")
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"Camera connection test failed: {e}")
+            return False
+    
     def cleanup(self):
         """Clean up camera resources."""
         try:
             if self.cap is not None:
                 self.cap.release()
-                self.cap = None
                 
             self.logger.info("Camera cleanup completed")
             
         except Exception as e:
             self.logger.error(f"Error during camera cleanup: {e}")
+        finally:
+            self.cap = None
     
     def __del__(self):
         """Destructor to ensure cleanup."""
