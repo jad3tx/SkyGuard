@@ -1,5 +1,7 @@
 # SkyGuard Model Integration Guide
 
+![SkyGuard Logo](../skyGuardShield.png)
+
 This guide explains how to download, integrate, and use AI models with SkyGuard for raptor detection.
 
 ## 🎯 **Model Options**

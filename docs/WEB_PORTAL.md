@@ -1,5 +1,7 @@
 # SkyGuard Web Portal
 
+![SkyGuard Logo](../skyGuardShield.png)
+
 A comprehensive web-based interface for managing and monitoring your SkyGuard raptor detection system.
 
 ## 🌐 **Features**
