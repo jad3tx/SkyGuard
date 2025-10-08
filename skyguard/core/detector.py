@@ -131,13 +131,13 @@ class RaptorDetector:
                         confidence = box.conf[0].cpu().numpy()
                         class_id = int(box.cls[0].cpu().numpy())
                         
-                        # Filter for raptor classes
-                        if class_id < len(self.classes):
+                        # Filter for raptor classes - check if it's a bird (class 14 in YOLOv8n)
+                        if class_id == 14:  # Bird class in YOLOv8n
                             detection = {
                                 'bbox': [int(x1), int(y1), int(x2), int(y2)],
                                 'confidence': float(confidence),
                                 'class_id': class_id,
-                                'class_name': self.classes[class_id],
+                                'class_name': 'bird',
                                 'timestamp': time.time(),
                                 'center': [int((x1 + x2) / 2), int((y1 + y2) / 2)],
                                 'area': int((x2 - x1) * (y2 - y1)),

@@ -1,24 +1,24 @@
 ai:
   classes:
   - bird
-  confidence_threshold: 0.7
-  input_size:
-  - 1080
-  - 1080
-  model_path: models\airbirds_raptor_detector.pt
+  confidence_threshold: 0.5
+  input_size: 1080
+  model_path: models\yolov8n.pt
   model_type: yolo
-  nms_threshold: 0.4
+  nms_threshold: 0.5
 camera:
   brightness: 0
   contrast: 0
   flip_horizontal: false
   flip_vertical: false
-  fps: 25
-  height: 720
+  focus_mode: infinity
+  focus_value: 0
+  fps: 30
+  height: 1080
   live_view: false
   rotation: '0'
   source: '0'
-  width: 1280
+  width: 1920
 hardware:
   gpio_enabled: false
   platform: desktop
@@ -30,7 +30,7 @@ logging:
   max_size_mb: 10
 notifications:
   audio:
-    enabled: true
+    enabled: false
     repeat_count: 3
     repeat_interval: 2.0
     sound_file: sounds/raptor_alert.wav
@@ -60,14 +60,15 @@ rate_limiting:
 storage:
   compress_images: true
   database_path: data/skyguard.db
+  detection_image_retention_days: 1
   detection_images_path: data/detections
   log_retention_days: 30
   max_image_size_mb: 5
 system:
   debug_mode: false
-  detection_interval: 2.0
-  max_detection_history: 100
-  save_detection_frames: true
+  detection_interval: 1
+  max_detection_history: 1000
+  save_detection_frames: false
 training:
   augmentations:
     brightness: 0.2

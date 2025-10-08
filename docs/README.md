@@ -198,14 +198,13 @@ We welcome contributions! Please see [CONTRIBUTING.md](../CONTRIBUTING.md) for g
 - [x] REST API
 - [x] Comprehensive testing suite
 
-### Phase 2 (Q1 2026)
+### Phase 2 (Maybe...ish?)
 - [ ] Model training pipeline
 - [ ] Mobile app
 - [ ] Multi-camera support
 - [ ] Advanced analytics
 
-### Phase 3 (Q2 2026)
-- [ ] Automated deterrents
+### Phase 3 (Future...maybe)
 - [ ] Weather integration
 - [ ] Machine learning improvements
 - [ ] Commercial deployment tools

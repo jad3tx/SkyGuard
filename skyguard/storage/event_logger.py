@@ -16,19 +16,31 @@ import numpy as np
 
 
 class EventLogger:
-    """Logs and stores detection events and system data."""
+    """Logs and stores detection events and system data.
+
+    This class persists detection metadata and optional annotated images to a
+    SQLite database and the filesystem. It also enforces data retention based
+    on configuration settings.
+    """
     
-    def __init__(self, config: dict):
+    def __init__(self, config: dict) -> None:
         """Initialize the event logger.
         
         Args:
-            config: Storage configuration dictionary
+            config: Storage configuration dictionary. Supported keys include
+                `database_path`, `detection_images_path`, `log_retention_days`,
+                and optional `detection_image_retention_days`.
         """
         self.config = config
         self.logger = logging.getLogger(__name__)
         self.db_path = Path(config.get('database_path', 'data/skyguard.db'))
         self.images_path = Path(config.get('detection_images_path', 'data/detections'))
-        self.retention_days = config.get('log_retention_days', 30)
+        # Log/table retention for system events (defaults to 30 days)
+        self.retention_days = int(config.get('log_retention_days', 30))
+        # Detection image retention (defaults to log_retention_days if not set)
+        self.image_retention_days = int(
+            config.get('detection_image_retention_days', self.retention_days)
+        )
         
         self.connection = None
         
@@ -52,11 +64,39 @@ class EventLogger:
         except Exception as e:
             self.logger.error(f"Failed to initialize event logger: {e}")
             return False
-    
-    def _init_database(self):
-        """Initialize the SQLite database."""
+
+    def _ensure_connection(self) -> bool:
+        """Ensure an active SQLite connection exists.
+
+        Returns:
+            True if connection is valid or re-established, False otherwise
+        """
         try:
-            self.connection = sqlite3.connect(str(self.db_path))
+            if self.connection is None:
+                self.connection = sqlite3.connect(str(self.db_path), check_same_thread=False)
+                return True
+            # Simple probe to validate connection
+            try:
+                cursor = self.connection.cursor()
+                cursor.execute('SELECT 1')
+                cursor.fetchone()
+                return True
+            except Exception:
+                # Reconnect on failure
+                self.connection = sqlite3.connect(str(self.db_path), check_same_thread=False)
+                return True
+        except Exception as e:
+            self.logger.error(f"Failed to ensure DB connection: {e}")
+            return False
+    
+    def _init_database(self) -> None:
+        """Initialize the SQLite database.
+
+        Creates required tables and indices if they do not already exist.
+        """
+        try:
+            # Allow the same connection to be used across Flask request threads
+            self.connection = sqlite3.connect(str(self.db_path), check_same_thread=False)
             cursor = self.connection.cursor()
             
             # Create detections table
@@ -123,15 +163,21 @@ class EventLogger:
             if frame is not None:
                 image_path = self._save_detection_image(frame, detection)
             
-            # Insert detection record
+            # Insert detection record - prefer detection-provided timestamp
             cursor = self.connection.cursor()
+            # Use detector's timestamp if present and valid; otherwise, fallback to now
+            try:
+                provided_ts = float(detection.get('timestamp')) if detection.get('timestamp') is not None else None
+            except (TypeError, ValueError):
+                provided_ts = None
+            current_time = provided_ts if provided_ts is not None else time.time()
             cursor.execute('''
                 INSERT INTO detections (
                     timestamp, class_name, confidence, bbox_x1, bbox_y1, bbox_x2, bbox_y2,
                     center_x, center_y, area, image_path, metadata
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (
-                detection['timestamp'],
+                current_time,  # Store detector's timestamp when available
                 detection['class_name'],
                 detection['confidence'],
                 detection['bbox'][0],
@@ -165,12 +211,18 @@ class EventLogger:
             Path to saved image
         """
         try:
-            timestamp = datetime.fromtimestamp(detection['timestamp'])
-            filename = f"detection_{timestamp.strftime('%Y%m%d_%H%M%S')}_{detection['confidence']:.2f}.jpg"
-            filepath = self.images_path / filename
+            # Prefer detection's timestamp for filename for consistency with DB/UI
+            try:
+                provided_ts = float(detection.get('timestamp')) if detection.get('timestamp') is not None else None
+            except (TypeError, ValueError):
+                provided_ts = None
+            dt = datetime.fromtimestamp(provided_ts) if provided_ts is not None else datetime.now()
+            filename = f"detection_{dt.strftime('%Y%m%d_%H%M%S_%f')[:-3]}_{detection['confidence']:.2f}.jpg"
+            filepath = (self.images_path / filename).resolve()
             
             # Draw detection on frame
             annotated_frame = self._annotate_frame(frame, detection)
+            self.logger.info(f"Saving annotated detection image: {filename}")
             
             # Save frame
             cv2.imwrite(str(filepath), annotated_frame)
@@ -197,24 +249,36 @@ class EventLogger:
             confidence = detection['confidence']
             class_name = detection['class_name']
             
-            # Draw bounding box
-            cv2.rectangle(annotated, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (0, 255, 0), 2)
+            # Ensure bbox coordinates are within frame bounds
+            h, w = frame.shape[:2]
+            x1 = max(0, min(int(bbox[0]), w-1))
+            y1 = max(0, min(int(bbox[1]), h-1))
+            x2 = max(0, min(int(bbox[2]), w-1))
+            y2 = max(0, min(int(bbox[3]), h-1))
             
-            # Draw label
+            self.logger.info(f"Drawing bbox: frame size {w}x{h}, bbox ({x1},{y1}) to ({x2},{y2})")
+            
+            # Draw bounding box with very thick bright red line
+            cv2.rectangle(annotated, (x1, y1), (x2, y2), (0, 0, 255), 5)
+            
+            # Draw label with larger font
             label = f"{class_name}: {confidence:.2f}"
-            label_size = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 2)[0]
+            font_scale = 0.8
+            thickness = 2
+            label_size = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, font_scale, thickness)[0]
             
-            # Draw label background
+            # Draw label background with bright red
             cv2.rectangle(annotated, 
-                        (bbox[0], bbox[1] - label_size[1] - 10),
-                        (bbox[0] + label_size[0], bbox[1]),
-                        (0, 255, 0), -1)
+                        (x1, y1 - label_size[1] - 10),
+                        (x1 + label_size[0], y1),
+                        (0, 0, 255), -1)
             
             # Draw label text
             cv2.putText(annotated, label,
-                      (bbox[0], bbox[1] - 5),
-                      cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2)
+                      (x1, y1 - 5),
+                      cv2.FONT_HERSHEY_SIMPLEX, font_scale, (0, 0, 0), thickness)
             
+            self.logger.info(f"Successfully annotated frame with bbox: ({x1},{y1}) to ({x2},{y2})")
             return annotated
             
         except Exception as e:
@@ -260,7 +324,7 @@ class EventLogger:
             return False
     
     def get_detections(self, start_time: Optional[float] = None, end_time: Optional[float] = None, 
-                      class_name: Optional[str] = None, limit: int = 100) -> List[Dict[str, Any]]:
+                     class_name: Optional[str] = None, limit: int = 100) -> List[Dict[str, Any]]:
         """Get detection records from database.
         
         Args:
@@ -273,7 +337,7 @@ class EventLogger:
             List of detection records
         """
         try:
-            if self.connection is None:
+            if not self._ensure_connection():
                 return []
             
             cursor = self.connection.cursor()
@@ -332,7 +396,7 @@ class EventLogger:
             Dictionary with statistics
         """
         try:
-            if self.connection is None:
+            if not self._ensure_connection():
                 return {}
             
             end_time = time.time()
@@ -380,19 +444,24 @@ class EventLogger:
     def cleanup_old_data(self) -> bool:
         """Clean up old data based on retention policy.
         
+        Deletes detection records and associated image files older than
+        `image_retention_days`, and system events older than `retention_days`.
+        
         Returns:
             True if successful, False otherwise
         """
         try:
-            if self.connection is None:
+            if not self._ensure_connection():
                 return False
-            
-            cutoff_time = time.time() - (self.retention_days * 24 * 60 * 60)
-            
+
+            now = time.time()
+            detections_cutoff_time = now - (self.image_retention_days * 24 * 60 * 60)
+            events_cutoff_time = now - (self.retention_days * 24 * 60 * 60)
+
             cursor = self.connection.cursor()
             
             # Get old detection records
-            cursor.execute('SELECT id, image_path FROM detections WHERE timestamp < ?', (cutoff_time,))
+            cursor.execute('SELECT id, image_path FROM detections WHERE timestamp < ?', (detections_cutoff_time,))
             old_detections = cursor.fetchall()
             
             # Delete old image files
@@ -404,11 +473,11 @@ class EventLogger:
                         self.logger.warning(f"Failed to delete old image {image_path}: {e}")
             
             # Delete old detection records
-            cursor.execute('DELETE FROM detections WHERE timestamp < ?', (cutoff_time,))
+            cursor.execute('DELETE FROM detections WHERE timestamp < ?', (detections_cutoff_time,))
             deleted_detections = cursor.rowcount
             
             # Delete old system events
-            cursor.execute('DELETE FROM system_events WHERE timestamp < ?', (cutoff_time,))
+            cursor.execute('DELETE FROM system_events WHERE timestamp < ?', (events_cutoff_time,))
             deleted_events = cursor.rowcount
             
             self.connection.commit()
@@ -419,8 +488,42 @@ class EventLogger:
         except Exception as e:
             self.logger.error(f"Failed to cleanup old data: {e}")
             return False
+
+    def get_detection_by_id(self, detection_id: int) -> Optional[Dict[str, Any]]:
+        """Get a single detection by its identifier.
+
+        Args:
+            detection_id: The database primary key of the detection.
+
+        Returns:
+            A detection record dictionary if found, otherwise None.
+        """
+        try:
+            if not self._ensure_connection():
+                return None
+
+            cursor = self.connection.cursor()
+            cursor.execute('SELECT * FROM detections WHERE id = ?', (detection_id,))
+            row = cursor.fetchone()
+            if row is None:
+                return None
+
+            return {
+                'id': row[0],
+                'timestamp': row[1],
+                'class_name': row[2],
+                'confidence': row[3],
+                'bbox': [row[4], row[5], row[6], row[7]],
+                'center': [row[8], row[9]],
+                'area': row[10],
+                'image_path': row[11],
+                'metadata': json.loads(row[12]) if row[12] else {},
+            }
+        except Exception as e:
+            self.logger.error(f"Failed to get detection by id {detection_id}: {e}")
+            return None
     
-    def cleanup(self):
+    def cleanup(self) -> None:
         """Clean up resources."""
         try:
             if self.connection:

@@ -50,6 +50,11 @@ class SkyGuardWebPortal:
         
         # Initialize event logger with config
         self.event_logger = EventLogger(self.config.get('storage', {}))
+        # Ensure database/paths exist for read APIs
+        try:
+            self.event_logger.initialize()
+        except Exception:
+            pass
         self.detector = None
         self.camera = None
         self.alert_system = None
@@ -128,26 +133,39 @@ class SkyGuardWebPortal:
                 return jsonify({'error': str(e)}), 500
         
         @self.app.route('/api/detections/<int:detection_id>')
-        def api_detection_detail(detection_id):
+        def api_detection_detail(detection_id: int):
             """Get detailed information about a specific detection."""
             try:
-                detection = self._get_detection_detail(detection_id)
+                detection = self.event_logger.get_detection_by_id(detection_id)
                 if detection:
-                    return jsonify(detection)
-                else:
-                    return jsonify({'error': 'Detection not found'}), 404
+                    # Normalize response keys for web consumption
+                    return jsonify({
+                        'id': detection.get('id', 0),
+                        'timestamp': detection.get('timestamp', ''),
+                        'confidence': detection.get('confidence', 0.0),
+                        'class': detection.get('class_name', 'bird'),
+                        'bbox': detection.get('bbox', [0, 0, 0, 0]),
+                        'image_path': detection.get('image_path', ''),
+                        'metadata': detection.get('metadata', {}),
+                    })
+                return jsonify({'error': 'Detection not found'}), 404
             except Exception as e:
                 return jsonify({'error': str(e)}), 500
         
         @self.app.route('/api/detections/<int:detection_id>/image')
-        def api_detection_image(detection_id):
+        def api_detection_image(detection_id: int):
             """Get detection image."""
             try:
-                image_path = self._get_detection_image(detection_id)
-                if image_path and os.path.exists(image_path):
-                    return send_file(image_path, mimetype='image/jpeg')
-                else:
-                    return jsonify({'error': 'Image not found'}), 404
+                record = self.event_logger.get_detection_by_id(detection_id)
+                image_path = (record or {}).get('image_path')
+                if image_path:
+                    # Resolve relative paths to absolute within project root
+                    abs_path = image_path
+                    if not os.path.isabs(abs_path):
+                        abs_path = os.path.abspath(os.path.join(project_root, image_path))
+                    if os.path.exists(abs_path):
+                        return send_file(abs_path, mimetype='image/jpeg')
+                return jsonify({'error': 'Image not found'}), 404
             except Exception as e:
                 return jsonify({'error': str(e)}), 500
         
@@ -413,9 +431,14 @@ class SkyGuardWebPortal:
     def _initialize_components(self):
         """Initialize SkyGuard components."""
         try:
-            # Initialize detector
-            self.detector = RaptorDetector(self.config)
-            print("✅ Detector initialized successfully")
+            # Initialize detector with AI config
+            ai_config = self.config.get('ai', {})
+            self.detector = RaptorDetector(ai_config)
+            # Load the model
+            if self.detector.load_model():
+                print("✅ Detector initialized and model loaded successfully")
+            else:
+                print("⚠️ Detector initialized but model loading failed")
             
             # Web portal does NOT access camera directly - it only reads snapshots
             # The main SkyGuard system handles all camera operations
@@ -423,7 +446,7 @@ class SkyGuardWebPortal:
             print("ℹ️ Web portal configured to read camera snapshots (no direct camera access)")
             
             # Initialize alert system
-            self.alert_system = AlertSystem(self.config)
+            self.alert_system = AlertSystem(self.config.get('notifications', {}))
             print("✅ Alert system initialized successfully")
             
         except Exception as e:
@@ -524,25 +547,12 @@ class SkyGuardWebPortal:
             return False
     
     def _is_model_loaded(self) -> bool:
-        """Check if AI model is loaded in the main system."""
+        """Check if AI model is loaded in the web portal's detector."""
         try:
-            # Check if the main system is running by looking for recent camera snapshots
-            import os
-            import time
-            
-            snapshot_file = "data/camera_snapshot.jpg"
-            if os.path.exists(snapshot_file):
-                # Check if file is recent (within last 30 seconds)
-                file_time = os.path.getmtime(snapshot_file)
-                current_time = time.time()
-                is_recent = (current_time - file_time) < 30
-                
-                if is_recent:
-                    # Main system is running, check if it has the model loaded
-                    # by looking for model file existence
-                    model_path = "models/airbirds_raptor_detector.pt"
-                    return os.path.exists(model_path)
-            
+            # Directly check if the detector's model is loaded
+            if self.detector:
+                # Check if the detector has a loaded model
+                return self.detector.model is not None and self.detector.model != "dummy"
             return False
         except:
             return False
@@ -567,31 +577,7 @@ class SkyGuardWebPortal:
         except:
             return []
     
-    def _get_detection_detail(self, detection_id: int) -> Optional[Dict[str, Any]]:
-        """Get detailed information about a specific detection."""
-        try:
-            # This would query the database for specific detection details
-            # For now, return a placeholder
-            return {
-                'id': detection_id,
-                'timestamp': datetime.now().isoformat(),
-                'confidence': 0.85,
-                'class': 'bird',
-                'bbox': [100, 100, 200, 200],
-                'image_path': f'data/detections/detection_{detection_id}.jpg'
-            }
-        except:
-            return None
-    
-    def _get_detection_image(self, detection_id: int) -> Optional[str]:
-        """Get path to detection image."""
-        try:
-            image_path = f'data/detections/detection_{detection_id}.jpg'
-            if os.path.exists(image_path):
-                return os.path.abspath(image_path)
-            return None
-        except:
-            return None
+    # Removed placeholder detection detail/image helpers in favor of DB-backed methods
     
     def _validate_config(self, config: Dict[str, Any]) -> bool:
         """Validate configuration."""
@@ -657,9 +643,14 @@ class SkyGuardWebPortal:
         """Test AI model."""
         try:
             if self.detector:
+                # Check if model is already loaded
+                if self.detector.model is not None:
+                    return True
+                # Try to load model
                 return self.detector.load_model()
             return False
-        except:
+        except Exception as e:
+            print(f"AI model test failed: {e}")
             return False
     
     def _test_alert_system(self) -> bool:
@@ -668,15 +659,15 @@ class SkyGuardWebPortal:
             if self.alert_system:
                 # Send test alert
                 test_detection = {
-                    'timestamp': datetime.now().isoformat(),
+                    'timestamp': time.time(),
                     'confidence': 0.9,
                     'class_name': 'bird',
                     'bbox': [100, 100, 200, 200]
                 }
-                self.alert_system.send_raptor_alert(test_detection)
-                return True
+                return self.alert_system.send_raptor_alert(test_detection)
             return False
-        except:
+        except Exception as e:
+            print(f"Alert system test failed: {e}")
             return False
     
     def _restart_system(self):
