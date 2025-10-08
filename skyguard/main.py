@@ -91,6 +91,9 @@ class SkyGuardSystem:
         if self.camera_manager:
             self.snapshot_service.start(self.camera_manager)
         
+        # Track last cleanup to run retention periodically (e.g., every 10 minutes)
+        last_cleanup_ts = time.time()
+
         try:
             while self.running:
                 # Capture frame from camera
@@ -103,6 +106,10 @@ class SkyGuardSystem:
                 # Run detection
                 detections = self.detector.detect(frame)
                 
+                # Debug: Log detection results
+                if detections:
+                    self.logger.info(f"Found {len(detections)} detections, max confidence: {max(d['confidence'] for d in detections):.3f}")
+                
                 # Process detections
                 for detection in detections:
                     if detection['confidence'] > self.config['ai']['confidence_threshold']:
@@ -110,6 +117,17 @@ class SkyGuardSystem:
                 
                 # Sleep between detection cycles
                 time.sleep(self.config['system']['detection_interval'])
+
+                # Periodic cleanup of old detections/events
+                now_ts = time.time()
+                if now_ts - last_cleanup_ts > 600:  # 10 minutes
+                    try:
+                        if self.event_logger:
+                            self.event_logger.cleanup_old_data()
+                    except Exception as cleanup_err:
+                        self.logger.debug(f"Retention cleanup skipped: {cleanup_err}")
+                    finally:
+                        last_cleanup_ts = now_ts
                 
         except KeyboardInterrupt:
             self.logger.info("Received keyboard interrupt")
@@ -126,32 +144,12 @@ class SkyGuardSystem:
         """Handle a detected raptor threat."""
         self.logger.warning(f"Raptor detected! Confidence: {detection['confidence']:.2f}")
         
-        # Log the event
+        # Log the event (includes saving annotated detection image)
         self.event_logger.log_detection(detection, frame)
         
         # Send alerts
         self.alert_system.send_raptor_alert(detection)
-        
-        # Optional: Save frame with detection
-        if self.config['system'].get('save_detection_frames', False):
-            self._save_detection_frame(frame, detection)
     
-    def _save_detection_frame(self, frame, detection):
-        """Save frame with detection annotations."""
-        try:
-            timestamp = time.strftime("%Y%m%d_%H%M%S")
-            filename = f"detection_{timestamp}_{detection['confidence']:.2f}.jpg"
-            filepath = Path(self.config['storage']['detection_images_path']) / filename
-            
-            # Create directory if it doesn't exist
-            filepath.parent.mkdir(parents=True, exist_ok=True)
-            
-            # Save frame (you might want to add bounding box annotations here)
-            import cv2
-            cv2.imwrite(str(filepath), frame)
-            
-        except Exception as e:
-            self.logger.error(f"Failed to save detection frame: {e}")
     
     def _signal_handler(self, signum, frame):
         """Handle shutdown signals."""
