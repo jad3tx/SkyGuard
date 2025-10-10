@@ -1,0 +1,21 @@
+[Unit]
+Description=SkyGuard Web Portal
+After=network-online.target skyguard.service
+Wants=network-online.target
+BindsTo=skyguard.service
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/skyguard
+Environment=PATH=/home/pi/skyguard/venv/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=/home/pi/skyguard/venv/bin/python scripts/start_web_portal.py --host 0.0.0.0 --port 8080
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=skyguard-web
+
+[Install]
+WantedBy=multi-user.target
+
