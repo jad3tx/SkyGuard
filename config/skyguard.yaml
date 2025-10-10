@@ -1,7 +1,7 @@
 ai:
   classes:
   - bird
-  confidence_threshold: 0.48
+  confidence_threshold: 0.6
   input_size: 1080
   model_path: models\yolov8n.pt
   model_type: yolo
@@ -13,7 +13,7 @@ camera:
   flip_vertical: false
   focus_mode: infinity
   focus_value: 0
-  fps: 30
+  fps: 25
   height: 1080
   live_view: false
   rotation: '0'
@@ -27,7 +27,7 @@ logging:
   console_output: true
   file: logs/skyguard.log
   level: INFO
-  max_size_mb: 10
+  max_size_mb: 10  
 notifications:
   audio:
     enabled: false
@@ -66,7 +66,7 @@ storage:
   max_image_size_mb: 5
 system:
   debug_mode: false
-  detection_interval: 1
+  detection_interval: 2.0
   max_detection_history: 1000
   save_detection_frames: false
 training:

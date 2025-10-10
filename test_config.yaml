@@ -1,0 +1,62 @@
+ai:
+  classes:
+  - raptor
+  - hawk
+  - eagle
+  - owl
+  confidence_threshold: 0.5
+  input_size:
+  - 640
+  - 640
+  model_path: models/raptor_detector.pt
+  model_type: yolo
+  nms_threshold: 0.4
+camera:
+  flip_horizontal: false
+  flip_vertical: false
+  fps: 30
+  height: 480
+  rotation: 0
+  source: 0
+  width: 640
+hardware:
+  buzzer_pin: 19
+  gpio_enabled: false
+  led_pin: 18
+  platform: auto
+logging:
+  backup_count: 5
+  file: logs/skyguard.log
+  level: INFO
+  max_size_mb: 10
+notifications:
+  audio:
+    enabled: true
+    sound_file: sounds/raptor_alert.wav
+    volume: 0.8
+  email:
+    enabled: false
+    from_email: ''
+    password: ''
+    smtp_port: 587
+    smtp_server: ''
+    to_emails: []
+    username: ''
+  push:
+    api_key: ''
+    device_id: ''
+    enabled: false
+  sms:
+    account_sid: ''
+    auth_token: ''
+    enabled: false
+    from_number: ''
+    to_numbers: []
+storage:
+  database_path: data/skyguard.db
+  detection_images_path: data/detections
+  log_retention_days: 30
+system:
+  detection_interval: 1.0
+  max_detection_history: 1000
+  save_detection_frames: true
