@@ -46,7 +46,7 @@ cp -r deployment/raspberry_pi5/* /media/usb/skyguard/
 ```bash
 # Test camera
 lsusb | grep -i camera
-python -c "import cv2; cap = cv2.VideoCapture(0); print('OK' if cap.isOpened() else 'Failed')"
+./venv/bin/python -c "import cv2; cap = cv2.VideoCapture(0); print('OK' if cap.isOpened() else 'Failed')"
 
 # For Pi Camera Module 3
 sudo raspi-config
@@ -55,7 +55,8 @@ sudo raspi-config
 
 ### Performance Tuning
 ```bash
-# Enable hardware acceleration
+# Note: These settings are automatically applied by install_pi5.sh
+# Manual configuration (if needed):
 sudo nano /boot/config.txt
 # Add:
 gpu_mem=256
@@ -149,7 +150,7 @@ lsusb
 ls /dev/video*
 
 # Test with OpenCV
-python -c "import cv2; cap = cv2.VideoCapture(0); print('OK' if cap.isOpened() else 'Failed')"
+./venv/bin/python -c "import cv2; cap = cv2.VideoCapture(0); print('OK' if cap.isOpened() else 'Failed')"
 ```
 
 **Performance issues:**
@@ -170,7 +171,7 @@ free -h
 ls -la models/
 
 # Test model loading
-python -c "from ultralytics import YOLO; model = YOLO('models/airbirds_raptor_detector.pt'); print('Model loaded successfully')"
+./venv/bin/python -c "from ultralytics import YOLO; model = YOLO('models/airbirds_raptor_detector.pt'); print('Model loaded successfully')"
 ```
 
 ## Advanced Features
@@ -191,7 +192,7 @@ camera:
 pip install flask flask-cors
 
 # Run web interface
-python scripts/web_interface.py
+./venv/bin/python scripts/web_interface.py
 ```
 
 ### Cloud Integration
@@ -218,7 +219,7 @@ sudo systemctl start ssh
 pip install flask flask-cors
 
 # Run web interface
-python scripts/web_interface.py
+./venv/bin/python scripts/web_interface.py
 ```
 
 ### Mobile App
@@ -227,7 +228,7 @@ python scripts/web_interface.py
 pip install fastapi uvicorn
 
 # Run mobile API
-python scripts/mobile_api.py
+./venv/bin/python scripts/mobile_api.py
 ```
 
 ## Security
@@ -265,7 +266,7 @@ sudo nano /etc/systemd/system/skyguard.service
 
 ## Next Steps
 
-1. **Test the system**: Run `./venv/bin/python -m skyguard.main --test-system`
+1. **Test the system**: Run `skyguard --test-system`
 2. **Configure alerts**: Set up SMS/email notifications
 3. **Optimize performance**: Adjust settings for your setup
 4. **Monitor operation**: Check logs and system status
