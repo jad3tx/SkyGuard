@@ -32,6 +32,17 @@ echo "gpu_mem=256" | sudo tee -a /boot/config.txt
 echo "dtoverlay=vc4-kms-v3d" | sudo tee -a /boot/config.txt
 echo "dtoverlay=vc4-kms-v3d-pi5" | sudo tee -a /boot/config.txt
 
+# Set CPU governor to performance for Pi 5
+echo "Setting CPU governor to performance..."
+echo performance | sudo tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor
+
+# Optimize swap for Pi 5
+echo "Optimizing swap configuration..."
+sudo dphys-swapfile swapoff
+sudo sed -i 's/CONF_SWAPSIZE=.*/CONF_SWAPSIZE=4096/' /etc/dphys-swapfile
+sudo dphys-swapfile setup
+sudo dphys-swapfile swapon
+
 # Create virtual environment
 echo "Setting up Python environment..."
 python3 -m venv venv
@@ -77,13 +88,15 @@ echo ""
 echo "Pi 5 Optimizations Applied:"
 echo "- GPU memory split: 256MB"
 echo "- Hardware acceleration enabled"
+echo "- CPU governor set to performance"
+echo "- Swap optimized to 4GB"
 echo "- Higher resolution: 1280x720"
 echo "- Higher FPS: 30"
 echo "- All notification services enabled"
 echo ""
 echo "Next steps:"
-echo "1. Configure SkyGuard: ./venv/bin/python -m skyguard.setup.configure"
-echo "2. Test the system: ./venv/bin/python -m skyguard.main --test-system"
+echo "1. Configure SkyGuard: skyguard-setup"
+echo "2. Test the system: skyguard --test-system"
 echo "3. Start SkyGuard: sudo systemctl start skyguard.service"
 echo "4. Check status: sudo systemctl status skyguard.service"
 echo "5. View logs: journalctl -u skyguard.service -f"

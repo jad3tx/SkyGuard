@@ -17,17 +17,17 @@ cd skyguard
 
 ```bash
 # Make installation script executable
-chmod +x scripts/install.sh
+chmod +x install_pi5.sh
 
 # Run Pi 5 optimized installation
-./scripts/install.sh
+./install_pi5.sh
 ```
 
 ### **Step 3: Configure SkyGuard**
 
 ```bash
 # Run configuration wizard
-./venv/bin/python -m skyguard.setup.configure
+skyguard-setup
 
 # Or edit config manually
 nano config/skyguard.yaml
@@ -37,23 +37,23 @@ nano config/skyguard.yaml
 
 ```bash
 # Test camera
-./venv/bin/python -m skyguard.main --test-camera
+skyguard --test-camera
 
 # Test AI model
-./venv/bin/python -m skyguard.main --test-model
+skyguard --test-model
 
 # Test alerts
-./venv/bin/python -m skyguard.main --test-alerts
+skyguard --test-alerts
 ```
 
 ### **Step 5: Run SkyGuard**
 
 ```bash
 # Manual start
-./venv/bin/python -m skyguard.main
+skyguard
 
-# Or create systemd service for auto-start
-sudo nano /etc/systemd/system/skyguard.service
+# Or create systemd service for auto-start (already created by install script)
+sudo systemctl start skyguard.service
 ```
 
 ## ⚙️ **Pi 5 Optimizations**
@@ -94,7 +94,7 @@ vcgencmd measure_temp
 ```bash
 # Test camera
 lsusb | grep -i camera
-python -c "import cv2; cap = cv2.VideoCapture(0); print('OK' if cap.isOpened() else 'Failed')"
+./venv/bin/python -c "import cv2; cap = cv2.VideoCapture(0); print('OK' if cap.isOpened() else 'Failed')"
 ```
 
 **Raspberry Pi Camera:**
@@ -245,7 +245,7 @@ lsusb
 ls /dev/video*
 
 # Test with OpenCV
-python -c "import cv2; cap = cv2.VideoCapture(0); print('OK' if cap.isOpened() else 'Failed')"
+./venv/bin/python -c "import cv2; cap = cv2.VideoCapture(0); print('OK' if cap.isOpened() else 'Failed')"
 ```
 
 **Permission errors:**
@@ -276,7 +276,7 @@ sudo dphys-swapfile swapon
 ls -la models/
 
 # Test model loading
-python -c "from ultralytics import YOLO; model = YOLO('models/airbirds_raptor_detector.pt'); print('Model loaded successfully')"
+./venv/bin/python -c "from ultralytics import YOLO; model = YOLO('models/airbirds_raptor_detector.pt'); print('Model loaded successfully')"
 ```
 
 ## 📱 **Remote Access**
@@ -296,7 +296,7 @@ sudo systemctl start ssh
 pip install flask flask-cors
 
 # Run web interface
-python scripts/web_interface.py
+./venv/bin/python scripts/web_interface.py
 ```
 
 ## 🔒 **Security**
@@ -336,10 +336,10 @@ sudo nano /etc/systemd/system/skyguard.service
 ## 🎯 **Next Steps**
 
 1. **Clone repository**: `git clone https://github.com/johndaughtridge/skyguard.git`
-2. **Install dependencies**: `./scripts/install.sh`
-3. **Configure system**: `./venv/bin/python -m skyguard.setup.configure`
-4. **Test system**: `./venv/bin/python -m skyguard.main --test-system`
-5. **Deploy**: `./venv/bin/python -m skyguard.main`
+2. **Install dependencies**: `./install_pi5.sh`
+3. **Configure system**: `skyguard-setup`
+4. **Test system**: `skyguard --test-system`
+5. **Deploy**: `skyguard`
 
 ---
 
