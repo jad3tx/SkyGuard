@@ -53,7 +53,6 @@ This guide covers the hardware requirements, recommendations, and setup for the 
 
 #### Alternative Options
 - **Orange Pi 5:** More powerful, similar price
-- **Jetson Nano:** Better for AI workloads, higher cost
 - **Intel NUC:** Desktop-class performance, higher power consumption
 
 ### 2. Camera Options
@@ -321,10 +320,11 @@ camera:
 - Cables and connectors: $15
 
 ### Premium Setup (~$400)
-- Jetson Orin Nano: $250
+- Raspberry Pi 5 (8GB): $80
 - 128GB microSD card: $25
 - HQ camera module: $50
 - Professional enclosure: $50
 - Professional mounting: $25
+- Additional accessories: $170
 
 

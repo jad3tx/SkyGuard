@@ -63,22 +63,17 @@ SkyGuard provides a low-cost, AI-driven alert system that:
 
 2. **Install dependencies**
    ```bash
-   # For Pi 5 optimized installation
-   ./install_pi5.sh
-   
-   # Or for generic installation
-   pip install -r requirements-minimal.txt
-   pip install -e .
+   pip install -r requirements.txt
    ```
 
 3. **Configure the system**
    ```bash
-   skyguard-setup
+   python -m skyguard.setup.configure
    ```
 
 4. **Run SkyGuard**
    ```bash
-   skyguard
+   python -m skyguard.main
    ```
 
 ### Detailed Installation
@@ -107,7 +102,7 @@ See [CONFIGURATION.md](docs/CONFIGURATION.md) for detailed configuration options
 
 1. **Start the system**
    ```bash
-   skyguard
+   python -m skyguard.main
    ```
 
 2. **Monitor detections**
@@ -117,7 +112,7 @@ See [CONFIGURATION.md](docs/CONFIGURATION.md) for detailed configuration options
 
 3. **Test alerts**
    ```bash
-   skyguard --test-alerts
+   python -m skyguard.main --test-alerts
    ```
 
 ### Advanced Features
@@ -160,7 +155,7 @@ We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guid
 
 1. **Install development dependencies**
    ```bash
-   pip install -r requirements-minimal.txt
+   pip install -r requirements.txt
    pip install -e .[dev]
    ```
 

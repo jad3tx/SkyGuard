@@ -1,5 +1,5 @@
 # SkyGuard - Minimal Dependencies
-# Core dependencies that are absolutely required
+# Core dependencies that are absolutely required for basic functionality
 
 # Core Computer Vision
 opencv-python>=4.8.0
