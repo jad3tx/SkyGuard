@@ -20,7 +20,6 @@ RPi.GPIO>=0.7.1  # For Raspberry Pi GPIO control
 adafruit-circuitpython-neopixel>=6.3.0  # For LED indicators
 
 # Camera and Video Processing
-
 imutils>=0.5.4
 
 # Notification Services
