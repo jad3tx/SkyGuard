@@ -1,4 +1,5 @@
-cache_location: C:\Users\johnd\.cache\huggingface\hub\datasets--auniquesun--AirBirds
+available_splits:
+- test
 classes:
 - bird
 dataset_name: AirBirds
@@ -7,6 +8,4 @@ format: YOLO
 image_resolution: 1920x1080
 license: CC BY-NC-SA 4.0
 source: https://huggingface.co/datasets/auniquesun/AirBirds
-total_samples: 20000
-train_samples: 100
-val_samples: 20
+test_samples: 20000
