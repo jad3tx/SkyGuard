@@ -97,13 +97,16 @@ class CameraManager:
         """
         try:
             if self.cap is None or not self.cap.isOpened():
-                self.logger.error("Camera not initialized")
-                return None
+                # Try to reinitialize camera
+                if not self.initialize():
+                    # If camera still not available, return test image
+                    return self._get_test_image()
             
             ret, frame = self.cap.read()
             if not ret:
                 self.logger.warning("Failed to capture frame")
-                return None
+                # Return test image as fallback
+                return self._get_test_image()
             
             # Apply transformations
             frame = self._apply_transformations(frame)
@@ -116,7 +119,8 @@ class CameraManager:
             
         except Exception as e:
             self.logger.error(f"Error capturing frame: {e}")
-            return None
+            # Return test image as fallback
+            return self._get_test_image()
     
     def _apply_transformations(self, frame: np.ndarray) -> np.ndarray:
         """Apply configured transformations to the frame.
@@ -233,6 +237,41 @@ class CameraManager:
             self.logger.error(f"Camera connection test failed: {e}")
             return False
     
+    def _get_test_image(self) -> np.ndarray:
+        """Generate a test image when camera is not available.
+        
+        Returns:
+            Test image as numpy array
+        """
+        try:
+            # Create a test image with current timestamp
+            img = np.zeros((480, 640, 3), dtype=np.uint8)
+            img[:] = (30, 30, 30)  # Dark background
+            
+            # Add timestamp
+            current_time = time.strftime("%Y-%m-%d %H:%M:%S")
+            
+            # Add text
+            font = cv2.FONT_HERSHEY_SIMPLEX
+            cv2.putText(img, "SkyGuard Test Mode", (50, 100), font, 1, (255, 255, 255), 2)
+            cv2.putText(img, "No Camera Detected", (50, 150), font, 0.8, (0, 255, 255), 2)
+            cv2.putText(img, f"Time: {current_time}", (50, 200), font, 0.6, (0, 255, 0), 2)
+            cv2.putText(img, "Check camera connection", (50, 250), font, 0.5, (255, 255, 0), 1)
+            
+            # Add some visual elements
+            cv2.rectangle(img, (100, 300), (300, 400), (255, 0, 0), 2)
+            cv2.circle(img, (200, 350), 50, (0, 0, 255), 2)
+            
+            # Add frame counter
+            cv2.putText(img, f"Frame: {self.frame_count}", (50, 450), font, 0.5, (255, 255, 255), 1)
+            
+            return img
+            
+        except Exception as e:
+            self.logger.error(f"Error creating test image: {e}")
+            # Return a simple black image as last resort
+            return np.zeros((480, 640, 3), dtype=np.uint8)
+
     def cleanup(self):
         """Clean up camera resources."""
         try:
