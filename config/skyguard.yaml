@@ -20,8 +20,8 @@ camera:
   source: '0'
   width: 1920
 hardware:
-  gpio_enabled: true
-  platform: raspberry_pi5
+  gpio_enabled: false
+  platform: windows
 logging:
   backup_count: 5
   console_output: true
