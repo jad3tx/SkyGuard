@@ -298,7 +298,7 @@ def create_deployment_instructions(deploy_dir):
 
 ## 🍓 Prerequisites
 
-- Raspberry Pi 4 (4GB RAM minimum, 8GB recommended)
+- Raspberry Pi 5 (4GB RAM minimum, 8GB recommended)
 - 32GB+ microSD card (Class 10 or better)
 - USB webcam or Raspberry Pi camera module
 - Internet connection
@@ -480,13 +480,13 @@ python -c "from ultralytics import YOLO; model = YOLO('models/airbirds_raptor_de
 
 ### Performance Optimization
 
-**For Raspberry Pi 4 (4GB):**
+**For Raspberry Pi 5 (4GB):**
 - Use lower resolution: 640x480
 - Reduce FPS: 15
 - Lower confidence threshold: 0.3
 - Enable GPU memory split: 128MB
 
-**For Raspberry Pi 4 (8GB):**
+**For Raspberry Pi 5 (8GB):**
 - Use medium resolution: 1280x720
 - Higher FPS: 30
 - Standard confidence threshold: 0.5

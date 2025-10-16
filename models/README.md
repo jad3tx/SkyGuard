@@ -42,7 +42,7 @@ The system will automatically use a dummy model for testing when no real model i
 - **F1-Score**: 0.85+ (raptor class)
 
 ### Speed Performance
-- **Inference Time**: <100ms (Raspberry Pi 4)
+- **Inference Time**: <100ms (Raspberry Pi 5)
 - **FPS**: 10+ (640x640 input)
 - **Memory Usage**: <2GB RAM
 
