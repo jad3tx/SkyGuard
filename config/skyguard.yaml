@@ -3,7 +3,7 @@ ai:
   - bird
   confidence_threshold: 0.6
   input_size: 1080
-  model_path: models\yolov8n.pt
+  model_path: models/airbirds_raptor_detector.pt
   model_type: yolo
   nms_threshold: 0.5
 camera:
@@ -20,14 +20,14 @@ camera:
   source: '0'
   width: 1920
 hardware:
-  gpio_enabled: false
-  platform: desktop
+  gpio_enabled: true
+  platform: raspberry_pi5
 logging:
   backup_count: 5
   console_output: true
   file: logs/skyguard.log
   level: INFO
-  max_size_mb: 10  
+  max_size_mb: 10
 notifications:
   audio:
     enabled: false

@@ -87,6 +87,9 @@ class SkyGuardSystem:
         self.running = True
         self.logger.info("Starting SkyGuard detection loop...")
         
+        # Perform warmup detections for faster startup
+        self._perform_warmup_detections()
+        
         # Start snapshot service for web portal
         if self.camera_manager:
             self.snapshot_service.start(self.camera_manager)
@@ -167,6 +170,34 @@ class SkyGuardSystem:
             self.event_logger.cleanup()
             
         self.logger.info("SkyGuard system shutdown complete")
+    
+    def _perform_warmup_detections(self):
+        """Perform warmup detections to optimize system performance."""
+        warmup_count = self.config.get('system', {}).get('warmup_detections', 5)
+        if warmup_count <= 0:
+            return
+            
+        self.logger.info(f"🔥 Performing {warmup_count} warmup detections for faster startup...")
+        
+        for i in range(warmup_count):
+            try:
+                # Capture frame
+                frame = self.camera_manager.capture_frame()
+                if frame is None:
+                    self.logger.warning(f"Warmup detection {i+1}: No frame captured")
+                    continue
+                
+                # Run detection (this optimizes the model)
+                detections = self.detector.detect(frame)
+                self.logger.debug(f"Warmup detection {i+1}: {len(detections)} objects found")
+                
+                # Small delay between warmup detections
+                time.sleep(0.5)
+                
+            except Exception as e:
+                self.logger.warning(f"Warmup detection {i+1} failed: {e}")
+        
+        self.logger.info("✅ Warmup detections completed - system ready for normal operation")
 
 
 def main():
