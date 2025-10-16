@@ -227,7 +227,34 @@ install_python_packages() {
     # Install SkyGuard in development mode
     pip install -e .
     
-    log_success "Python packages installed"
+    # Create wrapper scripts for easy access
+    log_info "Creating command wrappers..."
+    
+    # Create skyguard-setup wrapper
+    cat > skyguard-setup << 'EOF'
+#!/bin/bash
+# SkyGuard Setup Wrapper
+cd "$(dirname "$0")/.."
+source venv/bin/activate
+python -m skyguard.setup.configure "$@"
+EOF
+    
+    # Create skyguard wrapper
+    cat > skyguard << 'EOF'
+#!/bin/bash
+# SkyGuard Main Wrapper
+cd "$(dirname "$0")/.."
+source venv/bin/activate
+python -m skyguard.main "$@"
+EOF
+    
+    # Make wrappers executable
+    chmod +x skyguard-setup skyguard
+    
+    # Add to PATH for current session
+    export PATH="$(pwd):$PATH"
+    
+    log_success "Python packages installed and wrappers created"
 }
 
 # Configure Raspberry Pi specific settings
@@ -436,8 +463,9 @@ main() {
     echo ""
     echo "To configure and use SkyGuard:"
     echo ""
-    echo "  skyguard-setup                    # Configure the system"
-    echo "  skyguard --test-system           # Test everything works"
+    echo "  ./skyguard-setup                 # Configure the system"
+    echo "  ./skyguard --test-system         # Test everything works"
+    echo "  ./skyguard                       # Start detection"
     echo ""
     echo "Service management:"
     echo "  sudo systemctl start skyguard.service     # Start detection"
