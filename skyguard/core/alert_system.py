@@ -9,7 +9,6 @@ import time
 import threading
 from typing import Dict, Any, List, Optional
 from pathlib import Path
-import pygame
 import requests
 import smtplib
 try:
@@ -20,6 +19,14 @@ except ImportError:
     EMAIL_AVAILABLE = False
     MimeText = None
     MimeMultipart = None
+
+# Try to import pygame, but don't fail if not available
+try:
+    import pygame
+    PYGAME_AVAILABLE = True
+except ImportError:
+    PYGAME_AVAILABLE = False
+    pygame = None
 
 # Try to import Twilio, but don't fail if not available
 try:

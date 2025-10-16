@@ -26,7 +26,7 @@ imutils>=0.5.4
 requests>=2.31.0
 twilio>=8.5.0  # For SMS notifications
 pushbullet.py>=0.11.0  # For push notifications
-pygame>=2.5.0  # For audio alerts
+# pygame>=2.5.0  # For audio alerts (not available on newer Pi OS)
 
 # Data Storage and Logging
 pandas>=2.0.0
