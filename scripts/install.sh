@@ -102,9 +102,7 @@ install_dependencies() {
             libx264-dev \
             libgtk-3-dev \
             libcanberra-gtk3-dev \
-            libcanberra-gtk3-module \
-            libcanberra-gtk-dev \
-            libcanberra-gtk-module
+            libcanberra-gtk3-module
         
         # Try to install BLAS/LAPACK libraries (libatlas-base-dev may not be available on newer systems)
         log_info "Installing BLAS/LAPACK libraries..."
@@ -119,6 +117,16 @@ install_dependencies() {
                 log_warning "Some scientific computing features may be limited"
             fi
         fi
+        
+        # Try to install additional GTK/Canberra packages (may not be available on newer systems)
+        log_info "Installing additional GTK/Canberra packages..."
+        if sudo apt install -y libcanberra-gtk-dev libcanberra-gtk-module 2>/dev/null; then
+            log_success "Canberra GTK packages installed successfully"
+        else
+            log_warning "Canberra GTK packages not available, continuing without them"
+            log_warning "Some audio/notification features may be limited"
+        fi
+        
     elif [[ "$PLATFORM" == "ubuntu" ]]; then
         sudo apt install -y \
             python3 \

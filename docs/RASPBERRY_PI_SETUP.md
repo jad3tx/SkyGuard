@@ -345,8 +345,15 @@ sudo systemctl status skyguard.service
    # Update package lists
    sudo apt update
    
-   # Try alternative packages
+   # Try alternative packages for BLAS/LAPACK
    sudo apt install -y libopenblas-dev
+   
+   # Try alternative packages for GTK/Canberra
+   sudo apt install -y libcanberra-gtk3-dev libcanberra-gtk3-module
+   
+   
+   # If specific packages fail, continue without them
+   # The install script will handle missing packages gracefully
    ```
 
 5. **Permission issues:**
