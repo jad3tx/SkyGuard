@@ -77,6 +77,7 @@ install_dependencies() {
     log_info "Installing system dependencies..."
     
     if [[ "$PLATFORM" == "raspberry_pi" ]] || [[ "$PLATFORM" == "debian" ]]; then
+        # Install core packages first
         sudo apt install -y \
             python3 \
             python3-pip \
@@ -84,7 +85,6 @@ install_dependencies() {
             python3-dev \
             python3-opencv \
             libopencv-dev \
-            libatlas-base-dev \
             git \
             wget \
             curl \
@@ -102,9 +102,31 @@ install_dependencies() {
             libx264-dev \
             libgtk-3-dev \
             libcanberra-gtk3-dev \
-            libcanberra-gtk3-module \
-            libcanberra-gtk-dev \
-            libcanberra-gtk-module
+            libcanberra-gtk3-module
+        
+        # Try to install BLAS/LAPACK libraries (libatlas-base-dev may not be available on newer systems)
+        log_info "Installing BLAS/LAPACK libraries..."
+        if sudo apt install -y libatlas-base-dev 2>/dev/null; then
+            log_success "libatlas-base-dev installed successfully"
+        else
+            log_warning "libatlas-base-dev not available, trying alternative..."
+            if sudo apt install -y libopenblas-dev 2>/dev/null; then
+                log_success "libopenblas-dev installed as alternative"
+            else
+                log_warning "BLAS/LAPACK libraries not available, continuing without them"
+                log_warning "Some scientific computing features may be limited"
+            fi
+        fi
+        
+        # Try to install additional GTK/Canberra packages (may not be available on newer systems)
+        log_info "Installing additional GTK/Canberra packages..."
+        if sudo apt install -y libcanberra-gtk-dev libcanberra-gtk-module 2>/dev/null; then
+            log_success "Canberra GTK packages installed successfully"
+        else
+            log_warning "Canberra GTK packages not available, continuing without them"
+            log_warning "Some audio/notification features may be limited"
+        fi
+        
     elif [[ "$PLATFORM" == "ubuntu" ]]; then
         sudo apt install -y \
             python3 \
@@ -198,10 +220,41 @@ install_python_packages() {
         pip install twilio pushbullet.py
     fi
     
+    # Install web interface dependencies
+    log_info "Installing web interface dependencies..."
+    pip install flask flask-cors werkzeug requests python-dotenv
+    
     # Install SkyGuard in development mode
     pip install -e .
     
-    log_success "Python packages installed"
+    # Create wrapper scripts for easy access
+    log_info "Creating command wrappers..."
+    
+    # Create skyguard-setup wrapper
+    cat > skyguard-setup << 'EOF'
+#!/bin/bash
+# SkyGuard Setup Wrapper
+cd "$(dirname "$0")/.."
+source venv/bin/activate
+python -m skyguard.setup.configure "$@"
+EOF
+    
+    # Create skyguard wrapper
+    cat > skyguard << 'EOF'
+#!/bin/bash
+# SkyGuard Main Wrapper
+cd "$(dirname "$0")/.."
+source venv/bin/activate
+python -m skyguard.main "$@"
+EOF
+    
+    # Make wrappers executable
+    chmod +x skyguard-setup skyguard
+    
+    # Add to PATH for current session
+    export PATH="$(pwd):$PATH"
+    
+    log_success "Python packages installed and wrappers created"
 }
 
 # Configure Raspberry Pi specific settings
@@ -229,14 +282,15 @@ configure_raspberry_pi() {
     fi
 }
 
-# Create systemd service
+# Create systemd services
 create_systemd_service() {
-    log_info "Creating systemd service..."
+    log_info "Creating systemd services..."
     
-    SERVICE_FILE="/etc/systemd/system/skyguard.service"
     CURRENT_DIR=$(pwd)
     USER_NAME=$(whoami)
     
+    # Main SkyGuard service
+    SERVICE_FILE="/etc/systemd/system/skyguard.service"
     sudo tee $SERVICE_FILE > /dev/null <<EOF
 [Unit]
 Description=SkyGuard Raptor Alert System
@@ -255,10 +309,52 @@ RestartSec=10
 WantedBy=multi-user.target
 EOF
 
+    # Web interface service
+    WEB_SERVICE_FILE="/etc/systemd/system/skyguard-web.service"
+    sudo tee $WEB_SERVICE_FILE > /dev/null <<EOF
+[Unit]
+Description=SkyGuard Web Interface
+After=network.target skyguard.service
+Wants=skyguard.service
+
+[Service]
+Type=simple
+User=$USER_NAME
+WorkingDirectory=$CURRENT_DIR
+Environment=PATH=$CURRENT_DIR/venv/bin
+ExecStart=$CURRENT_DIR/venv/bin/python scripts/start_web_portal.py --host 0.0.0.0 --port 8080
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
     sudo systemctl daemon-reload
     sudo systemctl enable skyguard.service
+    sudo systemctl enable skyguard-web.service
     
-    log_success "Systemd service created and enabled"
+    log_success "Systemd services created and enabled"
+}
+
+# Setup cron jobs for maintenance
+setup_cron_jobs() {
+    log_info "Setting up cron jobs..."
+    
+    CURRENT_DIR=$(pwd)
+    USER_NAME=$(whoami)
+    
+    # Create cron job for log cleanup (daily at 2 AM)
+    CRON_JOB="0 2 * * * cd $CURRENT_DIR && $CURRENT_DIR/venv/bin/python -c \"import os; [os.remove(os.path.join('logs', f)) for f in os.listdir('logs') if f.endswith('.log') and os.path.getctime(os.path.join('logs', f)) < (time.time() - 7*24*3600)]\""
+    
+    # Create cron job for system health check (every 6 hours)
+    HEALTH_CHECK="0 */6 * * * cd $CURRENT_DIR && $CURRENT_DIR/venv/bin/python -c \"import subprocess; subprocess.run(['systemctl', 'is-active', 'skyguard.service'], check=True)\" || systemctl restart skyguard.service"
+    
+    # Add cron jobs
+    (crontab -l 2>/dev/null; echo "$CRON_JOB") | crontab -
+    (crontab -l 2>/dev/null; echo "$HEALTH_CHECK") | crontab -
+    
+    log_success "Cron jobs configured"
 }
 
 # Test installation
@@ -289,6 +385,40 @@ else:
     log_success "Installation test completed"
 }
 
+# Start web interface
+start_web_interface() {
+    log_info "Starting SkyGuard web interface..."
+    
+    # Get the Pi's IP address
+    if [[ "$PLATFORM" == "raspberry_pi" ]]; then
+        pi_ip=$(hostname -I | awk '{print $1}')
+        echo ""
+        echo "🌐 SkyGuard Web Interface"
+        echo "=========================="
+        echo "Web interface will be available at:"
+        echo "   http://$pi_ip:8080"
+        echo ""
+        echo "Press Ctrl+C to stop the web interface"
+        echo ""
+    fi
+    
+    # Start the web portal in the background
+    source venv/bin/activate
+    python scripts/start_web_portal.py --host 0.0.0.0 --port 8080 &
+    web_pid=$!
+    
+    # Wait a moment for the server to start
+    sleep 3
+    
+    if kill -0 $web_pid 2>/dev/null; then
+        log_success "Web interface started successfully!"
+        echo "Web interface is running in the background (PID: $web_pid)"
+        echo "To stop it later, run: kill $web_pid"
+    else
+        log_error "Failed to start web interface"
+    fi
+}
+
 # Main installation function
 main() {
     log_info "Starting SkyGuard installation..."
@@ -308,16 +438,46 @@ main() {
     install_python_packages
     configure_raspberry_pi
     create_systemd_service
+    setup_cron_jobs
     test_installation
     
     log_success "SkyGuard installation completed successfully!"
     
+    # Ask if user wants to start web interface
     echo ""
-    echo "Next steps:"
-    echo "1. Configure SkyGuard: skyguard-setup"
-    echo "2. Test the system: skyguard --test-system"
-    echo "3. Start SkyGuard: skyguard"
-    echo "4. Enable auto-start: sudo systemctl start skyguard.service"
+    read -p "Start web interface now? [Y/n]: " web_choice
+    web_choice=${web_choice:-Y}
+    
+    if [[ "$web_choice" =~ ^[Yy]$ ]]; then
+        start_web_interface
+    fi
+    
+    echo ""
+    echo "🎉 Installation Complete!"
+    echo "========================"
+    echo ""
+    echo "✅ Services configured and enabled:"
+    echo "   - skyguard.service (main detection system)"
+    echo "   - skyguard-web.service (web interface)"
+    echo "   - Cron jobs (log cleanup & health checks)"
+    echo ""
+    echo "To configure and use SkyGuard:"
+    echo ""
+    echo "  ./skyguard-setup                 # Configure the system"
+    echo "  ./skyguard --test-system         # Test everything works"
+    echo "  ./skyguard                       # Start detection"
+    echo ""
+    echo "Service management:"
+    echo "  sudo systemctl start skyguard.service     # Start detection"
+    echo "  sudo systemctl start skyguard-web.service # Start web interface"
+    echo "  sudo systemctl status skyguard.service     # Check status"
+    echo "  sudo systemctl stop skyguard.service       # Stop services"
+    echo ""
+    echo "🧹 Cleanup (if needed):"
+    echo "  ./scripts/cleanup_skyguard.sh             # Remove all services"
+    echo ""
+    echo "💡 Services will start automatically on boot!"
+    echo "   Web interface: http://$(hostname -I | awk '{print $1}'):8080"
     echo ""
     
     if [[ "$PLATFORM" == "raspberry_pi" ]]; then

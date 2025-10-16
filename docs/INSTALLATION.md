@@ -9,14 +9,14 @@ This guide will walk you through installing and setting up the SkyGuard raptor a
 ### Hardware Requirements
 
 **Minimum Requirements:**
-- Raspberry Pi 4 (4GB RAM) or equivalent single-board computer
+- Raspberry Pi 5 (4GB RAM) or equivalent single-board computer
 - USB webcam or Raspberry Pi camera module
 - 32GB+ microSD card (Class 10 or better)
 - 5V/3A power supply
 - Ethernet cable or WiFi connection
 
 **Recommended Setup:**
-- Raspberry Pi 4 (8GB RAM)
+- Raspberry Pi 5 (8GB RAM)
 - High-quality USB webcam (1080p, 30fps)
 - 64GB+ microSD card
 - Weatherproof enclosure
@@ -27,6 +27,20 @@ This guide will walk you through installing and setting up the SkyGuard raptor a
 - Raspberry Pi OS (64-bit) or Ubuntu 20.04+
 - Python 3.8 or higher
 - Internet connection for initial setup
+
+## Quick Start for Raspberry Pi
+
+**For detailed Raspberry Pi setup including manual steps, see: [Raspberry Pi Setup Guide](RASPBERRY_PI_SETUP.md)**
+
+The Raspberry Pi setup requires some manual steps before running the automated installer:
+
+1. **Image SD card** with Raspberry Pi OS Lite (64-bit)
+2. **Install Git and GitHub CLI** on the Pi
+3. **Configure Git** with your username/email
+4. **Setup SSH keys** for GitHub access
+5. **Clone repository** and run installer
+
+The automated installer now handles package availability issues gracefully, but you may need to complete the manual setup steps first.
 
 ## Installation Methods
 
