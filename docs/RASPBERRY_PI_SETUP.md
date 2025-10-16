@@ -296,6 +296,44 @@ sudo systemctl start skyguard.service
 sudo systemctl status skyguard.service
 ```
 
+## Service Management
+
+### Cleanup Services
+If you need to remove all SkyGuard services for testing or reinstallation:
+
+```bash
+# Use the cleanup script
+./scripts/cleanup_skyguard.sh
+
+# Or manually remove services
+sudo systemctl stop skyguard.service
+sudo systemctl stop skyguard-web.service
+sudo systemctl disable skyguard.service
+sudo systemctl disable skyguard-web.service
+sudo rm /etc/systemd/system/skyguard.service
+sudo rm /etc/systemd/system/skyguard-web.service
+sudo systemctl daemon-reload
+```
+
+### Service Commands
+```bash
+# Start services
+sudo systemctl start skyguard.service
+sudo systemctl start skyguard-web.service
+
+# Check status
+sudo systemctl status skyguard.service
+sudo systemctl status skyguard-web.service
+
+# Stop services
+sudo systemctl stop skyguard.service
+sudo systemctl stop skyguard-web.service
+
+# Enable/disable auto-start
+sudo systemctl enable skyguard.service
+sudo systemctl disable skyguard.service
+```
+
 ## Troubleshooting
 
 ### Common Issues
