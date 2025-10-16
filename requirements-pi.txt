@@ -1,0 +1,40 @@
+# SkyGuard - Raspberry Pi Optimized Dependencies
+# Optimized for Raspberry Pi 5 with hardware acceleration
+
+# Core Computer Vision
+opencv-python>=4.8.0
+numpy>=1.24.0
+pillow>=10.0.0
+
+# AI/ML - Optimized for Pi hardware
+torch>=2.0.0
+torchvision>=0.15.0
+ultralytics>=8.0.0
+
+# Raspberry Pi Hardware Integration
+RPi.GPIO>=0.7.1  # For Raspberry Pi GPIO control
+adafruit-circuitpython-neopixel>=6.3.0  # For LED indicators
+pyserial>=3.5  # For serial communication
+imutils>=0.5.4  # Image processing utilities
+
+# Notification Services (Pi can handle these)
+requests>=2.31.0
+twilio>=8.5.0  # For SMS notifications
+pushbullet.py>=0.11.0  # For push notifications
+# pygame>=2.5.0  # For audio alerts (not available on newer Pi OS)
+
+# Data Storage and Logging
+pandas>=2.0.0
+
+# Configuration and Utilities
+pyyaml>=6.0
+python-dotenv>=1.0.0
+psutil>=5.9.0
+
+# Web Interface (lightweight)
+flask>=2.3.0
+flask-cors>=4.0.0
+
+# Development and Testing
+pytest>=7.4.0
+

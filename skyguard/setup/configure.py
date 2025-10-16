@@ -357,8 +357,14 @@ class SkyGuardConfigurator:
                 import pygame
                 pygame.mixer.init()
                 print("✅ Audio test: OK")
+            except ImportError:
+                print("⚠️  pygame not available - audio notifications disabled")
+                print("   Install pygame for audio alerts: pip install pygame")
+                config['notifications']['audio']['enabled'] = False
             except Exception as e:
                 print(f"❌ Audio test: Error - {e}")
+                print("   Audio notifications will be disabled")
+                config['notifications']['audio']['enabled'] = False
         
         # Test model
         print("Testing AI model...")

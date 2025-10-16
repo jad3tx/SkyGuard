@@ -20,17 +20,15 @@ RPi.GPIO>=0.7.1  # For Raspberry Pi GPIO control
 adafruit-circuitpython-neopixel>=6.3.0  # For LED indicators
 
 # Camera and Video Processing
-picamera2>=0.3.0  # For Raspberry Pi camera
 imutils>=0.5.4
 
 # Notification Services
 requests>=2.31.0
 twilio>=8.5.0  # For SMS notifications
 pushbullet.py>=0.11.0  # For push notifications
-pygame>=2.5.0  # For audio alerts
+# pygame>=2.5.0  # For audio alerts (not available on newer Pi OS)
 
 # Data Storage and Logging
-sqlite3  # Built into Python
 pandas>=2.0.0
 matplotlib>=3.7.0
 

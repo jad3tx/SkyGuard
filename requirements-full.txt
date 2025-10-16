@@ -1,0 +1,48 @@
+# SkyGuard - Full Dependencies
+# Complete installation with all features enabled
+
+# Core Computer Vision
+opencv-python>=4.8.0
+numpy>=1.24.0
+pillow>=10.0.0
+
+# AI/ML - PyTorch + YOLO (Recommended)
+torch>=2.0.0
+torchvision>=0.15.0
+ultralytics>=8.0.0
+
+# Hardware Integration
+RPi.GPIO>=0.7.1  # For Raspberry Pi GPIO control
+picamera2>=0.3.0  # For Raspberry Pi camera
+adafruit-circuitpython-neopixel>=6.3.0  # For LED indicators
+pyserial>=3.5  # For serial communication
+imutils>=0.5.4  # Image processing utilities
+
+# Notification Services
+requests>=2.31.0
+twilio>=8.5.0  # For SMS notifications
+pushbullet.py>=0.11.0  # For push notifications
+pygame>=2.5.0  # For audio alerts
+
+# Data Storage and Logging
+pandas>=2.0.0
+matplotlib>=3.7.0
+
+# Configuration and Utilities
+pyyaml>=6.0
+python-dotenv>=1.0.0
+schedule>=1.2.0
+psutil>=5.9.0
+
+# Web Interface
+flask>=2.3.0
+flask-cors>=4.0.0
+jinja2>=3.1.0
+
+# Development and Testing
+pytest>=7.4.0
+pytest-cov>=4.1.0
+black>=23.0.0
+flake8>=6.0.0
+mypy>=1.5.0
+

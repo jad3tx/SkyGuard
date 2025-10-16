@@ -9,7 +9,7 @@ This guide covers the hardware requirements, recommendations, and setup for the 
 ### Minimum Requirements
 
 **Controller:**
-- Raspberry Pi 4 (8GB RAM) or equivalent single-board computer
+- Raspberry Pi 5 (8GB RAM) or equivalent single-board computer
 - 32GB+ microSD card (Class 10 or better)
 - 5V/3A power supply with USB-C connector
 
@@ -53,7 +53,6 @@ This guide covers the hardware requirements, recommendations, and setup for the 
 
 #### Alternative Options
 - **Orange Pi 5:** More powerful, similar price
-- **Jetson Nano:** Better for AI workloads, higher cost
 - **Intel NUC:** Desktop-class performance, higher power consumption
 
 ### 2. Camera Options
@@ -102,11 +101,11 @@ This guide covers the hardware requirements, recommendations, and setup for the 
 #### Requirements
 - **Voltage:** 5V DC
 - **Current:** 2A minimum
-- **Connector:** USB-C (Raspberry Pi 4/5)
+- **Connector:** USB-C (Raspberry Pi 5)
 - **Protection:** Overcurrent, overvoltage protection
 
 #### Recommended Options
-- Official Raspberry Pi 4 power supply
+- Official Raspberry Pi 5 power supply
 - Anker PowerPort III with USB-C
 - CanaKit 5V 3A power supply
 
@@ -218,8 +217,8 @@ This guide covers the hardware requirements, recommendations, and setup for the 
 ## Power Consumption
 
 ### Typical Power Usage
-- **Raspberry Pi 4 (idle):** 2-3W
-- **Raspberry Pi 4 (active):** 4-6W
+- **Raspberry Pi 5 (idle):** 2-3W
+- **Raspberry Pi 5 (active):** 4-6W
 - **USB webcam:** 1-2W
 - **LED indicators:** 0.1W each
 - **Piezo buzzer:** 0.5W
@@ -303,7 +302,7 @@ camera:
 ## Cost Breakdown
 
 ### Basic Setup (~$150)
-- Raspberry Pi 4 (4GB): $55
+- Raspberry Pi 5 (4GB): $55
 - 32GB microSD card: $10
 - Power supply: $10
 - USB webcam: $30
@@ -321,10 +320,11 @@ camera:
 - Cables and connectors: $15
 
 ### Premium Setup (~$400)
-- Jetson Orin Nano: $250
+- Raspberry Pi 5 (8GB): $80
 - 128GB microSD card: $25
 - HQ camera module: $50
 - Professional enclosure: $50
 - Professional mounting: $25
+- Additional accessories: $170
 
 
