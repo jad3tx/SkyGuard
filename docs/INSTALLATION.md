@@ -9,14 +9,14 @@ This guide will walk you through installing and setting up the SkyGuard raptor a
 ### Hardware Requirements
 
 **Minimum Requirements:**
-- Raspberry Pi 4 (4GB RAM) or equivalent single-board computer
+- Raspberry Pi 5 (4GB RAM) or equivalent single-board computer
 - USB webcam or Raspberry Pi camera module
 - 32GB+ microSD card (Class 10 or better)
 - 5V/3A power supply
 - Ethernet cable or WiFi connection
 
 **Recommended Setup:**
-- Raspberry Pi 4 (8GB RAM)
+- Raspberry Pi 5 (8GB RAM)
 - High-quality USB webcam (1080p, 30fps)
 - 64GB+ microSD card
 - Weatherproof enclosure

@@ -4,7 +4,7 @@ This guide covers the complete setup process for SkyGuard on a Raspberry Pi, inc
 
 ## Prerequisites
 
-- Raspberry Pi (3B+, 4B, or newer recommended)
+- Raspberry Pi 5 (4GB+ RAM recommended)
 - MicroSD card (32GB+ recommended)
 - Camera module or USB camera
 - Power supply (5V, 3A+ recommended)

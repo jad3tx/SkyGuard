@@ -1,0 +1,11 @@
+# SkyGuard Web Interface Dependencies
+# Web portal and API dependencies for SkyGuard
+
+# Core web framework
+flask>=2.3.0
+flask-cors>=4.0.0
+werkzeug>=2.3.0
+
+# Additional web utilities
+requests>=2.31.0
+python-dotenv>=1.0.0

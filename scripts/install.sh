@@ -220,6 +220,10 @@ install_python_packages() {
         pip install twilio pushbullet.py
     fi
     
+    # Install web interface dependencies
+    log_info "Installing web interface dependencies..."
+    pip install flask flask-cors werkzeug requests python-dotenv
+    
     # Install SkyGuard in development mode
     pip install -e .
     
@@ -311,6 +315,40 @@ else:
     log_success "Installation test completed"
 }
 
+# Start web interface
+start_web_interface() {
+    log_info "Starting SkyGuard web interface..."
+    
+    # Get the Pi's IP address
+    if [[ "$PLATFORM" == "raspberry_pi" ]]; then
+        pi_ip=$(hostname -I | awk '{print $1}')
+        echo ""
+        echo "🌐 SkyGuard Web Interface"
+        echo "=========================="
+        echo "Web interface will be available at:"
+        echo "   http://$pi_ip:8080"
+        echo ""
+        echo "Press Ctrl+C to stop the web interface"
+        echo ""
+    fi
+    
+    # Start the web portal in the background
+    source venv/bin/activate
+    python scripts/start_web_portal.py --host 0.0.0.0 --port 8080 &
+    web_pid=$!
+    
+    # Wait a moment for the server to start
+    sleep 3
+    
+    if kill -0 $web_pid 2>/dev/null; then
+        log_success "Web interface started successfully!"
+        echo "Web interface is running in the background (PID: $web_pid)"
+        echo "To stop it later, run: kill $web_pid"
+    else
+        log_error "Failed to start web interface"
+    fi
+}
+
 # Main installation function
 main() {
     log_info "Starting SkyGuard installation..."
@@ -334,12 +372,22 @@ main() {
     
     log_success "SkyGuard installation completed successfully!"
     
+    # Ask if user wants to start web interface
+    echo ""
+    read -p "Start web interface now? [Y/n]: " web_choice
+    web_choice=${web_choice:-Y}
+    
+    if [[ "$web_choice" =~ ^[Yy]$ ]]; then
+        start_web_interface
+    fi
+    
     echo ""
     echo "Next steps:"
     echo "1. Configure SkyGuard: skyguard-setup"
     echo "2. Test the system: skyguard --test-system"
     echo "3. Start SkyGuard: skyguard"
-    echo "4. Enable auto-start: sudo systemctl start skyguard.service"
+    echo "4. Start web interface: python scripts/start_web_portal.py"
+    echo "5. Enable auto-start: sudo systemctl start skyguard.service"
     echo ""
     
     if [[ "$PLATFORM" == "raspberry_pi" ]]; then
