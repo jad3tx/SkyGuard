@@ -77,6 +77,7 @@ install_dependencies() {
     log_info "Installing system dependencies..."
     
     if [[ "$PLATFORM" == "raspberry_pi" ]] || [[ "$PLATFORM" == "debian" ]]; then
+        # Install core packages first
         sudo apt install -y \
             python3 \
             python3-pip \
@@ -84,7 +85,6 @@ install_dependencies() {
             python3-dev \
             python3-opencv \
             libopencv-dev \
-            libatlas-base-dev \
             git \
             wget \
             curl \
@@ -105,6 +105,20 @@ install_dependencies() {
             libcanberra-gtk3-module \
             libcanberra-gtk-dev \
             libcanberra-gtk-module
+        
+        # Try to install BLAS/LAPACK libraries (libatlas-base-dev may not be available on newer systems)
+        log_info "Installing BLAS/LAPACK libraries..."
+        if sudo apt install -y libatlas-base-dev 2>/dev/null; then
+            log_success "libatlas-base-dev installed successfully"
+        else
+            log_warning "libatlas-base-dev not available, trying alternative..."
+            if sudo apt install -y libopenblas-dev 2>/dev/null; then
+                log_success "libopenblas-dev installed as alternative"
+            else
+                log_warning "BLAS/LAPACK libraries not available, continuing without them"
+                log_warning "Some scientific computing features may be limited"
+            fi
+        fi
     elif [[ "$PLATFORM" == "ubuntu" ]]; then
         sudo apt install -y \
             python3 \

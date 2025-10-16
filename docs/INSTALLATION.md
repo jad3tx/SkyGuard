@@ -28,6 +28,20 @@ This guide will walk you through installing and setting up the SkyGuard raptor a
 - Python 3.8 or higher
 - Internet connection for initial setup
 
+## Quick Start for Raspberry Pi
+
+**For detailed Raspberry Pi setup including manual steps, see: [Raspberry Pi Setup Guide](RASPBERRY_PI_SETUP.md)**
+
+The Raspberry Pi setup requires some manual steps before running the automated installer:
+
+1. **Image SD card** with Raspberry Pi OS Lite (64-bit)
+2. **Install Git and GitHub CLI** on the Pi
+3. **Configure Git** with your username/email
+4. **Setup SSH keys** for GitHub access
+5. **Clone repository** and run installer
+
+The automated installer now handles package availability issues gracefully, but you may need to complete the manual setup steps first.
+
 ## Installation Methods
 
 ### Method 1: Automated Installation (Recommended)
