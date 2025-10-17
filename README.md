@@ -56,7 +56,7 @@ SkyGuard provides a low-cost, AI-driven alert system that:
 
 ## 🛠️ Installation
 
-### Quick Start
+### Quick Start (Automated Installation)
 
 1. **Clone the repository**
    ```bash
@@ -64,28 +64,42 @@ SkyGuard provides a low-cost, AI-driven alert system that:
    cd skyguard
    ```
 
-2. **Install dependencies**
+2. **Run the automated installer**
    ```bash
-   pip install -r requirements.txt
+   chmod +x scripts/install.sh
+   ./scripts/install.sh
    ```
 
 3. **Configure the system**
    ```bash
-   python -m skyguard.setup.configure
+   ./skyguard-setup
    ```
 
-4. **Run SkyGuard**
+4. **Start SkyGuard**
    ```bash
-   python -m skyguard.main
+   ./skyguard
    ```
 
-### Detailed Installation
+### What the Installer Does
 
-See [INSTALLATION.md](docs/INSTALLATION.md) for detailed setup instructions including:
+The automated installer handles:
+- ✅ **System dependencies** (OpenCV, Python packages, etc.)
+- ✅ **Web interface setup** (Flask, web portal)
+- ✅ **Service configuration** (systemd services for auto-start)
+- ✅ **Cron jobs** (log cleanup, health monitoring)
+- ✅ **Command wrappers** (skyguard-setup, skyguard commands)
+
+### Manual Installation
+
+If you prefer manual installation, see [INSTALLATION.md](docs/INSTALLATION.md) for detailed setup instructions including:
 - Hardware assembly
 - Software installation
 - Configuration options
 - Troubleshooting
+
+### Raspberry Pi Setup
+
+For detailed Raspberry Pi setup including manual steps, see [RASPBERRY_PI_SETUP.md](docs/RASPBERRY_PI_SETUP.md)
 
 ## ⚙️ Configuration
 
@@ -103,27 +117,55 @@ See [CONFIGURATION.md](docs/CONFIGURATION.md) for detailed configuration options
 
 ### Basic Operation
 
-1. **Start the system**
+1. **Configure the system**
    ```bash
-   python -m skyguard.main
+   ./skyguard-setup
    ```
 
-2. **Access the web portal**
+2. **Start the detection system**
+   ```bash
+   ./skyguard
+   ```
+
+3. **Access the web portal**
    ```bash
    python scripts/start_web_portal.py
-   # Open http://localhost:8080 in your browser
+   # Open http://<PI_IP>:8080 in your browser
    ```
 
-3. **Monitor detections**
+4. **Monitor detections**
    - View real-time detection feed
    - Check alert notifications
    - Review detection logs
    - Use the web interface for easy management
 
-4. **Test alerts**
-   ```bash
-   python -m skyguard.main --test-alerts
-   ```
+### Service Management
+
+The installer sets up systemd services for automatic startup:
+
+```bash
+# Start services
+sudo systemctl start skyguard.service
+sudo systemctl start skyguard-web.service
+
+# Check status
+sudo systemctl status skyguard.service
+
+# Stop services
+sudo systemctl stop skyguard.service
+sudo systemctl stop skyguard-web.service
+
+# Enable/disable auto-start
+sudo systemctl enable skyguard.service
+sudo systemctl disable skyguard.service
+```
+
+### Cleanup (if needed)
+
+```bash
+# Remove all services for testing
+./scripts/cleanup_skyguard.sh
+```
 
 ### Web Portal Features
 
