@@ -77,7 +77,7 @@ SkyGuard provides a low-cost, AI-driven alert system that:
 
 4. **Start SkyGuard**
    ```bash
-   ./skyguard
+   ./skyguard-main
    ```
 
 ### What the Installer Does
@@ -124,7 +124,7 @@ See [CONFIGURATION.md](docs/CONFIGURATION.md) for detailed configuration options
 
 2. **Start the detection system**
    ```bash
-   ./skyguard
+   ./skyguard-main
    ```
 
 3. **Access the web portal**
