@@ -49,7 +49,7 @@ For better raptor-specific detection, you can train a model on the [AirBirds dat
 pip install datasets
 
 # Download dataset (large file - 16.9GB)
-python scripts/download_airbirds_hf.py
+python scripts/download_airbirds_universal.py
 ```
 
 #### **Train Custom Model:**

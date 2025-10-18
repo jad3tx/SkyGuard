@@ -58,7 +58,7 @@ def train_airbirds_model(
     # Check if dataset exists
     if not Path(data_path).exists():
         logger.error(f"❌ Dataset not found: {data_path}")
-        logger.info("Please run: python scripts/download_airbirds_hf.py")
+        logger.info("Please run: python scripts/download_airbirds_universal.py")
         return False
     
     # Create output directory

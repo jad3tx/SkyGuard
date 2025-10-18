@@ -34,7 +34,7 @@ def create_pi5_deployment():
         "setup.py",
         "README.md",
         "scripts/install.sh",
-        "scripts/setup_airbirds_fixed.py",
+        "scripts/download_airbirds_universal.py",
         "scripts/setup_yolov8n.py",
     ]
     

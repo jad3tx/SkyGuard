@@ -35,6 +35,9 @@ psutil>=5.9.0
 flask>=2.3.0
 flask-cors>=4.0.0
 
+# Dataset Management
+datasets>=3.1.0  # For downloading and managing training datasets
+
 # Development and Testing
 pytest>=7.4.0
 
