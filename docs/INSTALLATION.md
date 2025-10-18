@@ -48,7 +48,7 @@ The automated installer now handles package availability issues gracefully, but 
 
 1. **Download the installation script**
    ```bash
-   wget https://raw.githubusercontent.com/johndaughtridge/skyguard/main/scripts/install.sh
+   wget https://raw.githubusercontent.com/jad3tx/SkyGuard/main/scripts/install.sh
    chmod +x install.sh
    ```
 
@@ -89,7 +89,7 @@ The automated installer now handles package availability issues gracefully, but 
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/johndaughtridge/skyguard.git
+   git clone https://github.com/jad3tx/SkyGuard.git
    cd skyguard
    ```
 
@@ -316,7 +316,7 @@ sudo dphys-swapfile swapon
 ls -la models/
 
 # Download default model
-wget https://github.com/johndaughtridge/skyguard/releases/download/v0.1.0/raptor_detector.pt -O models/raptor_detector.pt
+wget https://github.com/jad3tx/SkyGuard/releases/download/v0.1.0/raptor_detector.pt -O models/raptor_detector.pt
 ```
 
 ### Getting Help

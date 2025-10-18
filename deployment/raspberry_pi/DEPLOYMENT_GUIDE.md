@@ -72,7 +72,7 @@ cp -r deployment/raspberry_pi/* /media/usb/skyguard/
 **Option C: Git Clone**
 ```bash
 # On Raspberry Pi
-git clone https://github.com/johndaughtridge/skyguard.git
+git clone https://github.com/jad3tx/SkyGuard.git
 cd skyguard
 ```
 

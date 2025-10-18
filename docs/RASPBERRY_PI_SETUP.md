@@ -129,7 +129,7 @@ gh auth status
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/SkyGuard.git
+git clone https://github.com/jad3tx/SkyGuard.git
 cd SkyGuard
 
 # Make install script executable

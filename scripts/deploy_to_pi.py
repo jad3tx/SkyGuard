@@ -330,7 +330,7 @@ def create_deployment_instructions(deploy_dir):
 
 1. **Clone repository on Pi:**
    ```bash
-   git clone https://github.com/johndaughtridge/skyguard.git
+   git clone https://github.com/jad3tx/SkyGuard.git
    cd skyguard
    ```
 

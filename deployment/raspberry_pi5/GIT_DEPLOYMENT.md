@@ -9,7 +9,7 @@
 ssh pi@<PI_IP_ADDRESS>
 
 # Clone the repository
-git clone https://github.com/johndaughtridge/skyguard.git
+git clone https://github.com/jad3tx/SkyGuard.git
 cd skyguard
 ```
 
@@ -335,7 +335,7 @@ sudo nano /etc/systemd/system/skyguard.service
 
 ## 🎯 **Next Steps**
 
-1. **Clone repository**: `git clone https://github.com/johndaughtridge/skyguard.git`
+1. **Clone repository**: `git clone https://github.com/jad3tx/SkyGuard.git`
 2. **Install dependencies**: `./install_pi5.sh`
 3. **Configure system**: `skyguard-setup`
 4. **Test system**: `skyguard --test-system`

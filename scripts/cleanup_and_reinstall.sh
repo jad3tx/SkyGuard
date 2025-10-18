@@ -6,7 +6,7 @@ set -e
 
 # Configuration
 SKYGUARD_DIR="/home/pi/skyguard"
-REPO_URL="https://github.com/johndaughtridge/skyguard.git"
+REPO_URL="https://github.com/jad3tx/SkyGuard.git"
 LOG_FILE="/tmp/skyguard_cleanup_reinstall.log"
 
 # Colors for output
