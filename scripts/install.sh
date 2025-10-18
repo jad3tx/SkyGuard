@@ -239,8 +239,8 @@ source venv/bin/activate
 python -m skyguard.setup.configure "$@"
 EOF
     
-    # Create skyguard wrapper
-    cat > skyguard << 'EOF'
+    # Create skyguard-main wrapper (avoiding conflict with skyguard/ directory)
+    cat > skyguard-main << 'EOF'
 #!/bin/bash
 # SkyGuard Main Wrapper
 cd "$(dirname "$0")/.."
@@ -249,7 +249,7 @@ python -m skyguard.main "$@"
 EOF
     
     # Make wrappers executable
-    chmod +x skyguard-setup skyguard
+    chmod +x skyguard-setup skyguard-main
     
     # Add to PATH for current session
     export PATH="$(pwd):$PATH"
@@ -464,8 +464,8 @@ main() {
     echo "To configure and use SkyGuard:"
     echo ""
     echo "  ./skyguard-setup                 # Configure the system"
-    echo "  ./skyguard --test-system         # Test everything works"
-    echo "  ./skyguard                       # Start detection"
+    echo "  ./skyguard-main --test-system    # Test everything works"
+    echo "  ./skyguard-main                  # Start detection"
     echo ""
     echo "Service management:"
     echo "  sudo systemctl start skyguard.service     # Start detection"
