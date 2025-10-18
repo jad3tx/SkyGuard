@@ -36,7 +36,7 @@ def create_deployment_package():
         "setup.py",
         "README.md",
         "scripts/install.sh",
-        "scripts/setup_airbirds_fixed.py",
+        "scripts/download_airbirds_universal.py",
         "scripts/setup_yolov8n.py",
     ]
     

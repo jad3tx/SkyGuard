@@ -26,7 +26,7 @@ def train_model():
         # Check if dataset exists
         dataset_yaml = Path("data/airbirds/dataset.yaml")
         if not dataset_yaml.exists():
-            print("❌ Dataset not found. Please run setup_airbirds_fixed.py first.")
+            print("❌ Dataset not found. Please run download_airbirds_universal.py first.")
             return False
         
         # Load pre-trained YOLO model
@@ -161,7 +161,7 @@ def main():
     # Check if dataset exists
     dataset_yaml = Path("data/airbirds/dataset.yaml")
     if not dataset_yaml.exists():
-        print("❌ Dataset not found. Please run setup_airbirds_fixed.py first.")
+        print("❌ Dataset not found. Please run download_airbirds_universal.py first.")
         return False
     
     # Ask user if they want to train
