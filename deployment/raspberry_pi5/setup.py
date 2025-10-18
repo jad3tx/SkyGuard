@@ -25,7 +25,7 @@ setup(
     description="Open-source AI-powered raptor alert system for small poultry farms",
     long_description=read_readme(),
     long_description_content_type="text/markdown",
-    url="https://github.com/johndaughtridge/skyguard",
+    url="https://github.com/jad3tx/SkyGuard",
     packages=find_packages(),
     classifiers=[
         "Development Status :: 3 - Alpha",

@@ -21,7 +21,7 @@ This directory contains the AI models used by SkyGuard for raptor detection.
 ### Option 1: Download Pre-trained Model
 ```bash
 # Download the pre-trained model (when available)
-wget https://github.com/johndaughtridge/skyguard/releases/download/v0.1.0/raptor_detector.pt -O models/raptor_detector.pt
+wget https://github.com/jad3tx/SkyGuard/releases/download/v0.1.0/raptor_detector.pt -O models/raptor_detector.pt
 ```
 
 ### Option 2: Train Your Own Model

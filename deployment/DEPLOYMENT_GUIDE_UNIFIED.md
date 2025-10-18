@@ -40,7 +40,7 @@ This guide covers the unified deployment approach for SkyGuard on Raspberry Pi, 
 ### 1. Clone Repository
 
 ```bash
-git clone https://github.com/johndaughtridge/skyguard.git
+git clone https://github.com/jad3tx/SkyGuard.git
 cd skyguard
 ```
 

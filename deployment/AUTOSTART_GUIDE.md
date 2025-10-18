@@ -17,7 +17,7 @@ This guide covers setting up SkyGuard to automatically start on Raspberry Pi boo
 
 ```bash
 # Clone the repository
-git clone https://github.com/johndaughtridge/skyguard.git
+git clone https://github.com/jad3tx/SkyGuard.git
 cd skyguard
 
 # Run the unified installer

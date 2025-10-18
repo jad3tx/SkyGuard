@@ -61,7 +61,7 @@ This documentation provides everything you need to understand, install, configur
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/johndaughtridge/skyguard.git
+   git clone https://github.com/jad3tx/SkyGuard.git
    cd skyguard
    ```
 
@@ -211,8 +211,8 @@ We welcome contributions! Please see [CONTRIBUTING.md](../CONTRIBUTING.md) for g
 
 ## 🤝 Support
 
-- **Issues**: [GitHub Issues](https://github.com/johndaughtridge/skyguard/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/johndaughtridge/skyguard/discussions)
+- **Issues**: [GitHub Issues](https://github.com/jad3tx/SkyGuard/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/jad3tx/SkyGuard/discussions)
 - **Email**: johnd@tamu.edu
 
 ## 📄 License
