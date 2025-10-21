@@ -42,10 +42,10 @@ SkyGuard provides a low-cost, AI-driven alert system that:
 ## 📋 System Requirements
 
 ### Hardware
-- **Camera**: USB webcam or Raspberry Pi camera module
+- **Camera**: USB webcam
 - **Controller**: Raspberry Pi 5 (recommended)
 - **Storage**: 32GB+ microSD card
-- **Power**: 5V/3A power supply
+- **Power**: 5V/3A power supply (5V/5A
 
 
 ### Software
@@ -187,7 +187,7 @@ sudo systemctl disable skyguard.service
 
 SkyGuard is designed to achieve:
 - **>80% detection accuracy** for common raptor species
-- **<1 second response time** from detection to alert
+- **<2 second response time** from detection to alert
 - **24/7 operation** with minimal maintenance
 - **Low power consumption** for continuous operation
 
@@ -246,7 +246,6 @@ We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guid
 - [x] Event logging
 - [x] Configuration management
 - [x] Web interface
-- [x] REST API
 - [x] Comprehensive testing suite
 
 ### Phase 2 (Q1 2026)
@@ -254,12 +253,6 @@ We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guid
 - [ ] Mobile app
 - [ ] Multi-camera support
 - [ ] Advanced analytics
-
-### Phase 3 (Q2 2026)
-- [ ] Automated deterrents
-- [ ] Weather integration
-- [ ] Machine learning improvements
-- [ ] Commercial deployment tools
 
 ## 📚 Documentation
 
