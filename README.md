@@ -12,6 +12,7 @@ SkyGuard is an open-source artificial intelligence solution that alerts small fl
 
 ### The Problem
 
+- 11M Homes in the US keep chickens for food and companionship
 - 49% of surveyed chicken owners cite hawks and other airborne predators as their #1 concern
 - Rising egg prices and supply concerns drive more families to backyard chicken farming
 - Existing deterrent systems are costly and sized for airports or industrial farms
