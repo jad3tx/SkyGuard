@@ -1,3 +1,13 @@
+# ⚠️ DEPRECATED - This guide has been consolidated
+
+**This guide has been consolidated into the main installation guide.**
+
+**👉 Please use the [Raspberry Pi 5 Setup Guide](../docs/RASPBERRY_PI_SETUP.md) instead.**
+
+This file is kept for reference only and may contain outdated information.
+
+---
+
 # SkyGuard Unified Deployment Guide
 
 ## 🎯 Overview

@@ -1,3 +1,13 @@
+# ⚠️ DEPRECATED - This guide is for older Raspberry Pi models
+
+**SkyGuard is now optimized for Raspberry Pi 5 only.**
+
+**👉 For Raspberry Pi 5 installation, please use the [Raspberry Pi 5 Setup Guide](../../docs/RASPBERRY_PI_SETUP.md).**
+
+This file is kept for reference only for older Pi models and may contain outdated information.
+
+---
+
 # SkyGuard Raspberry Pi Deployment Guide
 
 ## 🍓 **Quick Start**

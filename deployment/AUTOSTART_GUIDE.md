@@ -1,3 +1,15 @@
+# ⚠️ DEPRECATED - This guide has been consolidated
+
+**This guide has been consolidated into the main installation guide.**
+
+**👉 Please use the [Raspberry Pi 5 Setup Guide](../docs/RASPBERRY_PI_SETUP.md) instead.**
+
+The auto-startup information is now included in the main guide's "Step 7: Enable Auto-Start" section.
+
+This file is kept for reference only and may contain outdated information.
+
+---
+
 # SkyGuard Auto-Startup Guide
 
 ## 🚀 Overview

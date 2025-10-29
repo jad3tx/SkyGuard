@@ -57,50 +57,34 @@ SkyGuard provides a low-cost, AI-driven alert system that:
 
 ## 🛠️ Installation
 
-### Quick Start (Automated Installation)
+**SkyGuard is optimized for Raspberry Pi 5.**
+
+### Quick Start
 
 1. **Clone the repository**
    ```bash
    git clone https://github.com/jad3tx/SkyGuard.git
-   cd skyguard
+   cd SkyGuard
    ```
 
-2. **Run the automated installer**
-   ```bash
-   chmod +x scripts/install.sh
-   ./scripts/install.sh
-   ```
+2. **Follow the installation guide**
+   See **[Raspberry Pi 5 Setup Guide](docs/RASPBERRY_PI_SETUP.md)** for complete step-by-step instructions:
+   - OS imaging and initial setup
+   - System configuration
+   - SkyGuard installation
+   - Auto-startup configuration
+   - Troubleshooting
 
-3. **Configure the system**
-   ```bash
-   ./skyguard-setup
-   ```
+### Installation Guide
 
-4. **Start SkyGuard**
-   ```bash
-   ./skyguard-main
-   ```
+The [Raspberry Pi 5 Setup Guide](docs/RASPBERRY_PI_SETUP.md) covers:
+- ✅ Complete setup from OS imaging to deployment
+- ✅ Pi 5 optimizations and performance tuning
+- ✅ Auto-startup with systemd services
+- ✅ Web portal configuration
+- ✅ Comprehensive troubleshooting
 
-### What the Installer Does
-
-The automated installer handles:
-- ✅ **System dependencies** (OpenCV, Python packages, etc.)
-- ✅ **Web interface setup** (Flask, web portal)
-- ✅ **Service configuration** (systemd services for auto-start)
-- ✅ **Cron jobs** (log cleanup, health monitoring)
-- ✅ **Command wrappers** (skyguard-setup, skyguard commands)
-
-### Manual Installation
-
-If you prefer manual installation, see [INSTALLATION.md](docs/INSTALLATION.md) for detailed setup instructions including:
-- Hardware assembly
-- Software installation
-- Configuration options
-- Troubleshooting
-
-### Raspberry Pi Setup
-
-For detailed Raspberry Pi setup including manual steps, see [RASPBERRY_PI_SETUP.md](docs/RASPBERRY_PI_SETUP.md)
+For general installation overview, see [INSTALLATION.md](docs/INSTALLATION.md)
 
 ## ⚙️ Configuration
 
@@ -257,11 +241,10 @@ We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guid
 
 ## 📚 Documentation
 
-- [Installation Guide](docs/INSTALLATION.md)
-- [Configuration Reference](docs/CONFIGURATION.md)
-- [Model Training](docs/TRAINING.md)
+- **[Raspberry Pi 5 Setup Guide](docs/RASPBERRY_PI_SETUP.md)** - Complete installation guide (recommended)
+- [Installation Overview](docs/INSTALLATION.md)
 - [API Documentation](docs/API.md)
-- [Troubleshooting](docs/TROUBLESHOOTING.md)
+- [Web Portal Guide](docs/WEB_PORTAL.md)
 - [Hardware Guide](docs/HARDWARE.md)
 
 ## 🤝 Support

@@ -1,11 +1,21 @@
 #!/bin/bash
 # SkyGuard Unified Pi 5 Installation Script
 # Uses main codebase with systemd services for auto-startup
+#
+# NOTE: This is an alternative installer. The recommended approach is to use
+# ./scripts/install.sh from the SkyGuard root directory, which automatically
+# detects Raspberry Pi 5 and applies all optimizations.
+#
+# This unified installer provides more control and is useful for advanced
+# deployments or when you need to customize the installation process.
 
 set -e
 
 echo "🛡️ SkyGuard Unified Pi 5 Installation"
 echo "======================================"
+echo ""
+echo "ℹ️  NOTE: This is an alternative installer."
+echo "    For standard installation, use: ./scripts/install.sh"
 echo ""
 
 # Configuration
