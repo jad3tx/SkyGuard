@@ -68,7 +68,7 @@ SkyGuard provides a low-cost, AI-driven alert system that:
    ```
 
 2. **Follow the installation guide**
-   See **[Raspberry Pi 5 Setup Guide](docs/RASPBERRY_PI_SETUP.md)** for complete step-by-step instructions:
+   See **[Installation Guide](docs/INSTALLATION.md)** for complete step-by-step instructions:
    - OS imaging and initial setup
    - System configuration
    - SkyGuard installation
@@ -77,14 +77,12 @@ SkyGuard provides a low-cost, AI-driven alert system that:
 
 ### Installation Guide
 
-The [Raspberry Pi 5 Setup Guide](docs/RASPBERRY_PI_SETUP.md) covers:
+The [Installation Guide](docs/INSTALLATION.md) covers:
 - ✅ Complete setup from OS imaging to deployment
 - ✅ Pi 5 optimizations and performance tuning
 - ✅ Auto-startup with systemd services
 - ✅ Web portal configuration
 - ✅ Comprehensive troubleshooting
-
-For general installation overview, see [INSTALLATION.md](docs/INSTALLATION.md)
 
 ## ⚙️ Configuration
 
@@ -241,8 +239,7 @@ We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guid
 
 ## 📚 Documentation
 
-- **[Raspberry Pi 5 Setup Guide](docs/RASPBERRY_PI_SETUP.md)** - Complete installation guide (recommended)
-- [Installation Overview](docs/INSTALLATION.md)
+- **[Installation Guide](docs/INSTALLATION.md)** - Complete installation guide
 - [API Documentation](docs/API.md)
 - [Web Portal Guide](docs/WEB_PORTAL.md)
 - [Hardware Guide](docs/HARDWARE.md)
