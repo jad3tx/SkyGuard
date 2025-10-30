@@ -1,7 +1,7 @@
 task: detect
 mode: train
 model: yolov8n.pt
-data: C:\Users\johnd\source\SkyGuard\data\airbirds\dataset.yaml
+data: C:\Users\wzxv92\Documents\Code\SkyGuard\SkyGuard\data\airbirds\dataset.yaml
 epochs: 50
 time: null
 patience: 10
@@ -12,7 +12,7 @@ save_period: 10
 cache: false
 device: cpu
 workers: 2
-project: models/training
+project: C:\Users\wzxv92\Documents\Code\SkyGuard\SkyGuard\models\training
 name: airbirds_raptor_detector
 exist_ok: true
 pretrained: true
@@ -103,4 +103,4 @@ auto_augment: randaugment
 erasing: 0.4
 cfg: null
 tracker: botsort.yaml
-save_dir: C:\Users\johnd\source\SkyGuard\models\training\airbirds_raptor_detector
+save_dir: C:\Users\wzxv92\Documents\Code\SkyGuard\SkyGuard\models\training\airbirds_raptor_detector
