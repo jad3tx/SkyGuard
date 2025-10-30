@@ -3,8 +3,8 @@ ai:
   - bird
   confidence_threshold: 0.5
   input_size:
-  - 640
-  - 640
+  - 1280
+  - 720
   model_path: models/airbirds_raptor_detector.pt
   model_type: yolo
   nms_threshold: 0.4
