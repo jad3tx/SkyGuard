@@ -6,10 +6,10 @@ This script trains a custom YOLO model specifically for bird detection
 using the AirBirds dataset.
 """
 
-import os
 import sys
 from pathlib import Path
 import yaml
+import argparse
 
 # Add the project root to the Python path
 project_root = Path(__file__).parent.parent
@@ -23,8 +23,9 @@ def train_model():
     try:
         from ultralytics import YOLO
         
-        # Check if dataset exists
-        dataset_yaml = Path("data/airbirds/dataset.yaml")
+        # Resolve dataset path relative to repository root
+        repo_root = Path(__file__).parent.parent
+        dataset_yaml = (repo_root / "data" / "airbirds" / "dataset.yaml").resolve()
         if not dataset_yaml.exists():
             print("❌ Dataset not found. Please run download_airbirds_universal.py first.")
             return False
@@ -35,12 +36,12 @@ def train_model():
         
         # Training parameters
         training_params = {
-            'data': str(dataset_yaml.absolute()),
+            'data': str(dataset_yaml),
             'epochs': 50,  # Reduced for testing
             'imgsz': 640,
             'batch': 8,    # Reduced batch size for memory
             'name': 'airbirds_raptor_detector',
-            'project': 'models/training',
+            'project': str((repo_root / 'models' / 'training').resolve()),
             'exist_ok': True,
             'patience': 10,  # Early stopping
             'save_period': 10,  # Save checkpoint every 10 epochs
@@ -55,16 +56,23 @@ def train_model():
         
         # Train the model
         print("\n🚀 Starting training...")
-        results = model.train(**training_params)
+        _ = model.train(**training_params)
         
         print("✅ Training completed!")
         
         # Get the best model path
-        best_model_path = Path("models/training/airbirds_raptor_detector/weights/best.pt")
+        best_model_path = (
+            repo_root
+            / "models"
+            / "training"
+            / "airbirds_raptor_detector"
+            / "weights"
+            / "best.pt"
+        )
         if best_model_path.exists():
             # Copy to main models directory
             import shutil
-            target_path = Path("models/airbirds_raptor_detector.pt")
+            target_path = (repo_root / "models" / "airbirds_raptor_detector.pt")
             shutil.copy2(best_model_path, target_path)
             print(f"✅ Best model saved to {target_path}")
             
@@ -85,7 +93,8 @@ def update_config(model_path):
     print("\n⚙️  Updating SkyGuard configuration...")
     
     try:
-        config_path = Path("config/skyguard.yaml")
+        repo_root = Path(__file__).parent.parent
+        config_path = repo_root / "config" / "skyguard.yaml"
         if config_path.exists():
             with open(config_path, 'r') as f:
                 config = yaml.safe_load(f)
@@ -101,7 +110,10 @@ def update_config(model_path):
             print("✅ SkyGuard config updated!")
             print(f"   - Model path: {model_path}")
             print(f"   - Classes: {config['ai']['classes']}")
-            print(f"   - Confidence threshold: {config['ai']['confidence_threshold']}")
+            print(
+                f"   - Confidence threshold: "
+                f"{config['ai']['confidence_threshold']}"
+            )
         
     except Exception as e:
         print(f"❌ Failed to update config: {e}")
@@ -114,7 +126,8 @@ def test_model():
     try:
         from ultralytics import YOLO
         
-        model_path = Path("models/airbirds_raptor_detector.pt")
+        repo_root = Path(__file__).parent.parent
+        model_path = repo_root / "models" / "airbirds_raptor_detector.pt"
         if not model_path.exists():
             print("❌ Trained model not found.")
             return False
@@ -123,7 +136,7 @@ def test_model():
         model = YOLO(str(model_path))
         
         # Test on a sample image
-        sample_dir = Path("data/airbirds/samples")
+        sample_dir = repo_root / "data" / "airbirds" / "samples"
         if sample_dir.exists():
             sample_images = list(sample_dir.glob("*.jpg"))
             if sample_images:
@@ -155,37 +168,52 @@ def test_model():
 
 def main():
     """Main function."""
-    print("🦅 AirBirds Model Training Script")
+    parser = argparse.ArgumentParser(
+        description="Train YOLO on AirBirds dataset"
+    )
+    parser.add_argument(
+        "--yes",
+        "-y",
+        action="store_true",
+        help="Run non-interactively and start training",
+    )
+    args = parser.parse_args()
+
+    print("AirBirds Model Training Script")
     print("=" * 50)
-    
-    # Check if dataset exists
-    dataset_yaml = Path("data/airbirds/dataset.yaml")
+
+    # Check if dataset exists relative to repo root
+    repo_root = Path(__file__).parent.parent
+    dataset_yaml = repo_root / "data" / "airbirds" / "dataset.yaml"
     if not dataset_yaml.exists():
         print("❌ Dataset not found. Please run download_airbirds_universal.py first.")
         return False
-    
-    # Ask user if they want to train
-    print("This will train a YOLO model on the AirBirds dataset.")
-    print("Training may take 30-60 minutes depending on your hardware.")
-    response = input("Do you want to proceed? (y/N): ").strip().lower()
-    
-    if response not in ['y', 'yes']:
-        print("Training cancelled.")
-        return True
-    
+
+    # Confirm unless --yes
+    if not args.yes:
+        print("This will train a YOLO model on the AirBirds dataset.")
+        print("Training may take 30-60 minutes depending on your hardware.")
+        try:
+            response = input("Do you want to proceed? (y/N): ").strip().lower()
+        except EOFError:
+            response = "n"
+        if response not in ["y", "yes"]:
+            print("Training cancelled.")
+            return True
+
     # Train the model
     success = train_model()
-    
+
     if success:
         # Test the model
         test_model()
-        
-        print("\n🎉 Training complete!")
+
+        print("\nTraining complete!")
         print("\nNext steps:")
-        print("1. Test SkyGuard with the new model: python -m skyguard.main")
-        print("2. Adjust confidence threshold in config/skyguard.yaml if needed")
-        print("3. The model is now ready for raptor detection!")
-    
+    print("1. Test SkyGuard with the new model: python -m skyguard.main")
+    print("2. Adjust confidence threshold in config/skyguard.yaml if needed")
+    print("3. The model is now ready for raptor detection!")
+
     return success
 
 
