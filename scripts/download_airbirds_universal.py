@@ -8,7 +8,7 @@ import os
 import sys
 import subprocess
 from pathlib import Path
-from typing import List, Tuple
+import importlib
 
 # Add the project root to the Python path
 project_root = Path(__file__).parent.parent
@@ -18,7 +18,7 @@ sys.path.insert(0, str(project_root))
 def check_datasets_library() -> bool:
     """Check if datasets library is available."""
     try:
-        import datasets
+        importlib.import_module("datasets")
         print("✅ datasets library available")
         return True
     except ImportError:
@@ -29,15 +29,15 @@ def check_datasets_library() -> bool:
 def install_datasets_library() -> bool:
     """Install the datasets library."""
     print("📦 Installing datasets library...")
-    
+
     try:
-        result = subprocess.run([
+        subprocess.run([
             sys.executable, "-m", "pip", "install", "datasets>=3.1.0"
         ], capture_output=True, text=True, check=True)
-        
+
         print("✅ datasets library installed")
         return True
-        
+
     except subprocess.CalledProcessError as e:
         print(f"❌ Failed to install datasets library: {e}")
         return False
@@ -46,21 +46,29 @@ def install_datasets_library() -> bool:
 def run_download_method(method_name: str, script_path: str) -> bool:
     """Run a specific download method."""
     print(f"\n🔄 Trying {method_name}...")
-    
-    if not os.path.exists(script_path):
-        print(f"❌ Script not found: {script_path}")
+
+    # Resolve the script path relative to this file's directory to avoid
+    # failures when the current working directory is different.
+    scripts_dir = Path(__file__).parent
+    full_script_path = scripts_dir / script_path
+
+    if not os.path.exists(str(full_script_path)):
+        print(f"❌ Script not found: {full_script_path}")
         return False
-    
+
     try:
+        # Ensure child process uses UTF-8 for stdio to avoid Windows cp1252 emoji errors
+        child_env = os.environ.copy()
+        child_env.setdefault("PYTHONIOENCODING", "utf-8")
         result = subprocess.run([
-            sys.executable, script_path
-        ], capture_output=True, text=True, check=True)
-        
+            sys.executable, str(full_script_path)
+        ], capture_output=True, text=True, check=True, env=child_env)
+
         print(f"✅ {method_name} completed successfully")
         if result.stdout:
             print(f"   Output: {result.stdout}")
         return True
-        
+
     except subprocess.CalledProcessError as e:
         print(f"❌ {method_name} failed: {e}")
         if e.stdout:
@@ -96,8 +104,8 @@ def main():
     
     # Define download methods in order of preference
     download_methods = [
-        ("Alternative method", "scripts/download_airbirds_alternative.py"),
-        ("Install datasets and download", "scripts/install_datasets_and_download.py")
+        ("Alternative method", "download_airbirds_alternative.py"),
+        ("Install datasets and download", "install_datasets_and_download.py")
     ]
     
     # Check if datasets library is available
@@ -106,7 +114,10 @@ def main():
     if not has_datasets:
         print("\n📦 Installing datasets library...")
         if not install_datasets_library():
-            print("⚠️ Could not install datasets library, will try alternative methods")
+            print(
+                "⚠️ Could not install datasets library, "
+                "will try alternative methods"
+            )
     
     # Try each download method
     for method_name, script_path in download_methods:
@@ -119,7 +130,10 @@ def main():
     if create_fallback_dataset():
         print("✅ Fallback dataset created successfully")
         print("\n📋 Note: This is a sample dataset for testing.")
-        print("   For the full AirBirds dataset, ensure the datasets library is installed:")
+        print(
+            "   For the full AirBirds dataset, ensure the datasets "
+            "library is installed:"
+        )
         print("   pip install datasets>=3.1.0")
         return True
     

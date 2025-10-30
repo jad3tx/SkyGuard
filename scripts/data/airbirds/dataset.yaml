@@ -1,0 +1,6 @@
+names:
+- bird
+nc: 1
+path: C:\Users\wzxv92\Documents\Code\SkyGuard\SkyGuard\scripts\data\airbirds
+train: images/train
+val: images/val

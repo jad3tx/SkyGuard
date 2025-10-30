@@ -100,3 +100,4 @@ echo "   Or start services manually:"
 echo "     sudo systemctl start skyguard.service"
 echo "     sudo systemctl start skyguard-web.service"
 echo ""
+
