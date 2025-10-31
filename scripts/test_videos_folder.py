@@ -66,6 +66,8 @@ def process_video(
     video_path: Path,
     output_dir: Path,
     save_annotated: bool,
+    save_json: bool = False,
+    save_crops: bool = False,
 ) -> dict:
     cap = cv2.VideoCapture(str(video_path))
     if not cap.isOpened():
@@ -82,6 +84,15 @@ def process_video(
         fourcc = cv2.VideoWriter_fourcc(*"mp4v")
         writer = cv2.VideoWriter(str(out_path), fourcc, fps, (width, height))
 
+    # Detection outputs
+    det_root = output_dir / "detections" / video_path.stem
+    crops_root = output_dir / "crops" / video_path.stem
+    detections_log = []
+    if save_json:
+        det_root.mkdir(parents=True, exist_ok=True)
+    if save_crops:
+        crops_root.mkdir(parents=True, exist_ok=True)
+
     stats = {
         "video": str(video_path),
         "frames": 0,
@@ -92,11 +103,13 @@ def process_video(
 
     start = time.time()
     try:
+        frame_idx = 0
         while True:
             ok, frame = cap.read()
             if not ok:
                 break
             stats["frames"] += 1
+            frame_idx += 1
 
             dets = detector.detect(frame)
             high_conf_dets = [
@@ -110,6 +123,30 @@ def process_video(
                     max(float(d.get("confidence", 0.0)) for d in high_conf_dets),
                 )
 
+            # Save detailed detection records and optional crops
+            if (save_json or save_crops) and dets:
+                for i, d in enumerate(dets):
+                    rec = {
+                        "frame": frame_idx,
+                        "bbox": d.get("bbox"),
+                        "confidence": float(d.get("confidence", 0.0)),
+                        "class_name": d.get("class_name"),
+                        "class_id": d.get("class_id"),
+                        "species": d.get("species"),
+                        "species_confidence": d.get("species_confidence"),
+                        "polygon": d.get("polygon"),
+                    }
+                    if save_json:
+                        detections_log.append(rec)
+                    if save_crops and rec["bbox"] and len(rec["bbox"]) == 4:
+                        x1, y1, x2, y2 = map(int, rec["bbox"])
+                        x1 = max(0, x1); y1 = max(0, y1)
+                        x2 = min(width - 1, x2); y2 = min(height - 1, y2)
+                        if x2 > x1 and y2 > y1:
+                            crop = frame[y1:y2, x1:x2]
+                            crop_name = f"{frame_idx:06d}_{i}_{rec['class_name'] or 'bird'}_{rec['confidence']:.2f}.jpg"
+                            cv2.imwrite(str(crops_root / crop_name), crop)
+
             if writer is not None:
                 annotated = annotate_frame(frame.copy(), dets)
                 writer.write(annotated)
@@ -118,6 +155,18 @@ def process_video(
         cap.release()
         if writer is not None:
             writer.release()
+
+    # Write detections.json per video
+    if save_json and detections_log:
+        out_json = det_root / "detections.json"
+        with open(out_json, "w", encoding="utf-8") as f:
+            json.dump({
+                "video": str(video_path),
+                "width": width,
+                "height": height,
+                "fps": fps,
+                "detections": detections_log,
+            }, f, indent=2)
 
     return stats
 
@@ -146,6 +195,43 @@ def main():
         action="store_true",
         help="Write annotated output videos",
     )
+    parser.add_argument(
+        "--save-json",
+        action="store_true",
+        help="Save per-video detections JSON to output/detections/",
+    )
+    parser.add_argument(
+        "--save-crops",
+        action="store_true",
+        help="Save cropped bird images to output/crops/",
+    )
+    # Optional species classification backend options
+    parser.add_argument(
+        "--species-backend",
+        choices=["ultralytics", "external"],
+        help="Species classifier backend",
+    )
+    parser.add_argument(
+        "--species-model-path",
+        help="Path to Ultralytics classification model (*.pt)",
+    )
+    parser.add_argument(
+        "--species-repo-path",
+        help="Path to external species repo (for external backend)",
+    )
+    parser.add_argument(
+        "--species-module",
+        help="Module in external repo that contains prediction function",
+    )
+    parser.add_argument(
+        "--species-function",
+        help="Function in module that returns (label, confidence)",
+    )
+    parser.add_argument(
+        "--species-input-size",
+        type=str,
+        help="Classifier input size as WxH (e.g., 224x224)",
+    )
     args = parser.parse_args()
 
     input_dir = Path(args.input_dir)
@@ -158,9 +244,31 @@ def main():
 
     # Load config and detector
     cfg = ConfigManager(args.config).get_config()
-    detector = RaptorDetector(cfg.get("ai", {}))
+    ai_cfg = dict(cfg.get("ai", {}))
+    # Force an explicit model path relative to project root
+    ai_cfg["model_path"] = str(PROJECT_ROOT / "models" / "yolo11n-seg.pt")
+    # Apply species options if provided
+    if args.species_backend:
+        ai_cfg["species_backend"] = args.species_backend
+    if args.species_model_path:
+        ai_cfg["species_model_path"] = args.species_model_path
+    if args.species_repo_path:
+        ai_cfg["species_repo_path"] = args.species_repo_path
+    if args.species_module:
+        ai_cfg["species_module"] = args.species_module
+    if args.species_function:
+        ai_cfg["species_function"] = args.species_function
+    if args.species_input_size:
+        try:
+            w, h = map(int, args.species_input_size.lower().split("x"))
+            ai_cfg["species_input_size"] = [w, h]
+        except Exception:
+            print("⚠️ Invalid --species-input-size, expected WxH (e.g., 224x224)")
+    detector = RaptorDetector(ai_cfg)
     if not detector.load_model():
-        print("⚠️ Model loading failed; continuing (dummy mode may be used)")
+        print("❌ Model loading failed. Checked:")
+        print(f"   - {ai_cfg['model_path']}")
+        return 1
 
     videos = find_videos(input_dir)
     if not videos:
@@ -175,7 +283,14 @@ def main():
     print(f"🎬 Found {len(videos)} videos. Processing...")
     for idx, v in enumerate(videos, 1):
         print(f"[{idx}/{len(videos)}] {v.name}")
-        stats = process_video(detector, v, output_dir, args.save_annotated)
+        stats = process_video(
+            detector,
+            v,
+            output_dir,
+            args.save_annotated,
+            save_json=args.save_json,
+            save_crops=args.save_crops,
+        )
         all_stats.append(stats)
         print(
             "   - frames={frames} detections={dets} max_conf={maxc:.3f} "

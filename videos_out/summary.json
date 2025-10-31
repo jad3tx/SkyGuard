@@ -1,9 +1,9 @@
 [
   {
-    "video": "SkyGuard\\videos_in\\gull-in-the-sky-bird-flying-in-slow-mo-how-far-can-seagulls-fly-SBV-317839217-HD.mp4",
+    "video": "C:\\Users\\wzxv92\\Documents\\Code\\SkyGuard\\SkyGuard\\videos_in\\gull-in-the-sky-bird-flying-in-slow-mo-how-far-can-seagulls-fly-SBV-317839217-HD.mp4",
     "frames": 261,
-    "detections": 4,
-    "max_confidence": 0.8835531524987361,
-    "duration_s": 4.042
+    "detections": 8,
+    "max_confidence": 0.8339942097663879,
+    "duration_s": 44.439
   }
 ]
