@@ -104,7 +104,7 @@ camera:
 ### AI Configuration
 ```yaml
 ai:
-  model_path: 'models/airbirds_raptor_detector.pt'
+  model_path: 'models/yolo11n-seg.pt'
   confidence_threshold: 0.5  # Higher confidence
   input_size: [640, 640]
   classes: ['bird']
@@ -181,7 +181,7 @@ free -h
 ls -la models/
 
 # Test model loading
-./venv/bin/python -c "from ultralytics import YOLO; model = YOLO('models/airbirds_raptor_detector.pt'); print('Model loaded successfully')"
+./venv/bin/python -c "from ultralytics import YOLO; model = YOLO('models/yolo11n-seg.pt'); print('Model loaded successfully')"
 ```
 
 ## Advanced Features

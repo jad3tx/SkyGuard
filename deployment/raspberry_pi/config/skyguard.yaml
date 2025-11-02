@@ -5,7 +5,7 @@ ai:
   input_size:
   - 1080
   - 1080
-  model_path: models\airbirds_raptor_detector.pt
+  model_path: models\yolo11n-seg.pt
   model_type: yolo
   nms_threshold: 0.4
 camera:

@@ -58,7 +58,7 @@ This file is kept for reference only for older Pi models and may contain outdate
 
 The deployment package contains:
 - ✅ **SkyGuard source code** (`skyguard/`)
-- ✅ **Trained AirBirds model** (`models/airbirds_raptor_detector.pt`)
+- ✅ **Trained model** (`models/yolo11n-seg.pt`)
 - ✅ **Configuration files** (`config/`)
 - ✅ **Installation script** (`install.sh`)
 - ✅ **Requirements** (`requirements-*.txt`)
@@ -158,8 +158,8 @@ libcamera-hello --list-cameras
 
 ### **Model Configuration**
 
-The trained AirBirds model is already included:
-- **Model**: `models/airbirds_raptor_detector.pt`
+The trained model is already included:
+- **Model**: `models/yolo11n-seg.pt`
 - **Classes**: `['bird']`
 - **Confidence**: `0.3` (adjustable in config)
 
@@ -233,7 +233,7 @@ sudo dphys-swapfile swapon
 ls -la models/
 
 # Test model loading
-python -c "from ultralytics import YOLO; model = YOLO('models/airbirds_raptor_detector.pt'); print('Model loaded successfully')"
+python -c "from ultralytics import YOLO; model = YOLO('models/yolo11n-seg.pt'); print('Model loaded successfully')"
 ```
 
 ### **Performance Optimization**
@@ -301,7 +301,7 @@ sudo systemctl start skyguard.service
 ### **Update Model**
 ```bash
 # Replace model file
-cp new_model.pt models/airbirds_raptor_detector.pt
+cp new_model.pt models/yolo11n-seg.pt
 
 # Restart service
 sudo systemctl restart skyguard.service

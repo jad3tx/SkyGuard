@@ -1,9 +1,9 @@
 [
   {
-    "video": "C:\\Users\\wzxv92\\Documents\\Code\\SkyGuard\\SkyGuard\\videos_in\\gull-in-the-sky-bird-flying-in-slow-mo-how-far-can-seagulls-fly-SBV-317839217-HD.mp4",
-    "frames": 261,
-    "detections": 8,
-    "max_confidence": 0.8339942097663879,
-    "duration_s": 44.439
+    "video": "videos_in\\three-lappet-faced-vultures-torgos-tracheliotos-flying-over-a-dead-antelope-SBV-352245251-4K.mp4",
+    "frames": 720,
+    "detections": 577,
+    "max_confidence": 0.9534583687782288,
+    "duration_s": 92.314
   }
 ]

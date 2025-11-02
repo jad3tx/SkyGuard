@@ -138,7 +138,7 @@ class BirdSegmentationDetector:
                     self.logger.error(f"Species model not found: {sp_path}")
                     return
                 self.species_model = YOLO(str(sp_path))
-                self._species_predict_fn = self._ultralytics_species_predict
+                # Note: _classify_species uses self.species_model directly
                 self.logger.info(f"Species model loaded (ultralytics): {sp_path}")
             elif self.species_backend == 'external':
                 # Expect: species_repo_path, species_module, species_function

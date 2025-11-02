@@ -94,7 +94,7 @@ class SkyGuardWebPortal:
                     },
                     'ai': {
                         'loaded': self._is_model_loaded(),
-                        'model_path': self.config.get('ai', {}).get('model_path', 'models/airbirds_raptor_detector.pt'),
+                        'model_path': self.config.get('ai', {}).get('model_path', 'models/yolo11n-seg.pt'),
                         'confidence_threshold': self.config.get('ai', {}).get('confidence_threshold', 0.5),
                         'classes': self.config.get('ai', {}).get('classes', []),
                     },

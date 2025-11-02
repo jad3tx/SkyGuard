@@ -258,7 +258,7 @@ camera:
 
 # AI model settings
 ai:
-  model_path: 'models/airbirds_raptor_detector.pt'
+  model_path: 'models/yolo11n-seg.pt'
   confidence_threshold: 0.5  # Higher confidence for Pi 5
   input_size: [640, 640]
   classes: ['bird']
@@ -680,7 +680,7 @@ tail -f logs/skyguard.log | grep "Detection"
     
     # Test model loading
     source venv/bin/activate
-    python3 -c "from ultralytics import YOLO; model = YOLO('models/airbirds_raptor_detector.pt'); print('Model loaded successfully')"
+    python3 -c "from ultralytics import YOLO; model = YOLO('models/yolo11n-seg.pt'); print('Model loaded successfully')"
     ```
 
 ### Performance Optimization

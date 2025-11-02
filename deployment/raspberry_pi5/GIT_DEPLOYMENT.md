@@ -119,8 +119,8 @@ libcamera-hello --list-cameras
 
 ### **Model Configuration**
 
-The trained AirBirds model is already included:
-- **Model**: `models/airbirds_raptor_detector.pt`
+The trained model is already included:
+- **Model**: `models/yolo11n-seg.pt`
 - **Classes**: `['bird']`
 - **Confidence**: `0.5` (Pi 5 optimized)
 
@@ -195,7 +195,7 @@ sudo systemctl start skyguard.service
 
 ```bash
 # Replace model file
-cp new_model.pt models/airbirds_raptor_detector.pt
+cp new_model.pt models/yolo11n-seg.pt
 
 # Restart service
 sudo systemctl restart skyguard.service
@@ -286,7 +286,7 @@ sudo dphys-swapfile swapon
 ls -la models/
 
 # Test model loading
-./venv/bin/python -c "from ultralytics import YOLO; model = YOLO('models/airbirds_raptor_detector.pt'); print('Model loaded successfully')"
+./venv/bin/python -c "from ultralytics import YOLO; model = YOLO('models/yolo11n-seg.pt'); print('Model loaded successfully')"
 ```
 
 ## 📱 **Remote Access**

@@ -39,26 +39,7 @@ with open('config/skyguard.yaml', 'w') as f: yaml.dump(config, f)
 "
 ```
 
-### **Option 2: AirBirds Dataset Training**
-
-For better raptor-specific detection, you can train a model on the [AirBirds dataset](https://huggingface.co/datasets/auniquesun/AirBirds).
-
-#### **Download AirBirds Dataset:**
-```bash
-# Install datasets library
-pip install datasets
-
-# Download dataset (large file - 16.9GB)
-python scripts/download_airbirds_universal.py
-```
-
-#### **Train Custom Model:**
-```bash
-# Train with AirBirds dataset
-python -m skyguard.training.train_model --data-path data/airbirds/yolo_format/dataset.yaml --epochs 50
-```
-
-### **Option 3: Custom Dataset Training**
+### **Option 2: Custom Dataset Training**
 
 If you have your own raptor images, you can train a custom model.
 
@@ -100,7 +81,7 @@ ai:
   nms_threshold: 0.4
   input_size: [640, 640]
   classes:
-    - "bird"  # For AirBirds dataset
+    - "bird"
     # OR for COCO dataset:
     # - "person", "bicycle", "car", ..., "bird", ...
 ```
@@ -174,7 +155,7 @@ cap.release()
 | YOLOv8n | 6MB | ~15 | 0.37 | Testing, Raspberry Pi |
 | YOLOv8s | 22MB | ~25 | 0.44 | Production, Desktop |
 | YOLOv8m | 50MB | ~40 | 0.50 | High accuracy |
-| Custom (AirBirds) | 50MB | ~40 | 0.60+ | Raptor-specific |
+| Custom | 50MB | ~40 | 0.60+ | Raptor-specific |
 
 ### **Optimization Tips:**
 
@@ -259,7 +240,6 @@ print(f'Detections last week: {stats[\"total_detections\"]}')
 ## 📚 **Additional Resources**
 
 ### **Datasets:**
-- [AirBirds Dataset](https://huggingface.co/datasets/auniquesun/AirBirds) - Real-world bird detection
 - [COCO Dataset](https://cocodataset.org/) - General object detection
 - [Open Images](https://storage.googleapis.com/openimages/web/index.html) - Large-scale dataset
 

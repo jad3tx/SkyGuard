@@ -34,7 +34,6 @@ def create_pi5_deployment():
         "setup.py",
         "README.md",
         "scripts/install.sh",
-        "scripts/download_airbirds_universal.py",
         "scripts/setup_yolov8n.py",
     ]
     
@@ -102,7 +101,7 @@ pushbullet.py>=0.11.0
             'flip_vertical': False,
         },
         'ai': {
-            'model_path': 'models/airbirds_raptor_detector.pt',
+            'model_path': 'models/yolo11n-seg.pt',
             'model_type': 'yolo',
             'confidence_threshold': 0.5,  # Higher confidence for Pi 5
             'nms_threshold': 0.4,
@@ -401,7 +400,7 @@ camera:
 ### **AI Configuration**
 ```yaml
 ai:
-  model_path: 'models/airbirds_raptor_detector.pt'
+  model_path: 'models/yolo11n-seg.pt'
   confidence_threshold: 0.5  # Higher confidence
   input_size: [640, 640]
   classes: ['bird']
@@ -478,7 +477,7 @@ free -h
 ls -la models/
 
 # Test model loading
-python -c "from ultralytics import YOLO; model = YOLO('models/airbirds_raptor_detector.pt'); print('Model loaded successfully')"
+python -c "from ultralytics import YOLO; model = YOLO('models/yolo11n-seg.pt'); print('Model loaded successfully')"
 ```
 
 ## 🚀 **Advanced Features**

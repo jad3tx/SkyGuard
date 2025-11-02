@@ -2,7 +2,7 @@
 """
 SkyGuard Model Training Script
 
-Trains a custom YOLO model using the AirBirds dataset for raptor detection.
+Trains a custom YOLO model for raptor detection.
 """
 
 import os
@@ -24,8 +24,8 @@ def setup_logging():
     )
     return logging.getLogger(__name__)
 
-def train_airbirds_model(
-    data_path: str = "data/airbirds/yolo_format/dataset.yaml",
+def train_model(
+    data_path: str = "data/training/dataset.yaml",
     epochs: int = 100,
     batch_size: int = 16,
     img_size: int = 640,
@@ -33,7 +33,7 @@ def train_airbirds_model(
     output_dir: str = "models/trained"
 ) -> bool:
     """
-    Train a YOLO model using the AirBirds dataset.
+    Train a YOLO model for raptor detection.
     
     Args:
         data_path: Path to dataset.yaml file
@@ -58,14 +58,14 @@ def train_airbirds_model(
     # Check if dataset exists
     if not Path(data_path).exists():
         logger.error(f"❌ Dataset not found: {data_path}")
-        logger.info("Please run: python scripts/download_airbirds_universal.py")
+        logger.info("Please prepare your dataset in YOLO format")
         return False
     
     # Create output directory
     output_path = Path(output_dir)
     output_path.mkdir(parents=True, exist_ok=True)
     
-    logger.info("🦅 Starting SkyGuard model training with AirBirds dataset")
+    logger.info("🦅 Starting SkyGuard model training")
     logger.info("=" * 60)
     logger.info(f"📁 Dataset: {data_path}")
     logger.info(f"🔄 Epochs: {epochs}")
@@ -89,7 +89,7 @@ def train_airbirds_model(
             batch=batch_size,
             imgsz=img_size,
             project=output_path,
-            name="skyguard_airbirds",
+            name="skyguard_raptor_detector",
             exist_ok=True,
             save=True,
             save_period=10,  # Save checkpoint every 10 epochs
@@ -100,7 +100,7 @@ def train_airbirds_model(
         )
         
         # Save the best model
-        best_model_path = output_path / "skyguard_airbirds" / "weights" / "best.pt"
+        best_model_path = output_path / "skyguard_raptor_detector" / "weights" / "best.pt"
         final_model_path = output_path / "skyguard_raptor_detector.pt"
         
         if best_model_path.exists():
@@ -109,7 +109,7 @@ def train_airbirds_model(
             logger.info(f"✅ Best model saved to: {final_model_path}")
         else:
             logger.warning("⚠️  Best model not found, using last model")
-            last_model_path = output_path / "skyguard_airbirds" / "weights" / "last.pt"
+            last_model_path = output_path / "skyguard_raptor_detector" / "weights" / "last.pt"
             if last_model_path.exists():
                 shutil.copy2(last_model_path, final_model_path)
                 logger.info(f"✅ Last model saved to: {final_model_path}")
@@ -167,7 +167,7 @@ def validate_model(model_path: str) -> bool:
         model = YOLO(model_path)
         
         # Test with a sample image
-        test_image = "data/airbirds/yolo_format/images/val"
+        test_image = "data/training/images/val"
         if Path(test_image).exists():
             test_images = list(Path(test_image).glob("*.jpg"))[:5]  # Test with 5 images
             
@@ -185,7 +185,7 @@ def validate_model(model_path: str) -> bool:
 def main():
     """Main training function."""
     parser = argparse.ArgumentParser(description="Train SkyGuard raptor detection model")
-    parser.add_argument("--data-path", default="data/airbirds/yolo_format/dataset.yaml",
+    parser.add_argument("--data-path", default="data/training/dataset.yaml",
                        help="Path to dataset.yaml file")
     parser.add_argument("--epochs", type=int, default=100,
                        help="Number of training epochs")
@@ -203,7 +203,7 @@ def main():
     args = parser.parse_args()
     
     # Train the model
-    success = train_airbirds_model(
+    success = train_model(
         data_path=args.data_path,
         epochs=args.epochs,
         batch_size=args.batch_size,

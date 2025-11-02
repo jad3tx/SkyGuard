@@ -175,14 +175,8 @@ def suggest_solutions():
     print("\n3. Try installing specific version:")
     print("   pip install datasets==2.14.0")
     
-    print("\n4. Use alternative download method:")
-    print("   python scripts/download_airbirds_alternative.py")
-    
-    print("\n5. Install from conda (if available):")
+    print("\n4. Install from conda (if available):")
     print("   conda install -c huggingface datasets")
-    
-    print("\n6. Use the universal download script:")
-    print("   python scripts/download_airbirds_universal.py")
 
 
 def main():

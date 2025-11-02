@@ -68,9 +68,9 @@ def setup_yolov8n():
         print("\n🧪 Testing YOLOv8n model...")
         model = YOLO('yolov8n.pt')
         
-        # Test on a sample image if available
-        sample_dir = Path("data/airbirds/samples")
-        if sample_dir.exists():
+        # Test on a sample image if available (if samples directory exists)
+        sample_dir = Path("data/samples")
+        if sample_dir.exists() and list(sample_dir.glob("*.jpg")):
             sample_images = list(sample_dir.glob("*.jpg"))
             if sample_images:
                 test_image = sample_images[0]
@@ -99,7 +99,7 @@ def setup_yolov8n():
         print("YOLOv8n can detect 80 different object classes including 'bird'.")
         print("\nNext steps:")
         print("1. Test SkyGuard: python -m skyguard.main")
-        print("2. For better raptor detection, train a custom model: python scripts/train_airbirds_model.py")
+        print("2. For better raptor detection, train a custom model: python -m skyguard.training.train_model")
         
         return True
         
