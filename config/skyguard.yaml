@@ -7,6 +7,7 @@ ai:
   model_type: yolo
   nms_threshold: 0.5
   species_backend: ultralytics
+  species_confidence_threshold: 0.6
   species_input_size:
   - 224
   - 224

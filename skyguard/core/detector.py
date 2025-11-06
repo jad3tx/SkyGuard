@@ -64,6 +64,7 @@ class BirdSegmentationDetector:
         self.species_input_size = tuple(
             self.config.get('species_input_size', (224, 224))
         )
+        self.species_confidence_threshold = self.config.get('species_confidence_threshold', 0.3)
         # External repo backend (optional)
         self.species_backend = self.config.get('species_backend', 'ultralytics')
         self.species_repo_path = self.config.get('species_repo_path')
@@ -392,6 +393,11 @@ class BirdSegmentationDetector:
         arr = probs.data.detach().cpu().numpy()
         top_i = int(np.argmax(arr))
         conf = float(arr[top_i])
+        
+        # Filter by confidence threshold - only return if above threshold
+        if conf < self.species_confidence_threshold:
+            return None, None
+        
         label = names.get(top_i) if isinstance(names, dict) else None
         return label, conf
     

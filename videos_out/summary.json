@@ -1,9 +1,30 @@
 [
   {
+    "video": "videos_in\\bald-eagle-soaring-against-clouds-SBV-300128442-HD.mp4",
+    "frames": 278,
+    "detections": 98,
+    "max_confidence": 0.9306862950325012,
+    "duration_s": 8.726
+  },
+  {
+    "video": "videos_in\\slow-motion-bald-eagle-soaring-over-treetops-SBV-300135454-HD.mp4",
+    "frames": 462,
+    "detections": 33,
+    "max_confidence": 0.9187288284301758,
+    "duration_s": 12.178
+  },
+  {
+    "video": "videos_in\\slow-motion-soaring-bald-eagle-closeup-SBV-300135462-HD.mp4",
+    "frames": 477,
+    "detections": 320,
+    "max_confidence": 0.9554159045219421,
+    "duration_s": 17.864
+  },
+  {
     "video": "videos_in\\three-lappet-faced-vultures-torgos-tracheliotos-flying-over-a-dead-antelope-SBV-352245251-4K.mp4",
     "frames": 720,
-    "detections": 577,
-    "max_confidence": 0.9534583687782288,
-    "duration_s": 92.314
+    "detections": 576,
+    "max_confidence": 0.9534918665885925,
+    "duration_s": 66.28
   }
 ]
