@@ -77,7 +77,6 @@ Thumbs.db
 models/trained/
 models/checkpoints/
 *.h5
-*.pt
 *.pth
 *.onnx
 
