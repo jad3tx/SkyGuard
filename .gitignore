@@ -119,6 +119,9 @@ images/
 *.avi
 *.mov
 *.mp4
+# Allow videos_in folder to be tracked
+!videos_in/
+!videos_in/*.mp4
 *.jpg
 *.jpeg
 *.png
