@@ -40,23 +40,57 @@ class CameraManager:
             if isinstance(source, str):
                 source = int(source)
             
-            # Initialize camera
-            self.cap = cv2.VideoCapture(source)
+            # On Raspberry Pi, try multiple camera sources if default fails
+            sources_to_try = [source]
+            if source == 0:
+                # Try common video device indices on Raspberry Pi
+                sources_to_try = [0, 1, 2]
             
-            if not self.cap.isOpened():
-                self.logger.error(f"Failed to open camera source: {source}")
+            camera_opened = False
+            for src in sources_to_try:
+                try:
+                    self.logger.info(f"Attempting to open camera source: {src}")
+                    self.cap = cv2.VideoCapture(src)
+                    
+                    if self.cap.isOpened():
+                        # Test capture to verify it actually works
+                        ret, frame = self.cap.read()
+                        if ret and frame is not None:
+                            self.logger.info(f"Camera opened successfully at source: {src}")
+                            camera_opened = True
+                            # Update config with working source
+                            self.config['source'] = src
+                            break
+                        else:
+                            self.cap.release()
+                            self.cap = None
+                except Exception as e:
+                    self.logger.warning(f"Failed to open camera source {src}: {e}")
+                    if self.cap:
+                        self.cap.release()
+                        self.cap = None
+                    continue
+            
+            if not camera_opened:
+                self.logger.error(f"Failed to open any camera source. Tried: {sources_to_try}")
+                self.logger.error("Troubleshooting steps:")
+                self.logger.error("1. Check if camera is connected: lsusb | grep -i camera")
+                self.logger.error("2. Check video devices: ls /dev/video*")
+                self.logger.error("3. For USB cameras, ensure user is in 'video' group: sudo usermod -a -G video $USER")
+                self.logger.error("4. For Pi camera, enable in raspi-config: sudo raspi-config")
+                self.logger.error("5. Test camera manually: python -c \"import cv2; cap = cv2.VideoCapture(0); print('OK' if cap.isOpened() else 'Failed')\"")
                 return False
             
             # Set camera properties
             self._configure_camera()
             
-            # Test capture
+            # Test capture again after configuration
             ret, frame = self.cap.read()
             if not ret:
-                self.logger.error("Failed to capture test frame")
+                self.logger.error("Failed to capture test frame after configuration")
                 return False
                 
-            self.logger.info(f"Camera initialized successfully: {source}")
+            self.logger.info(f"Camera initialized successfully: {self.config.get('source')}")
             return True
             
         except Exception as e:

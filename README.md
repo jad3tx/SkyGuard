@@ -219,6 +219,54 @@ SkyGuard provides a low-cost, AI-driven alert system that:
 ./scripts/stop_skyguard.sh --web-only
 ```
 
+## 🔧 Troubleshooting
+
+### Camera Not Working
+
+If you see "ERROR - Failed to open camera source: 0", try these steps:
+
+1. **Check if camera is connected (USB webcam):**
+   ```bash
+   lsusb | grep -i camera
+   ls /dev/video*
+   ```
+
+2. **Check camera permissions:**
+   ```bash
+   # Add user to video group
+   sudo usermod -a -G video pi
+   
+   # Log out and log back in, or reboot
+   sudo reboot
+   ```
+
+3. **Test camera manually:**
+   ```bash
+   source venv/bin/activate
+   python -c "import cv2; cap = cv2.VideoCapture(0); print('OK' if cap.isOpened() else 'Failed'); cap.release()"
+   ```
+
+4. **For Raspberry Pi Camera Module:**
+   ```bash
+   # Enable camera interface
+   sudo raspi-config
+   # Navigate to: Interface Options → Camera → Enable
+   # Reboot after enabling
+   sudo reboot
+   
+   # Test Pi camera
+   libcamera-hello --list-cameras
+   ```
+
+5. **Try different camera sources:**
+   - Edit `config/skyguard.yaml` and change `camera.source` to try 0, 1, or 2
+   - The system will automatically try multiple sources if source 0 fails
+
+6. **Check logs for detailed error messages:**
+   ```bash
+   tail -f logs/skyguard.log
+   ```
+
 ## ⚙️ Configuration
 
 SkyGuard is configured through the `config/skyguard.yaml` file. Key settings include:
