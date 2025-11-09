@@ -25,6 +25,7 @@ sudo apt update
 sudo apt upgrade -y
 
 echo -e "${BLUE}📦 Step 2: Installing system dependencies...${NC}"
+# Install core dependencies (required)
 sudo apt install -y \
     python3 \
     python3-pip \
@@ -45,9 +46,16 @@ sudo apt install -y \
     libswscale-dev \
     libv4l-dev \
     libxvidcore-dev \
-    libx264-dev \
-    libatlas-base-dev \
-    libopenblas-dev
+    libx264-dev
+
+# Install BLAS/LAPACK library (try openblas first, fallback to atlas if needed)
+echo -e "${BLUE}Installing BLAS/LAPACK library...${NC}"
+if sudo apt install -y libopenblas-dev 2>/dev/null; then
+    echo -e "${GREEN}✅ libopenblas-dev installed${NC}"
+else
+    echo -e "${YELLOW}⚠️  libopenblas-dev not available, trying libatlas-base-dev...${NC}"
+    sudo apt install -y libatlas-base-dev || echo -e "${YELLOW}⚠️  BLAS/LAPACK library not installed (may affect NumPy performance)${NC}"
+fi
 
 echo -e "${BLUE}📦 Step 3: Creating Python virtual environment...${NC}"
 if [ ! -d "venv" ]; then
