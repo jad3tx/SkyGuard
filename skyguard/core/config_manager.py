@@ -135,8 +135,8 @@ class ConfigManager:
                 'flip_vertical': False,
             },
             'ai': {
-                'model_path': 'models/raptor_detector.pt',
-                'model_type': 'yolo',  # 'yolo' or 'tensorflow'
+                'model_path': 'models/yolo11n-seg.pt',
+                'model_type': 'yolo',
                 'confidence_threshold': 0.5,
                 'nms_threshold': 0.4,
                 'input_size': [640, 640],

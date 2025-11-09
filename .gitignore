@@ -86,6 +86,7 @@ data/processed/
 data/training/
 data/validation/
 data/test/
+data/bird_species/
 logs/
 *.log
 

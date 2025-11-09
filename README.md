@@ -8,7 +8,7 @@ SkyGuard is an open-source artificial intelligence solution that alerts small fl
 
 ## 🎯 Project Overview
 
-**Author:** John Daughtridge  
+**Author:** John Daughtridge  github:jad3tx
 
 ### The Problem
 
@@ -21,7 +21,7 @@ SkyGuard is an open-source artificial intelligence solution that alerts small fl
 ### The Solution
 
 SkyGuard provides a low-cost, AI-driven alert system that:
-- Uses generic webcams and inexpensive microcontrollers (ESP32/Raspberry Pi)
+- Uses generic webcams and inexpensive microcontrollers (Raspberry Pi)
 - Runs real-time computer vision models to detect raptors
 - Sends immediate alerts via audio, push notifications, or SMS
 - Logs detection events for analysis and improvement
@@ -44,13 +44,13 @@ SkyGuard provides a low-cost, AI-driven alert system that:
 
 ### Hardware
 - **Camera**: USB webcam
-- **Controller**: Raspberry Pi 5 (recommended)
+- **Controller**: Raspberry Pi 5
 - **Storage**: 32GB+ microSD card
-- **Power**: 5V/3A power supply (5V/5A
+- **Power**: 5V/3A power supply (5V/5A recommended)
 
 
 ### Software
-- **OS**: Raspberry Pi OS (recommended) or Ubuntu 20.04+
+- **OS**: Raspberry Pi 64bit OS (recommended) or Ubuntu 20.04+
 - **Python**: 3.8 or higher
 - **RAM**: 4GB minimum (8GB recommended)
 - **Storage**: 10GB free space
@@ -59,30 +59,165 @@ SkyGuard provides a low-cost, AI-driven alert system that:
 
 **SkyGuard is optimized for Raspberry Pi 5.**
 
-### Quick Start
+### Step 1: Prepare the Raspberry Pi OS
 
-1. **Clone the repository**
+1. **Download and install Raspberry Pi Imager**
+   - Download from: https://www.raspberrypi.org/downloads/
+   - Install on your computer
+
+2. **Write Raspberry Pi OS to microSD card**
+   - Insert your microSD card (32GB+ recommended)
+   - Open Raspberry Pi Imager
+   - Click "Choose OS" and select:
+     - **Raspberry Pi OS (64-bit)** → **Raspberry Pi OS Lite (64-bit)**
+   - Click "Choose Storage" and select your microSD card
+   - Click the gear icon (⚙️) to configure advanced options:
+     - **Enable SSH**: Check this box
+     - **Set username**: Enter `pi`
+     - **Set password**: Choose a secure password
+     - **Configure WiFi**: 
+       - Enter your WiFi SSID (network name)
+       - Enter your WiFi password
+       - Select your country
+     - **Set locale settings**: Choose your timezone and keyboard layout
+   - Click "Write" to image the card
+   - Wait for the write process to complete
+
+3. **Boot your Raspberry Pi**
+   - Insert the microSD card into your Raspberry Pi 5
+   - Connect power and boot the Pi
+   - Wait a few minutes for the Pi to boot and connect to WiFi
+   - Find your Pi's IP address (check your router's admin panel or use a network scanner)
+
+### Step 2: Connect to Your Raspberry Pi
+
+1. **SSH into your Pi**
+   ```bash
+   ssh pi@<PI_IP_ADDRESS>
+   ```
+   Replace `<PI_IP_ADDRESS>` with your Pi's actual IP address.
+   - Default password is the one you set in Raspberry Pi Imager
+
+### Step 3: Install Git and GitHub CLI
+
+1. **Update system packages**
+   ```bash
+   sudo apt update && sudo apt upgrade -y
+   ```
+
+2. **Install Git and GitHub CLI**
+   ```bash
+   sudo apt install git gh -y
+   ```
+
+3. **Authenticate with GitHub**
+   ```bash
+   gh auth login
+   ```
+   
+   Follow the prompts:
+   - **What account do you want to log into?** → Select `GitHub.com`
+   - **What is your preferred protocol for Git operations?** → Select `HTTPS`
+   - **Authenticate Git with your GitHub credentials?** → Select `Yes`
+   - **How would you like to authenticate GitHub CLI?** → Select `Login with a web browser`
+   - You'll be given a one-time code. Copy it.
+   - A URL will be displayed. Open it in a web browser on another device (your computer, phone, etc.)
+   - Enter the one-time code when prompted
+   - Authorize GitHub CLI to access your account
+   
+   **Alternative:** If you can't use a web browser, you can use a personal access token:
+   - Go to https://github.com/settings/tokens
+   - Generate a new token with `repo` permissions
+   - When prompted, select `Paste an authentication token` and paste your token
+
+4. **Verify authentication**
+   ```bash
+   gh auth status
+   ```
+   
+   You should see: `✓ Logged in to github.com as <your-username>`
+
+### Step 4: Clone the Repository
+
+1. **Clone the SkyGuard repository**
    ```bash
    git clone https://github.com/jad3tx/SkyGuard.git
    cd SkyGuard
    ```
 
-2. **Follow the installation guide**
-   See **[Installation Guide](docs/INSTALLATION.md)** for complete step-by-step instructions:
-   - OS imaging and initial setup
-   - System configuration
-   - SkyGuard installation
-   - Auto-startup configuration
-   - Troubleshooting
+### Step 5: Install SkyGuard
 
-### Installation Guide
+1. **Run the installation script**
+   ```bash
+   cd SkyGuard
+   chmod +x scripts/install.sh
+   ./scripts/install.sh
+   ```
 
-The [Installation Guide](docs/INSTALLATION.md) covers:
-- ✅ Complete setup from OS imaging to deployment
-- ✅ Pi 5 optimizations and performance tuning
-- ✅ Auto-startup with systemd services
-- ✅ Web portal configuration
-- ✅ Comprehensive troubleshooting
+   This script will:
+   - Install all system dependencies
+   - Create a Python virtual environment
+   - Install all Python packages
+   - Set up necessary directories
+   - Make scripts executable
+
+   **Important:** During the Python package installation, you may be prompted to install:
+   - **Raspberry Pi hardware dependencies** (such as RPi.GPIO) - **Answer "yes" or "y"** to enable GPIO features for LED indicators and buzzers
+   - **Notification dependencies** (such as Twilio or Pushbullet) - **Answer "yes" or "y"** to enable SMS and push notification features
+
+   **Note:** The installation may take 15-30 minutes depending on your internet connection and Pi model.
+
+2. **Configure SkyGuard Services** 
+   ```bash
+   source venv/bin/activate
+   python -m skyguard.setup.configure
+   ```
+
+### Step 6: Start SkyGuard
+
+1. **Start the system**
+   ```bash
+   ./scripts/start_skyguard.sh
+   ```
+
+   This will start both the detection system and web portal.
+
+2. **Access the web portal**
+   - Open your web browser
+   - Navigate to: `http://<PI_IP_ADDRESS>:8080`
+   - You should see the SkyGuard dashboard
+
+### Managing SkyGuard
+
+**Start SkyGuard:**
+```bash
+./scripts/start_skyguard.sh
+```
+
+**Stop SkyGuard:**
+```bash
+./scripts/stop_skyguard.sh
+```
+
+**Start only the detection system:**
+```bash
+./scripts/start_skyguard.sh --main-only
+```
+
+**Start only the web portal:**
+```bash
+./scripts/start_skyguard.sh --web-only
+```
+
+**Stop only the detection system:**
+```bash
+./scripts/stop_skyguard.sh --main-only
+```
+
+**Stop only the web portal:**
+```bash
+./scripts/stop_skyguard.sh --web-only
+```
 
 ## ⚙️ Configuration
 
@@ -100,55 +235,32 @@ See [CONFIGURATION.md](docs/CONFIGURATION.md) for detailed configuration options
 
 ### Basic Operation
 
-1. **Configure the system**
-   ```bash
-   ./skyguard-setup
-   ```
+Once SkyGuard is installed and running:
 
-2. **Start the detection system**
-   ```bash
-   ./skyguard-main
-   ```
+1. **Access the web portal**
+   - Open your web browser
+   - Navigate to: `http://<PI_IP_ADDRESS>:8080`
+   - You'll see the SkyGuard dashboard with:
+     - Real-time system status
+     - Detection history
+     - System configuration
+     - Camera feed
 
-3. **Access the web portal**
-   ```bash
-   python scripts/start_web_portal.py
-   # Open http://<PI_IP>:8080 in your browser
-   ```
-
-4. **Monitor detections**
+2. **Monitor detections**
    - View real-time detection feed
    - Check alert notifications
    - Review detection logs
    - Use the web interface for easy management
 
-### Service Management
+3. **Configure the system**
+   - Use the web interface to adjust settings
+   - Or edit `config/skyguard.yaml` directly
+   - Restart SkyGuard after making changes:
+     ```bash
+     ./scripts/stop_skyguard.sh
+     ./scripts/start_skyguard.sh
+     ```
 
-The installer sets up systemd services for automatic startup:
-
-```bash
-# Start services
-sudo systemctl start skyguard.service
-sudo systemctl start skyguard-web.service
-
-# Check status
-sudo systemctl status skyguard.service
-
-# Stop services
-sudo systemctl stop skyguard.service
-sudo systemctl stop skyguard-web.service
-
-# Enable/disable auto-start
-sudo systemctl enable skyguard.service
-sudo systemctl disable skyguard.service
-```
-
-### Cleanup (if needed)
-
-```bash
-# Remove all services for testing
-./scripts/cleanup_skyguard.sh
-```
 
 ### Web Portal Features
 
@@ -239,7 +351,6 @@ We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guid
 
 ## 📚 Documentation
 
-- **[Installation Guide](docs/INSTALLATION.md)** - Complete installation guide
 - [API Documentation](docs/API.md)
 - [Web Portal Guide](docs/WEB_PORTAL.md)
 - [Hardware Guide](docs/HARDWARE.md)

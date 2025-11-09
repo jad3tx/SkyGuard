@@ -166,9 +166,13 @@ class TestRaptorDetector:
         """Test dummy model creation."""
         config = {'model_path': 'nonexistent.pt'}
         detector = RaptorDetector(config)
-        detector._create_dummy_model()
+        # The detector doesn't have a _create_dummy_model method anymore
+        # Instead, it will fail to load the model and set model to None
+        result = detector.load_model()
         
-        assert detector.model == "dummy"
+        # Model loading should fail for nonexistent file
+        assert result is False
+        assert detector.model is None
     
     def test_dummy_detection(self):
         """Test dummy detection functionality."""

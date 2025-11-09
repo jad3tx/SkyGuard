@@ -2,8 +2,7 @@
 Raptor Detector for SkyGuard System
 
 Handles AI-based detection and classification of raptors using
-computer vision models.
-Supports both YOLO and TensorFlow model formats.
+YOLO computer vision models.
 """
 
 import cv2
@@ -24,14 +23,6 @@ except ImportError:
     PYTORCH_AVAILABLE = False
     torch = None
     YOLO = None
-
-# Try to import TensorFlow, but don't fail if not available
-try:
-    import tensorflow as tf
-    TENSORFLOW_AVAILABLE = True
-except ImportError:
-    TENSORFLOW_AVAILABLE = False
-    tf = None
 
 
 class BirdSegmentationDetector:
@@ -84,7 +75,6 @@ class BirdSegmentationDetector:
                 'model_path', self.default_seg_model_path
             )
             model_path = self._resolve_model_path(model_path_str)
-            model_type = self.config.get('model_type', 'yolo')
             
             if not Path(model_path).exists():
                 self.logger.error(
@@ -92,33 +82,17 @@ class BirdSegmentationDetector:
                 )
                 return False
             
-            if model_type.lower() == 'yolo':
-                if not PYTORCH_AVAILABLE:
-                    self.logger.error(
-                        "PyTorch/YOLO not available; cannot load YOLO model"
-                    )
-                    return False
-                self.model = YOLO(str(model_path))
-                self.logger.info(f"YOLO model loaded: {model_path}")
-                # Load optional species classifier (ultralytics or external)
-                self._init_species_backend()
-            elif model_type.lower() == 'tensorflow':
-                if not TENSORFLOW_AVAILABLE:
-                    self.logger.error(
-                        "TensorFlow not available; cannot load TensorFlow model"
-                    )
-                    return False
-                # TODO: Implement TensorFlow model loading
-                self.logger.warning(
-                    "TensorFlow model loading not yet implemented, "
-                    "using dummy model"
-                )
-                return False
-            else:
+            # Only YOLO models are supported
+            if not PYTORCH_AVAILABLE:
                 self.logger.error(
-                    f"Unsupported model type: {model_type}"
+                    "PyTorch/YOLO not available; cannot load YOLO model"
                 )
                 return False
+            
+            self.model = YOLO(str(model_path))
+            self.logger.info(f"YOLO model loaded: {model_path}")
+            # Load optional species classifier (ultralytics or external)
+            self._init_species_backend()
             
             return True
             

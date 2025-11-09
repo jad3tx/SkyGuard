@@ -10,7 +10,6 @@ This documentation provides everything you need to understand, install, configur
 
 ### 🚀 Getting Started
 
-- **[Installation Guide](INSTALLATION.md)** - Complete setup instructions for all platforms
 - **[Hardware Guide](HARDWARE.md)** - Hardware requirements and recommendations
 - **[Web Portal Guide](WEB_PORTAL.md)** - Web interface management and monitoring
 
@@ -22,11 +21,13 @@ This documentation provides everything you need to understand, install, configur
 
 ## 🎯 Quick Start
 
-1. **Install SkyGuard**: Follow the [Installation Guide](INSTALLATION.md)
-2. **Configure Hardware**: Check the [Hardware Guide](HARDWARE.md)
-3. **Set Up AI Models**: Use the [Model Integration Guide](MODEL_INTEGRATION.md)
-4. **Access Web Portal**: See the [Web Portal Guide](WEB_PORTAL.md)
-5. **Test Your System**: Follow the [Testing Guide](TESTING.md)
+1. **Clone the repository**: `git clone https://github.com/jad3tx/SkyGuard.git`
+2. **Install dependencies**: `pip install -r requirements.txt`
+3. **Configure the system**: `python -m skyguard.setup.configure`
+4. **Configure Hardware**: Check the [Hardware Guide](HARDWARE.md)
+5. **Set Up AI Models**: Use the [Model Integration Guide](MODEL_INTEGRATION.md)
+6. **Access Web Portal**: See the [Web Portal Guide](WEB_PORTAL.md)
+7. **Test Your System**: Follow the [Testing Guide](TESTING.md)
 
 ## 🌟 Key Features
 
@@ -82,11 +83,12 @@ This documentation provides everything you need to understand, install, configur
 
 ### Detailed Installation
 
-See [INSTALLATION.md](INSTALLATION.md) for detailed setup instructions including:
-- Hardware assembly
-- Software installation
-- Configuration options
-- Troubleshooting
+For detailed setup instructions:
+- Clone the repository: `git clone https://github.com/jad3tx/SkyGuard.git`
+- Install dependencies: `pip install -r requirements.txt`
+- Configure the system: `python -m skyguard.setup.configure`
+- See the [Hardware Guide](HARDWARE.md) for hardware setup
+- See the [Web Portal Guide](WEB_PORTAL.md) for web interface setup
 
 ## ⚙️ Configuration
 

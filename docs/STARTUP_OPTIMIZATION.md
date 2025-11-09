@@ -65,13 +65,16 @@ The optimized configuration has been applied to your `config/skyguard.yaml`:
 - ✅ **Warmup**: Added 5 warmup detections
 - ✅ **Interval**: Increased detection interval to 2 seconds
 
-### **Manual Optimization Script**
+### **Warmup Detections**
 
-Run the optimization script for additional startup improvements:
+Warmup detections are automatically performed when SkyGuard starts. The number of warmup detections can be configured in `config/skyguard.yaml`:
 
-```bash
-python scripts/optimize_startup.py --verbose
+```yaml
+system:
+  warmup_detections: 5  # Number of warmup detections (0 to disable)
 ```
+
+The warmup functionality is built into the main application and runs automatically on startup.
 
 ## 📊 Performance Improvements
 

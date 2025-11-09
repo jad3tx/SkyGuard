@@ -56,8 +56,7 @@ check_user() {
 check_skyguard_dir() {
     if [ ! -d "$SKYGUARD_DIR" ]; then
         echo -e "${RED}❌ SkyGuard directory not found: $SKYGUARD_DIR${NC}"
-        echo "Please run the installation script first:"
-        echo "  ./deployment/install_pi5_unified.sh"
+        echo "Please install SkyGuard first. See the documentation for installation instructions."
         exit 1
     fi
 }
@@ -66,8 +65,7 @@ check_skyguard_dir() {
 check_venv() {
     if [ ! -d "$VENV_DIR" ]; then
         echo -e "${RED}❌ Virtual environment not found: $VENV_DIR${NC}"
-        echo "Please run the installation script first:"
-        echo "  ./deployment/install_pi5_unified.sh"
+        echo "Please install SkyGuard first. See the documentation for installation instructions."
         exit 1
     fi
 }

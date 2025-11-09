@@ -12,31 +12,28 @@ The easiest way to get started is with a pre-trained YOLO model that can detect 
 
 #### **Quick Setup:**
 ```bash
-python scripts/setup_model.py
+# Download YOLO11 segmentation model (recommended)
+python -c "from ultralytics import YOLO; YOLO('yolo11n-seg.pt')"
+
+# The model will be downloaded to the current directory
+# Move it to the models directory
+mv yolo11n-seg.pt models/yolo11n-seg.pt
 ```
 
-This will:
-- Download YOLOv8n (nano) model
-- Copy it to `models/raptor_detector.pt`
-- Update SkyGuard configuration
-- Test the integration
+The default configuration already uses `models/yolo11n-seg.pt`, so no config changes are needed.
 
 #### **Manual Setup:**
 ```bash
-# Download model
-python -c "from ultralytics import YOLO; YOLO('yolov8n.pt')"
+# Download YOLO11 segmentation model
+python -c "from ultralytics import YOLO; YOLO('yolo11n-seg.pt')"
 
-# Copy to SkyGuard location
-cp yolov8n.pt models/raptor_detector.pt
+# Move to models directory
+mv yolo11n-seg.pt models/yolo11n-seg.pt
 
-# Update config
-python -c "
-import yaml
-with open('config/skyguard.yaml', 'r') as f: config = yaml.safe_load(f)
-config['ai']['model_path'] = 'models/raptor_detector.pt'
-config['ai']['model_type'] = 'yolo'
-with open('config/skyguard.yaml', 'w') as f: yaml.dump(config, f)
-"
+# Verify configuration
+# Check that config/skyguard.yaml has:
+# ai:
+#   model_path: models/yolo11n-seg.pt
 ```
 
 ### **Option 2: Custom Dataset Training**
@@ -75,15 +72,13 @@ If you have your own raptor images, you can train a custom model.
 
 ```yaml
 ai:
-  model_path: "models/raptor_detector.pt"
+  model_path: "models/yolo11n-seg.pt"  # YOLO11 segmentation model
   model_type: "yolo"  # "yolo" or "tensorflow"
-  confidence_threshold: 0.5
-  nms_threshold: 0.4
-  input_size: [640, 640]
+  confidence_threshold: 0.6
+  nms_threshold: 0.5
+  input_size: 1080
   classes:
     - "bird"
-    # OR for COCO dataset:
-    # - "person", "bicycle", "car", ..., "bird", ...
 ```
 
 ### **Model Performance Tuning:**
@@ -178,25 +173,27 @@ ai:
 ### **Update Existing Model:**
 ```bash
 # Download new model
-python -c "from ultralytics import YOLO; YOLO('yolov8s.pt')"
+python -c "from ultralytics import YOLO; YOLO('yolo11n-seg.pt')"
 
 # Replace old model
-cp yolov8s.pt models/raptor_detector.pt
+mv yolo11n-seg.pt models/yolo11n-seg.pt
 
 # Test new model
-python scripts/setup_model.py
+python -c "from ultralytics import YOLO; model = YOLO('models/yolo11n-seg.pt'); print('Model loaded successfully')"
 ```
 
 ### **Switch Between Models:**
 ```bash
 # Backup current model
-cp models/raptor_detector.pt models/raptor_detector_backup.pt
+cp models/yolo11n-seg.pt models/yolo11n-seg_backup.pt
 
-# Switch to different model
-cp models/yolov8s.pt models/raptor_detector.pt
+# Download and switch to different model
+python -c "from ultralytics import YOLO; YOLO('yolo11s-seg.pt')"
+mv yolo11s-seg.pt models/yolo11s-seg.pt
 
-# Update config if needed
-python scripts/setup_model.py
+# Update config/skyguard.yaml to use new model
+# ai:
+#   model_path: models/yolo11s-seg.pt
 ```
 
 ## 🐛 **Troubleshooting**
@@ -205,9 +202,13 @@ python scripts/setup_model.py
 
 #### **Model Not Found:**
 ```
-Error: Model file not found: models/raptor_detector.pt
+Error: Model file not found: models/yolo11n-seg.pt
 ```
-**Solution:** Run `python scripts/setup_model.py`
+**Solution:** Download the model:
+```bash
+python -c "from ultralytics import YOLO; YOLO('yolo11n-seg.pt')"
+mv yolo11n-seg.pt models/yolo11n-seg.pt
+```
 
 #### **Model Loading Error:**
 ```

@@ -58,7 +58,7 @@ class TestSkyGuardWebPortalAPI:
             assert 'notifications' in data
             assert data['system']['status'] == 'running'
             assert data['camera']['connected'] is True
-            assert data['ai']['model_loaded'] is True
+            assert data['ai']['loaded'] is True
     
     def test_api_status_error_handling(self, web_portal: SkyGuardWebPortal, mocker: "MockerFixture") -> None:
         """Test the /api/status endpoint handles errors gracefully."""
@@ -90,9 +90,13 @@ class TestSkyGuardWebPortalAPI:
             assert response.status_code == 200
             
             data = json.loads(response.data)
-            assert len(data) == 1
-            assert data[0]['id'] == 1
-            assert data[0]['class'] == 'bird'
+            assert 'detections' in data
+            assert len(data['detections']) == 1
+            assert data['detections'][0]['id'] == 1
+            assert data['detections'][0]['class'] == 'bird'
+            assert 'total' in data
+            assert 'page' in data
+            assert 'limit' in data
     
     def test_api_detections_with_parameters(self, web_portal: SkyGuardWebPortal, mocker: "MockerFixture") -> None:
         """Test the /api/detections endpoint with query parameters."""
@@ -104,7 +108,9 @@ class TestSkyGuardWebPortalAPI:
             assert response.status_code == 200
             
             data = json.loads(response.data)
-            assert len(data) == 5
+            assert 'detections' in data
+            assert len(data['detections']) == 5
+            assert data['page'] == 3  # offset=10, limit=5, so page = (10/5)+1 = 3
     
     def test_api_detection_detail_success(self, web_portal: SkyGuardWebPortal, mocker: "MockerFixture") -> None:
         """Test the /api/detections/<id> endpoint returns specific detection."""
@@ -112,10 +118,12 @@ class TestSkyGuardWebPortalAPI:
             'id': 1,
             'timestamp': '2024-01-01T12:00:00',
             'confidence': 0.85,
-            'class': 'bird',
-            'bbox': [100, 100, 200, 200]
+            'class_name': 'bird',
+            'bbox': [100, 100, 200, 200],
+            'image_path': '',
+            'metadata': {}
         }
-        mocker.patch.object(web_portal, '_get_detection_detail', return_value=mock_detection)
+        mocker.patch.object(web_portal.event_logger, 'get_detection_by_id', return_value=mock_detection)
         
         with web_portal.app.test_client() as client:
             response = client.get('/api/detections/1')
@@ -127,7 +135,7 @@ class TestSkyGuardWebPortalAPI:
     
     def test_api_detection_detail_not_found(self, web_portal: SkyGuardWebPortal, mocker: "MockerFixture") -> None:
         """Test the /api/detections/<id> endpoint handles missing detection."""
-        mocker.patch.object(web_portal, '_get_detection_detail', return_value=None)
+        mocker.patch.object(web_portal.event_logger, 'get_detection_by_id', return_value=None)
         
         with web_portal.app.test_client() as client:
             response = client.get('/api/detections/999')
@@ -284,8 +292,10 @@ class TestSkyGuardWebPortalAPI:
             assert response.status_code == 200
             
             data = json.loads(response.data)
-            assert len(data) == 1
-            assert data[0]['level'] == 'INFO'
+            assert 'logs' in data
+            assert len(data['logs']) == 1
+            assert data['logs'][0]['level'] == 'INFO'
+            assert 'total_lines' in data
     
     def test_api_stats_success(self, web_portal: SkyGuardWebPortal, mocker: "MockerFixture") -> None:
         """Test the /api/stats endpoint returns system statistics."""
@@ -304,9 +314,12 @@ class TestSkyGuardWebPortalAPI:
             assert response.status_code == 200
             
             data = json.loads(response.data)
-            assert 'cpu_percent' in data
-            assert 'memory_percent' in data
-            assert 'detections_today' in data
+            assert 'system' in data
+            assert 'detections' in data
+            assert 'performance' in data
+            assert data['system']['cpu_usage'] == 25.5
+            assert data['system']['memory_usage'] == 60.2
+            assert data['system']['disk_usage'] == 45.8
 
 
 if __name__ == "__main__":

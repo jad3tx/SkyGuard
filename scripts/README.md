@@ -58,42 +58,6 @@ Stops the SkyGuard system.
 - `--verbose`: Enable verbose output
 - `--help`: Show help message
 
-## 🧹 Cleanup and Reinstallation
-
-### `cleanup_and_reinstall.sh`
-Performs a complete cleanup and fresh installation of SkyGuard.
-
-**What it does:**
-1. Stops all SkyGuard services
-2. Creates backup of current installation (optional)
-3. Removes `/home/pi/skyguard` directory
-4. Clones fresh repository from GitHub
-5. Runs installation with default values
-6. Starts services automatically
-
-**Usage:**
-```bash
-# Full cleanup and reinstall
-./scripts/cleanup_and_reinstall.sh
-
-# Skip backup creation
-./scripts/cleanup_and_reinstall.sh --no-backup
-
-# Only run installation (skip cleanup)
-./scripts/cleanup_and_reinstall.sh --install-only
-
-# Skip git clone (use existing directory)
-./scripts/cleanup_and_reinstall.sh --skip-git
-```
-
-**Options:**
-- `--force`: Force cleanup even if services are running
-- `--no-backup`: Don't create backup of current installation
-- `--skip-git`: Skip git clone (use existing directory)
-- `--install-only`: Skip cleanup, only run installation
-- `--verbose`: Enable verbose output
-- `--help`: Show help message
-
 ## 📋 Service Management
 
 ### Using systemd (Recommended)
@@ -114,24 +78,6 @@ sudo systemctl enable skyguard.service skyguard-web.service
 
 # Disable auto-start
 sudo systemctl disable skyguard.service skyguard-web.service
-```
-
-### Using Control Script
-```bash
-# Start all services
-./deployment/scripts/skyguard-control.sh start
-
-# Stop all services
-./deployment/scripts/skyguard-control.sh stop
-
-# Restart all services
-./deployment/scripts/skyguard-control.sh restart
-
-# Check status
-./deployment/scripts/skyguard-control.sh status
-
-# View logs
-./deployment/scripts/skyguard-control.sh logs
 ```
 
 ## 🔍 Monitoring and Troubleshooting
@@ -181,9 +127,9 @@ tail -f /home/pi/skyguard/logs/web.log
 
 If you encounter issues:
 
-1. **Check the logs** in `/home/pi/skyguard/logs/`
-2. **Run health check**: `./deployment/scripts/health_check.sh`
-3. **Check system status**: `./deployment/scripts/skyguard-control.sh status`
-4. **View recent logs**: `./deployment/scripts/skyguard-control.sh logs`
+1. **Check the logs** in `logs/`
+2. **Check systemd status**: `sudo systemctl status skyguard.service skyguard-web.service`
+3. **View recent logs**: `tail -f logs/skyguard.log`
+4. **Check service processes**: `ps aux | grep skyguard`
 
 For more detailed troubleshooting, see the main documentation in the `docs/` directory.
