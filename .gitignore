@@ -114,7 +114,6 @@ tmp/
 # Media files (too large for git)
 media/
 videos/
-videos_in/
 videos_out/
 images/
 *.avi
