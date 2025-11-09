@@ -5,7 +5,7 @@
 set -e
 
 # Configuration
-SKYGUARD_DIR="/home/pi/skyguard"
+SKYGUARD_DIR="/home/pi/SkyGuard"
 LOG_FILE="$SKYGUARD_DIR/logs/stop.log"
 
 # Colors for output

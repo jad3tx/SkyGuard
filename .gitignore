@@ -115,7 +115,6 @@ tmp/
 media/
 videos/
 images/
-*.mp4
 *.avi
 *.mov
 *.jpg

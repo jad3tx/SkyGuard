@@ -5,7 +5,7 @@
 set -e
 
 # Configuration
-SKYGUARD_DIR="/home/pi/skyguard"
+SKYGUARD_DIR="/home/pi/SkyGuard"
 VENV_DIR="$SKYGUARD_DIR/venv"
 LOG_FILE="$SKYGUARD_DIR/logs/startup.log"
 
