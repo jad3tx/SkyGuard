@@ -221,23 +221,35 @@ SkyGuard provides a low-cost, AI-driven alert system that:
 
 ## 🔧 Troubleshooting
 
-### Camera Not Working
+### Camera Not Working (USB Webcam)
 
-If you see "ERROR - Failed to open camera source: 0", try these steps:
+If you see "ERROR - Failed to open camera source: 0", run the diagnostic script first:
 
-1. **Check if camera is connected (USB webcam):**
+```bash
+source venv/bin/activate
+python scripts/diagnose_camera.py
+```
+
+This will check:
+- Video devices (`/dev/video*`)
+- USB camera detection
+- User permissions (video group)
+- Camera device permissions
+- OpenCV camera access
+
+**Common fixes:**
+
+1. **Add user to video group (most common issue):**
+   ```bash
+   sudo usermod -a -G video pi
+   # Logout and login again, or reboot
+   sudo reboot
+   ```
+
+2. **Check if camera is detected:**
    ```bash
    lsusb | grep -i camera
    ls /dev/video*
-   ```
-
-2. **Check camera permissions:**
-   ```bash
-   # Add user to video group
-   sudo usermod -a -G video pi
-   
-   # Log out and log back in, or reboot
-   sudo reboot
    ```
 
 3. **Test camera manually:**
@@ -246,26 +258,20 @@ If you see "ERROR - Failed to open camera source: 0", try these steps:
    python -c "import cv2; cap = cv2.VideoCapture(0); print('OK' if cap.isOpened() else 'Failed'); cap.release()"
    ```
 
-4. **For Raspberry Pi Camera Module:**
-   ```bash
-   # Enable camera interface
-   sudo raspi-config
-   # Navigate to: Interface Options → Camera → Enable
-   # Reboot after enabling
-   sudo reboot
-   
-   # Test Pi camera
-   libcamera-hello --list-cameras
-   ```
-
-5. **Try different camera sources:**
+4. **Try different camera sources:**
    - Edit `config/skyguard.yaml` and change `camera.source` to try 0, 1, or 2
    - The system will automatically try multiple sources if source 0 fails
 
-6. **Check logs for detailed error messages:**
+5. **Check logs for detailed error messages:**
    ```bash
    tail -f logs/skyguard.log
    ```
+
+6. **If camera still doesn't work:**
+   - Unplug and replug the USB camera
+   - Try a different USB port
+   - Check if another application is using the camera
+   - Verify the camera works on another computer
 
 ## ⚙️ Configuration
 
