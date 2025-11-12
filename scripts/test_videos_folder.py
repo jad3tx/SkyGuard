@@ -12,8 +12,9 @@ import cv2
 import time
 import json
 import argparse
+import numpy as np
 from pathlib import Path
-from typing import List
+from typing import List, Dict, Any
 
 # Ensure project root on sys.path
 PROJECT_ROOT = Path(__file__).parent.parent
@@ -34,7 +35,7 @@ def find_videos(input_dir: Path) -> List[Path]:
 
 
 def annotate_frame(frame, detections):
-    # Minimal annotation: draw boxes and labels if present
+    """Minimal annotation: draw boxes and labels if present."""
     for det in detections or []:
         conf = float(det.get("confidence", 0.0))
         if conf < 0.80:
@@ -61,6 +62,86 @@ def annotate_frame(frame, detections):
     return frame
 
 
+def draw_segmented_frame(frame: np.ndarray, detections: List[Dict[str, Any]]) -> np.ndarray:
+    """Draw segmentation masks, bounding boxes, and labels on frame.
+    
+    Args:
+        frame: Input frame as numpy array
+        detections: List of detection dictionaries
+        
+    Returns:
+        Annotated frame with segmentation masks and labels
+    """
+    annotated_frame = frame.copy()
+    
+    for detection in detections or []:
+        bbox = detection.get("bbox")
+        confidence = float(detection.get("confidence", 0.0))
+        class_name = detection.get("class_name", "bird")
+        polygon = detection.get("polygon")
+        species = detection.get("species")
+        species_confidence = detection.get("species_confidence")
+        
+        # Draw segmentation mask if available
+        if polygon is not None and len(polygon) > 0:
+            overlay = annotated_frame.copy()
+            pts = np.array(polygon, dtype=np.int32)
+            # Use green color for segmentation mask
+            cv2.fillPoly(overlay, [pts], color=(0, 255, 0))
+            # Alpha blend mask for transparency
+            alpha = 0.3
+            annotated_frame = cv2.addWeighted(
+                overlay,
+                alpha,
+                annotated_frame,
+                1 - alpha,
+                0,
+            )
+        
+        # Draw bounding box
+        if bbox and len(bbox) == 4:
+            x1, y1, x2, y2 = map(int, bbox)
+            cv2.rectangle(annotated_frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+            
+            # Build label text
+            if species and species_confidence is not None:
+                label = f"{class_name}: {confidence:.2f} | {species}: {species_confidence:.2f}"
+            else:
+                label = f"{class_name}: {confidence:.2f}"
+            
+            # Calculate label size for background
+            font = cv2.FONT_HERSHEY_SIMPLEX
+            font_scale = 0.6
+            thickness = 2
+            (label_width, label_height), baseline = cv2.getTextSize(
+                label, font, font_scale, thickness
+            )
+            
+            # Draw label background
+            label_y = max(label_height + 5, y1)
+            cv2.rectangle(
+                annotated_frame,
+                (x1, label_y - label_height - 5),
+                (x1 + label_width, label_y + baseline),
+                (0, 255, 0),
+                -1,
+            )
+            
+            # Draw label text
+            cv2.putText(
+                annotated_frame,
+                label,
+                (x1, label_y),
+                font,
+                font_scale,
+                (0, 0, 0),
+                thickness,
+                cv2.LINE_AA,
+            )
+    
+    return annotated_frame
+
+
 def process_video(
     detector: RaptorDetector,
     video_path: Path,
@@ -68,6 +149,7 @@ def process_video(
     save_annotated: bool,
     save_json: bool = False,
     save_crops: bool = False,
+    save_segmented_images: bool = False,
 ) -> dict:
     cap = cv2.VideoCapture(str(video_path))
     if not cap.isOpened():
@@ -87,11 +169,14 @@ def process_video(
     # Detection outputs
     det_root = output_dir / "detections" / video_path.stem
     crops_root = output_dir / "crops" / video_path.stem
+    segmented_root = output_dir / "segmented_images" / video_path.stem
     detections_log = []
     if save_json:
         det_root.mkdir(parents=True, exist_ok=True)
     if save_crops:
         crops_root.mkdir(parents=True, exist_ok=True)
+    if save_segmented_images:
+        segmented_root.mkdir(parents=True, exist_ok=True)
 
     stats = {
         "video": str(video_path),
@@ -112,6 +197,24 @@ def process_video(
             frame_idx += 1
 
             dets = detector.detect(frame)
+            
+            # Filter to only high-confidence detections (>= 0.20) for species classification
+            # Only these will be sent to species classification
+            high_conf_dets_for_species = [
+                d for d in (dets or [])
+                if float(d.get("confidence", 0.0)) >= 0.20
+            ]
+            
+            # Filter to only detections with species confidence >= 0.10
+            # Only save segmented images if species is identified with >= 0.10 confidence
+            dets_with_species = [
+                d for d in high_conf_dets_for_species
+                if d.get("species") is not None 
+                and d.get("species_confidence") is not None
+                and float(d.get("species_confidence", 0.0)) >= 0.10
+            ]
+            
+            # Track all detections for stats (using 0.80 threshold for stats)
             high_conf_dets = [
                 d for d in (dets or [])
                 if float(d.get("confidence", 0.0)) >= 0.80
@@ -146,6 +249,32 @@ def process_video(
                             crop = frame[y1:y2, x1:x2]
                             crop_name = f"{frame_idx:06d}_{i}_{rec['class_name'] or 'bird'}_{rec['confidence']:.2f}.jpg"
                             cv2.imwrite(str(crops_root / crop_name), crop)
+            
+            # Save segmented images ONLY for detections with:
+            # - Bird confidence >= 0.20 (already filtered above)
+            # - Species confidence >= 0.10
+            # - Species name present
+            if save_segmented_images and dets_with_species:
+                segmented_frame = draw_segmented_frame(frame.copy(), dets_with_species)
+                
+                # Build filename with species name
+                # If multiple detections, use the first one's species
+                if len(dets_with_species) == 1:
+                    det = dets_with_species[0]
+                    species = det.get("species")
+                    species_conf = float(det.get("species_confidence", 0.0))
+                    # Sanitize species name for filename (replace spaces/special chars)
+                    species_safe = species.replace(" ", "_").replace("/", "_").replace("(", "").replace(")", "").replace(",", "")
+                    segmented_name = f"{frame_idx:06d}_{species_safe}_{species_conf:.2f}_segmented.jpg"
+                else:
+                    # Multiple detections - use first species
+                    det = dets_with_species[0]
+                    species = det.get("species")
+                    species_conf = float(det.get("species_confidence", 0.0))
+                    species_safe = species.replace(" ", "_").replace("/", "_").replace("(", "").replace(")", "").replace(",", "")
+                    segmented_name = f"{frame_idx:06d}_{species_safe}_{species_conf:.2f}_multi_segmented.jpg"
+                
+                cv2.imwrite(str(segmented_root / segmented_name), segmented_frame)
 
             if writer is not None:
                 annotated = annotate_frame(frame.copy(), dets)
@@ -204,6 +333,11 @@ def main():
         "--save-crops",
         action="store_true",
         help="Save cropped bird images to output/crops/",
+    )
+    parser.add_argument(
+        "--save-segmented-images",
+        action="store_true",
+        help="Save labeled segmented images for frames with detections to output/segmented_images/",
     )
     # Optional species classification backend options
     parser.add_argument(
@@ -290,6 +424,7 @@ def main():
             args.save_annotated,
             save_json=args.save_json,
             save_crops=args.save_crops,
+            save_segmented_images=args.save_segmented_images,
         )
         all_stats.append(stats)
         print(

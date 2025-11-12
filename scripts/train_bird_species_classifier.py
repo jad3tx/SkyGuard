@@ -233,6 +233,42 @@ def train_classifier(
                 if isinstance(value, float):
                     print(f"   {key}: {value:.4f}")
         
+        # Save results.csv for analytics
+        # Ultralytics should generate this automatically, but we'll ensure it exists
+        results_csv_path = output_dir / "results.csv"
+        alt_csv_path = output_dir / "bird_species_classifier" / "results.csv"
+        
+        # Check if CSV already exists (Ultralytics generates it automatically)
+        if results_csv_path.exists():
+            print(f"📊 Results CSV found at: {results_csv_path}")
+        elif alt_csv_path.exists():
+            print(f"📊 Results CSV found at: {alt_csv_path}")
+        else:
+            # Try to extract CSV from results object
+            try:
+                import pandas as pd
+                # Ultralytics results object has a csv property that contains the CSV string
+                if hasattr(results, 'csv') and results.csv:
+                    results_csv_path = output_dir / "results.csv"
+                    with open(results_csv_path, 'w') as f:
+                        f.write(results.csv)
+                    print(f"📊 Results CSV saved to: {results_csv_path}")
+                elif hasattr(results, 'results_dict'):
+                    # Fallback: create CSV from results_dict if available
+                    # Note: This may not have epoch-by-epoch data
+                    df = pd.DataFrame([results.results_dict])
+                    results_csv_path = output_dir / "results.csv"
+                    df.to_csv(results_csv_path, index=False)
+                    print(f"📊 Results CSV saved to: {results_csv_path}")
+                    print("   Note: This CSV contains final metrics only. For epoch-by-epoch data,")
+                    print("   check the training output directory after training completes.")
+            except ImportError:
+                print("⚠️  pandas not available, skipping CSV export")
+                print("   Install with: pip install pandas")
+            except Exception as e:
+                print(f"⚠️  Could not save results CSV: {e}")
+                print(f"   Ultralytics should generate results.csv automatically in: {output_dir}")
+        
         # Update config
         update_config(final_model_path)
         

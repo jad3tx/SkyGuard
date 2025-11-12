@@ -62,6 +62,8 @@ class BirdSegmentationDetector:
         self.species_module = self.config.get('species_module')
         self.species_function = self.config.get('species_function')
         self._species_predict_fn = None  # callable(image_rgb_np) -> (label, conf)
+        # Class name mapping for numeric IDs to bird names
+        self._species_class_name_map = None
         
     def load_model(self) -> bool:
         """Load the AI model for detection.
@@ -115,6 +117,8 @@ class BirdSegmentationDetector:
                 self.species_model = YOLO(str(sp_path))
                 # Note: _classify_species uses self.species_model directly
                 self.logger.info(f"Species model loaded (ultralytics): {sp_path}")
+                # Try to load class name mapping from dataset
+                self._load_species_class_name_map()
             elif self.species_backend == 'external':
                 # Expect: species_repo_path, species_module, species_function
                 if not (self.species_repo_path and self.species_module and self.species_function):
@@ -150,6 +154,153 @@ class BirdSegmentationDetector:
         except Exception as e:
             self.logger.error(f"Failed to init species backend: {e}")
 
+    def _load_species_class_name_map(self) -> None:
+        """Load class name mapping from classes.txt and dataset_info.yaml if available.
+        
+        This attempts to map numeric class IDs to actual bird names.
+        """
+        try:
+            import yaml
+            base = Path(__file__).resolve()
+            # Project root is two levels up: SkyGuard/skyguard/core -> SkyGuard/
+            project_root = base.parents[2]
+            
+            class_name_map = {}
+            
+            # First, try to load classes.txt from NABirds directory (highest priority)
+            classes_txt_path = project_root / "data" / "nabirds" / "classes.txt"
+            if classes_txt_path.exists():
+                try:
+                    with open(classes_txt_path, 'r', encoding='utf-8') as f:
+                        for line in f:
+                            line = line.strip()
+                            if not line:
+                                continue
+                            # Format: "{class_id} {class_name}"
+                            parts = line.split(' ', 1)
+                            if len(parts) >= 2:
+                                class_id_str = parts[0].strip()
+                                class_name = parts[1].strip()
+                                
+                                # Map both with and without leading zeros
+                                # e.g., "0989" -> "Yellow-headed Blackbird (Female/Immature Male)"
+                                # and "989" -> same
+                                class_id_int = int(class_id_str)
+                                class_name_map[class_id_str] = class_name
+                                class_name_map[str(class_id_int)] = class_name
+                                # Also map zero-padded versions (4 digits)
+                                class_id_padded = f"{class_id_int:04d}"
+                                if class_id_padded != class_id_str:
+                                    class_name_map[class_id_padded] = class_name
+                    
+                    self.logger.info(
+                        f"Loaded NABirds class mapping from {classes_txt_path} "
+                        f"({len(class_name_map)} entries)"
+                    )
+                except Exception as e:
+                    self.logger.warning(f"Failed to load classes.txt from {classes_txt_path}: {e}")
+                    import traceback
+                    self.logger.debug(traceback.format_exc())
+            
+            # Also try to load from dataset_info.yaml (lower priority, for named species)
+            dataset_paths = [
+                project_root / "data" / "bird_species_merged" / "dataset_info.yaml",
+                project_root / "data" / "bird_species" / "dataset_info.yaml",
+                project_root / "data" / "nabirds_prepared" / "dataset_info.yaml",
+            ]
+            
+            # Also try to find it relative to the model path
+            if self.species_model_path:
+                model_path = self._resolve_model_path(self.species_model_path)
+                # Look for dataset_info.yaml in parent directories
+                for parent in [model_path.parent, model_path.parent.parent]:
+                    dataset_paths.append(parent / "dataset_info.yaml")
+                    # Also check data subdirectories
+                    for data_dir in parent.glob("**/data/*/dataset_info.yaml"):
+                        dataset_paths.append(data_dir)
+            
+            for dataset_path in dataset_paths:
+                if dataset_path.exists():
+                    try:
+                        with open(dataset_path, 'r', encoding='utf-8') as f:
+                            dataset_info = yaml.safe_load(f)
+                        
+                        # Get class list from dataset info
+                        classes = dataset_info.get('classes', [])
+                        if isinstance(classes, list):
+                            # Only add named species (non-numeric) from dataset_info.yaml
+                            # Numeric IDs should already be mapped from classes.txt
+                            for idx, class_name in enumerate(classes):
+                                class_name_str = str(class_name)
+                                # Check if it's a named species (not purely numeric)
+                                is_numeric = class_name_str.isdigit() or (
+                                    class_name_str.startswith('0') and class_name_str[1:].isdigit()
+                                )
+                                
+                                # Only add named species, and only if not already mapped
+                                if not is_numeric:
+                                    # Map by index only if not already in map
+                                    if str(idx) not in class_name_map:
+                                        class_name_map[str(idx)] = class_name_str
+                                    # Map by name
+                                    if class_name_str not in class_name_map:
+                                        class_name_map[class_name_str] = class_name_str
+                        
+                        self.logger.debug(
+                            f"Loaded additional class mappings from {dataset_path}"
+                        )
+                    except Exception as e:
+                        self.logger.debug(f"Failed to load dataset info from {dataset_path}: {e}")
+                        continue
+            
+            if class_name_map:
+                self._species_class_name_map = class_name_map
+                self.logger.info(
+                    f"Total class name mappings loaded: {len(class_name_map)}"
+                )
+            else:
+                self.logger.debug("No class name mappings found")
+        except Exception as e:
+            self.logger.debug(f"Failed to load species class name map: {e}")
+    
+    def _format_species_name(self, label: str) -> str:
+        """Format species name, converting numeric IDs to more readable format.
+        
+        Args:
+            label: Raw species label from model (may be numeric ID or name)
+            
+        Returns:
+            Formatted species name
+        """
+        if not label:
+            return label
+        
+        label_str = str(label).strip()
+        
+        # Check if it's a numeric ID (may have leading zeros like "0395")
+        # Try to determine if it's numeric by checking if it's all digits
+        is_numeric = label_str.isdigit() or (label_str.startswith('0') and label_str[1:].isdigit())
+        
+        # If it's already a named species (not purely numeric), use it as-is
+        if not is_numeric:
+            # Replace underscores with spaces for readability
+            return label_str.replace('_', ' ')
+        
+        # It's a numeric ID - try to look it up in the mapping
+        if self._species_class_name_map:
+            # Try both with and without leading zeros
+            mapped = self._species_class_name_map.get(label_str)
+            if not mapped and label_str.startswith('0'):
+                # Try without leading zero
+                mapped = self._species_class_name_map.get(label_str.lstrip('0'))
+            if mapped and not (mapped.isdigit() or (mapped.startswith('0') and mapped[1:].isdigit())):
+                # Found a named species for this ID
+                return mapped.replace('_', ' ')
+        
+        # No mapping found - format numeric ID more readably
+        # Return as "NABirds Class {ID}" 
+        return f"NABirds Class {label_str}"
+    
     def _resolve_model_path(self, path_str: str) -> Path:
         """Resolve a possibly relative model path against project root.
 
@@ -267,9 +418,10 @@ class BirdSegmentationDetector:
                         polygon_points = pts.astype(np.int32).tolist()
                     
                     # Optional species classification
+                    # Only run species classification for high-confidence detections (>= 0.20)
                     species_name = None
                     species_conf = None
-                    if self._species_predict_fn is not None or self.species_model is not None:
+                    if confidence >= 0.20 and (self._species_predict_fn is not None or self.species_model is not None):
                         try:
                             crop = self._extract_crop(
                                 frame, polygon_points, x1, y1, x2, y2
@@ -373,6 +525,9 @@ class BirdSegmentationDetector:
             return None, None
         
         label = names.get(top_i) if isinstance(names, dict) else None
+        if label is not None:
+            # Format the label to convert numeric IDs to readable names
+            label = self._format_species_name(label)
         return label, conf
     
     def draw_detections(

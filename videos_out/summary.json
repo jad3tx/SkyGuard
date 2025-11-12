@@ -1,30 +1,44 @@
 [
   {
-    "video": "videos_in\\bald-eagle-soaring-against-clouds-SBV-300128442-HD.mp4",
+    "video": "/Users/johndaughtridge/Code/SkyGuard/videos_in/albatross-bird-flying-in-antarctica-landscape-seabird-in-flight-flying-past-antarct-SBV-352919482-HD.mp4",
+    "frames": 259,
+    "detections": 178,
+    "max_confidence": 0.9546694755554199,
+    "duration_s": 11.617
+  },
+  {
+    "video": "/Users/johndaughtridge/Code/SkyGuard/videos_in/frigate-birds-flying-around-santa-cruz-galapagos-islands-nature-SBV-347560427-HD.mp4",
+    "frames": 421,
+    "detections": 375,
+    "max_confidence": 0.9598090052604675,
+    "duration_s": 20.568
+  },
+  {
+    "video": "/Users/johndaughtridge/Code/SkyGuard/videos_in/lonely-bird-flying-in-the-blue-sky-against-the-sun-SBV-338835604-HD.mp4",
     "frames": 278,
-    "detections": 98,
-    "max_confidence": 0.9306862950325012,
-    "duration_s": 8.726
+    "detections": 0,
+    "max_confidence": 0.0,
+    "duration_s": 10.356
   },
   {
-    "video": "videos_in\\slow-motion-bald-eagle-soaring-over-treetops-SBV-300135454-HD.mp4",
-    "frames": 462,
-    "detections": 33,
-    "max_confidence": 0.9187288284301758,
-    "duration_s": 12.178
+    "video": "/Users/johndaughtridge/Code/SkyGuard/videos_in/slow-motion-puffin-flying-with-sky-atlantic-puffin-in-flight-flying-fast-and-flappi-SBV-352924077-HD.mp4",
+    "frames": 156,
+    "detections": 81,
+    "max_confidence": 0.944733202457428,
+    "duration_s": 6.899
   },
   {
-    "video": "videos_in\\slow-motion-soaring-bald-eagle-closeup-SBV-300135462-HD.mp4",
+    "video": "/Users/johndaughtridge/Code/SkyGuard/videos_in/slow-motion-shot-of-aerial-shot-of-bird-flying-across-the-empty-savannah-on-a-hot-a-SBV-352853463-HD.mp4",
+    "frames": 242,
+    "detections": 27,
+    "max_confidence": 0.834489107131958,
+    "duration_s": 11.251
+  },
+  {
+    "video": "/Users/johndaughtridge/Code/SkyGuard/videos_in/slow-motion-soaring-bald-eagle-closeup-SBV-300135462-HD.mp4",
     "frames": 477,
-    "detections": 320,
-    "max_confidence": 0.9554159045219421,
-    "duration_s": 17.864
-  },
-  {
-    "video": "videos_in\\three-lappet-faced-vultures-torgos-tracheliotos-flying-over-a-dead-antelope-SBV-352245251-4K.mp4",
-    "frames": 720,
-    "detections": 576,
-    "max_confidence": 0.9534918665885925,
-    "duration_s": 66.28
+    "detections": 318,
+    "max_confidence": 0.9539756178855896,
+    "duration_s": 24.039
   }
 ]

@@ -1,8 +1,8 @@
 task: classify
 mode: train
 model: yolo11n-cls.pt
-data: data\bird_species
-epochs: 1
+data: data/bird_species_merged
+epochs: 20
 time: null
 patience: 20
 batch: 16
@@ -10,9 +10,9 @@ imgsz: 224
 save: true
 save_period: 10
 cache: false
-device: '0'
+device: mps
 workers: 4
-project: models\training
+project: /Users/johndaughtridge/Code/SkyGuard/models/training
 name: bird_species_classifier
 exist_ok: true
 pretrained: true
@@ -103,4 +103,4 @@ auto_augment: randaugment
 erasing: 0.4
 cfg: null
 tracker: botsort.yaml
-save_dir: C:\Users\johnd\source\SkyGuard\models\training\bird_species_classifier
+save_dir: /Users/johndaughtridge/Code/SkyGuard/models/training/bird_species_classifier
