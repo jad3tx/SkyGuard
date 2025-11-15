@@ -18,9 +18,9 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 def train_classifier(
     data_dir: Path,
-    model_size: str = "s",
-    epochs: int = 100,
-    imgsz: int = 448,
+    model_size: str = "m",
+    epochs: int = 20,
+    imgsz: int = 672,
     batch_size: int = 16,
     device: str = "auto",
     output_dir: Optional[Path] = None,
