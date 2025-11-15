@@ -20,13 +20,13 @@ sys.path.insert(0, str(PROJECT_ROOT))
 try:
     import cv2
 except ImportError:
-    print("❌ OpenCV not found. Install it with: pip install opencv-python")
+    print("[ERROR] OpenCV not found. Install it with: pip install opencv-python")
     sys.exit(1)
 
 try:
     import yaml
 except ImportError:
-    print("❌ PyYAML not found. Install it with: pip install pyyaml")
+    print("[ERROR] PyYAML not found. Install it with: pip install pyyaml")
     sys.exit(1)
 
 
@@ -48,6 +48,22 @@ def find_videos(species_dir: Path) -> List[Path]:
         videos.extend(species_dir.glob(f"*{ext}"))
         videos.extend(species_dir.glob(f"*{ext.upper()}"))
     return sorted(videos)
+
+
+def find_images(species_dir: Path) -> List[Path]:
+    """Find all images in a species directory.
+    
+    Args:
+        species_dir: Directory containing images for a species
+        
+    Returns:
+        List of image file paths
+    """
+    images = []
+    for ext in SUPPORTED_IMAGE_EXTS:
+        images.extend(species_dir.glob(f"*{ext}"))
+        images.extend(species_dir.glob(f"*{ext.upper()}"))
+    return sorted(images)
 
 
 def extract_frames(
@@ -139,7 +155,7 @@ def prepare_training_from_videos(
         True if successful, False otherwise
     """
     if not input_dir.exists():
-        print(f"❌ Input directory not found: {input_dir}")
+        print(f"[ERROR] Input directory not found: {input_dir}")
         return False
     
     # Set random seed for reproducibility
@@ -149,11 +165,11 @@ def prepare_training_from_videos(
     species_dirs = [d for d in input_dir.iterdir() if d.is_dir()]
     
     if not species_dirs:
-        print(f"❌ No species directories found in {input_dir}")
+        print(f"[ERROR] No species directories found in {input_dir}")
         print("   Expected structure: input_dir/Species_Name/video1.mp4, ...")
         return False
     
-    print(f"✅ Found {len(species_dirs)} species directories")
+    print(f"[OK] Found {len(species_dirs)} species directories")
     
     # Create output directories
     train_dir = output_dir / "train"
@@ -172,20 +188,24 @@ def prepare_training_from_videos(
     }
     
     # Process each species
-    print("\n[INFO] Extracting frames from videos...")
+    print("\n[INFO] Processing videos and images...")
     
     for species_dir in sorted(species_dirs):
         species_name = species_dir.name
         print(f"\n   Processing: {species_name}")
         
-        # Find videos for this species
+        # Find videos and images for this species
         videos = find_videos(species_dir)
+        images = find_images(species_dir)
         
-        if not videos:
-            print(f"   [WARNING] No videos found in {species_dir}")
+        if not videos and not images:
+            print(f"   [WARNING] No videos or images found in {species_dir}")
             continue
         
-        print(f"   Found {len(videos)} videos")
+        if videos:
+            print(f"   Found {len(videos)} videos")
+        if images:
+            print(f"   Found {len(images)} images")
         
         # Extract frames from all videos
         all_frames = []
@@ -199,9 +219,12 @@ def prepare_training_from_videos(
             all_frames.extend(video_frames)
             stats['total_videos'] += 1
         
+        # Add images directly (they're already frames)
+        all_frames.extend(images)
+        
         if len(all_frames) < min_frames_per_class:
-            print(f"   [WARNING] Only {len(all_frames)} frames extracted (minimum: {min_frames_per_class})")
-            print(f"   Consider adding more videos or increasing --frames-per-video")
+            print(f"   [WARNING] Only {len(all_frames)} frames/images found (minimum: {min_frames_per_class})")
+            print(f"   Consider adding more videos/images or increasing --frames-per-video")
             # Continue anyway, but warn user
         
         # Split frames into train/val
@@ -217,13 +240,31 @@ def prepare_training_from_videos(
         train_species_dir.mkdir(parents=True, exist_ok=True)
         val_species_dir.mkdir(parents=True, exist_ok=True)
         
-        # Copy frames to train/val directories
+        # Copy frames/images to train/val directories
         for frame_path in train_frames:
+            # For extracted frames, use the existing name
+            # For direct images, use the original name
             dest_path = train_species_dir / frame_path.name
+            # Avoid overwriting if same name exists (add counter)
+            counter = 1
+            original_dest = dest_path
+            while dest_path.exists():
+                stem = original_dest.stem
+                suffix = original_dest.suffix
+                dest_path = train_species_dir / f"{stem}_{counter}{suffix}"
+                counter += 1
             shutil.copy2(frame_path, dest_path)
         
         for frame_path in val_frames:
             dest_path = val_species_dir / frame_path.name
+            # Avoid overwriting if same name exists (add counter)
+            counter = 1
+            original_dest = dest_path
+            while dest_path.exists():
+                stem = original_dest.stem
+                suffix = original_dest.suffix
+                dest_path = val_species_dir / f"{stem}_{counter}{suffix}"
+                counter += 1
             shutil.copy2(frame_path, dest_path)
         
         # Clean up temp directory
@@ -234,6 +275,7 @@ def prepare_training_from_videos(
         # Update statistics
         stats['species'][species_name] = {
             'videos': len(videos),
+            'images': len(images),
             'total_frames': len(all_frames),
             'train_frames': len(train_frames),
             'val_frames': len(val_frames),
@@ -242,7 +284,7 @@ def prepare_training_from_videos(
         stats['train_frames'] += len(train_frames)
         stats['val_frames'] += len(val_frames)
         
-        print(f"   ✅ Extracted {len(all_frames)} frames ({len(train_frames)} train, {len(val_frames)} val)")
+        print(f"   [OK] Extracted {len(all_frames)} frames ({len(train_frames)} train, {len(val_frames)} val)")
     
     # Clean up temp directory if empty
     temp_root = output_dir / "temp"
@@ -257,7 +299,7 @@ def prepare_training_from_videos(
     
     # Print summary
     print("\n" + "=" * 60)
-    print("✅ Dataset preparation completed!")
+    print("[OK] Dataset preparation completed!")
     print("=" * 60)
     print(f"Output directory: {output_dir}")
     print(f"Species: {len(stats['species'])}")
@@ -312,16 +354,18 @@ def main():
         description="Extract frames from videos organized by species for training",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
-This script extracts frames from videos organized by bird species and prepares
-them for YOLO classification training.
+This script extracts frames from videos and processes images organized by bird 
+species, preparing them for YOLO classification training.
 
 Expected input structure:
   input_dir/
     ├── Bald_Eagle/
     │   ├── video1.mp4
-    │   └── video2.mp4
+    │   ├── image1.jpg
+    │   └── ...
     ├── Red_Tailed_Hawk/
-    │   └── video1.mp4
+    │   ├── video1.mp4
+    │   └── image1.jpg
     └── ...
 
 Example usage:
@@ -415,7 +459,7 @@ Example usage:
     
     if success:
         print("\n" + "=" * 60)
-        print("🎉 Frame extraction completed!")
+        print("[SUCCESS] Frame extraction completed!")
         print("=" * 60)
         print("\nNext steps:")
         print("1. Train the species classification model:")

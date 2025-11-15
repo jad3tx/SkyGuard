@@ -1,44 +1,44 @@
 [
   {
-    "video": "/Users/johndaughtridge/Code/SkyGuard/videos_in/albatross-bird-flying-in-antarctica-landscape-seabird-in-flight-flying-past-antarct-SBV-352919482-HD.mp4",
+    "video": "videos_in\\albatross-bird-flying-in-antarctica-landscape-seabird-in-flight-flying-past-antarct-SBV-352919482-HD.mp4",
     "frames": 259,
-    "detections": 178,
-    "max_confidence": 0.9546694755554199,
-    "duration_s": 11.617
+    "detections": 174,
+    "max_confidence": 0.9542903304100037,
+    "duration_s": 16.859
   },
   {
-    "video": "/Users/johndaughtridge/Code/SkyGuard/videos_in/frigate-birds-flying-around-santa-cruz-galapagos-islands-nature-SBV-347560427-HD.mp4",
+    "video": "videos_in\\frigate-birds-flying-around-santa-cruz-galapagos-islands-nature-SBV-347560427-HD.mp4",
     "frames": 421,
-    "detections": 375,
-    "max_confidence": 0.9598090052604675,
-    "duration_s": 20.568
+    "detections": 365,
+    "max_confidence": 0.9599566459655762,
+    "duration_s": 28.439
   },
   {
-    "video": "/Users/johndaughtridge/Code/SkyGuard/videos_in/lonely-bird-flying-in-the-blue-sky-against-the-sun-SBV-338835604-HD.mp4",
+    "video": "videos_in\\lonely-bird-flying-in-the-blue-sky-against-the-sun-SBV-338835604-HD.mp4",
     "frames": 278,
     "detections": 0,
     "max_confidence": 0.0,
-    "duration_s": 10.356
+    "duration_s": 9.758
   },
   {
-    "video": "/Users/johndaughtridge/Code/SkyGuard/videos_in/slow-motion-puffin-flying-with-sky-atlantic-puffin-in-flight-flying-fast-and-flappi-SBV-352924077-HD.mp4",
+    "video": "videos_in\\slow-motion-puffin-flying-with-sky-atlantic-puffin-in-flight-flying-fast-and-flappi-SBV-352924077-HD.mp4",
     "frames": 156,
     "detections": 81,
-    "max_confidence": 0.944733202457428,
-    "duration_s": 6.899
+    "max_confidence": 0.9445681571960449,
+    "duration_s": 9.544
   },
   {
-    "video": "/Users/johndaughtridge/Code/SkyGuard/videos_in/slow-motion-shot-of-aerial-shot-of-bird-flying-across-the-empty-savannah-on-a-hot-a-SBV-352853463-HD.mp4",
+    "video": "videos_in\\slow-motion-shot-of-aerial-shot-of-bird-flying-across-the-empty-savannah-on-a-hot-a-SBV-352853463-HD.mp4",
     "frames": 242,
-    "detections": 27,
-    "max_confidence": 0.834489107131958,
-    "duration_s": 11.251
+    "detections": 26,
+    "max_confidence": 0.8369244337081909,
+    "duration_s": 14.819
   },
   {
-    "video": "/Users/johndaughtridge/Code/SkyGuard/videos_in/slow-motion-soaring-bald-eagle-closeup-SBV-300135462-HD.mp4",
+    "video": "videos_in\\slow-motion-soaring-bald-eagle-closeup-SBV-300135462-HD.mp4",
     "frames": 477,
-    "detections": 318,
-    "max_confidence": 0.9539756178855896,
-    "duration_s": 24.039
+    "detections": 320,
+    "max_confidence": 0.9554159045219421,
+    "duration_s": 34.147
   }
 ]

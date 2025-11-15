@@ -1,3407 +1,3386 @@
 class_stats:
-  0295:
-    sources:
-    - nabirds_prepared
-    train: 42
-    val: 11
-  0296:
-    sources:
-    - nabirds_prepared
-    train: 51
-    val: 13
-  0297:
-    sources:
-    - nabirds_prepared
-    train: 69
-    val: 18
-  0298:
-    sources:
-    - nabirds_prepared
-    train: 53
-    val: 14
-  0299:
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  '0313':
-    sources:
-    - nabirds_prepared
-    train: 37
-    val: 10
-  '0314':
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  '0315':
-    sources:
-    - nabirds_prepared
-    train: 92
-    val: 24
-  '0316':
-    sources:
-    - nabirds_prepared
-    train: 76
-    val: 20
-  '0317':
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  0318:
-    sources:
-    - nabirds_prepared
-    train: 66
-    val: 17
-  0319:
-    sources:
-    - nabirds_prepared
-    train: 84
-    val: 22
-  '0320':
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  '0321':
-    sources:
-    - nabirds_prepared
-    train: 69
-    val: 18
-  '0322':
-    sources:
-    - nabirds_prepared
-    train: 77
-    val: 20
-  '0323':
-    sources:
-    - nabirds_prepared
-    train: 71
-    val: 18
-  '0324':
-    sources:
-    - nabirds_prepared
-    train: 52
-    val: 14
-  '0325':
-    sources:
-    - nabirds_prepared
-    train: 65
-    val: 17
-  '0326':
-    sources:
-    - nabirds_prepared
-    train: 57
-    val: 15
-  '0327':
-    sources:
-    - nabirds_prepared
-    train: 68
-    val: 17
-  0328:
-    sources:
-    - nabirds_prepared
-    train: 73
-    val: 19
-  0329:
-    sources:
-    - nabirds_prepared
-    train: 56
-    val: 14
-  '0330':
-    sources:
-    - nabirds_prepared
-    train: 35
-    val: 9
-  '0331':
-    sources:
-    - nabirds_prepared
-    train: 32
-    val: 9
-  '0332':
-    sources:
-    - nabirds_prepared
-    train: 84
-    val: 22
-  '0333':
-    sources:
-    - nabirds_prepared
-    train: 84
-    val: 21
-  '0334':
-    sources:
-    - nabirds_prepared
-    train: 36
-    val: 9
-  '0335':
-    sources:
-    - nabirds_prepared
-    train: 84
-    val: 22
-  '0336':
-    sources:
-    - nabirds_prepared
-    train: 50
-    val: 13
-  '0337':
-    sources:
-    - nabirds_prepared
-    train: 61
-    val: 16
-  0338:
-    sources:
-    - nabirds_prepared
-    train: 92
-    val: 24
-  0339:
-    sources:
-    - nabirds_prepared
-    train: 56
-    val: 15
-  '0340':
-    sources:
-    - nabirds_prepared
-    train: 74
-    val: 19
-  '0341':
-    sources:
-    - nabirds_prepared
-    train: 18
-    val: 5
-  '0342':
-    sources:
-    - nabirds_prepared
-    train: 24
-    val: 7
-  '0343':
-    sources:
-    - nabirds_prepared
-    train: 75
-    val: 19
-  '0344':
-    sources:
-    - nabirds_prepared
-    train: 60
-    val: 16
-  '0345':
-    sources:
-    - nabirds_prepared
-    train: 43
-    val: 11
-  '0346':
-    sources:
-    - nabirds_prepared
-    train: 58
-    val: 15
-  '0347':
-    sources:
-    - nabirds_prepared
-    train: 84
-    val: 22
-  0348:
-    sources:
-    - nabirds_prepared
-    train: 87
-    val: 22
-  0349:
-    sources:
-    - nabirds_prepared
-    train: 60
-    val: 15
-  '0350':
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  '0351':
-    sources:
-    - nabirds_prepared
-    train: 88
-    val: 22
-  '0352':
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  '0353':
-    sources:
-    - nabirds_prepared
-    train: 78
-    val: 20
-  '0354':
-    sources:
-    - nabirds_prepared
-    train: 94
-    val: 24
-  '0355':
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  '0356':
-    sources:
-    - nabirds_prepared
-    train: 76
-    val: 19
-  '0357':
-    sources:
-    - nabirds_prepared
-    train: 94
-    val: 24
-  0358:
-    sources:
-    - nabirds_prepared
-    train: 93
-    val: 24
-  0359:
-    sources:
-    - nabirds_prepared
-    train: 56
-    val: 14
-  '0360':
-    sources:
-    - nabirds_prepared
-    train: 46
-    val: 12
-  '0361':
-    sources:
-    - nabirds_prepared
-    train: 40
-    val: 10
-  '0362':
-    sources:
-    - nabirds_prepared
-    train: 64
-    val: 17
-  '0363':
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  '0364':
-    sources:
-    - nabirds_prepared
-    train: 61
-    val: 16
-  '0365':
-    sources:
-    - nabirds_prepared
-    train: 59
-    val: 15
-  '0366':
-    sources:
-    - nabirds_prepared
-    train: 80
-    val: 21
-  '0367':
-    sources:
-    - nabirds_prepared
-    train: 65
-    val: 17
-  0368:
-    sources:
-    - nabirds_prepared
-    train: 86
-    val: 22
-  0369:
-    sources:
-    - nabirds_prepared
-    train: 24
-    val: 7
-  '0370':
-    sources:
-    - nabirds_prepared
-    train: 60
-    val: 16
-  '0371':
-    sources:
-    - nabirds_prepared
-    train: 72
-    val: 18
-  '0372':
-    sources:
-    - nabirds_prepared
-    train: 71
-    val: 18
-  '0373':
-    sources:
-    - nabirds_prepared
-    train: 80
-    val: 20
-  '0374':
-    sources:
-    - nabirds_prepared
-    train: 80
-    val: 21
-  '0375':
-    sources:
-    - nabirds_prepared
-    train: 90
-    val: 23
-  '0376':
-    sources:
-    - nabirds_prepared
-    train: 59
-    val: 15
-  '0377':
-    sources:
-    - nabirds_prepared
-    train: 62
-    val: 16
-  0378:
-    sources:
-    - nabirds_prepared
-    train: 64
-    val: 17
-  0379:
-    sources:
-    - nabirds_prepared
-    train: 74
-    val: 19
-  0380:
-    sources:
-    - nabirds_prepared
-    train: 85
-    val: 22
-  0381:
-    sources:
-    - nabirds_prepared
-    train: 95
-    val: 24
-  0382:
-    sources:
-    - nabirds_prepared
-    train: 95
-    val: 24
-  0392:
-    sources:
-    - nabirds_prepared
-    train: 36
-    val: 9
-  0393:
-    sources:
-    - nabirds_prepared
-    train: 64
-    val: 17
-  0394:
-    sources:
-    - nabirds_prepared
-    train: 42
-    val: 11
-  0395:
-    sources:
-    - nabirds_prepared
-    train: 95
-    val: 24
-  0396:
-    sources:
-    - nabirds_prepared
-    train: 69
-    val: 18
-  0397:
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  0398:
-    sources:
-    - nabirds_prepared
-    train: 56
-    val: 14
-  0399:
-    sources:
-    - nabirds_prepared
-    train: 60
-    val: 16
-  '0400':
-    sources:
-    - nabirds_prepared
-    train: 93
-    val: 24
-  '0401':
-    sources:
-    - nabirds_prepared
-    train: 62
-    val: 16
-  '0402':
-    sources:
-    - nabirds_prepared
-    train: 67
-    val: 17
-  '0446':
-    sources:
-    - nabirds_prepared
-    train: 94
-    val: 24
-  '0447':
-    sources:
-    - nabirds_prepared
-    train: 44
-    val: 11
-  0448:
-    sources:
-    - nabirds_prepared
-    train: 74
-    val: 19
-  0449:
-    sources:
-    - nabirds_prepared
-    train: 50
-    val: 13
-  '0450':
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  '0451':
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  '0452':
-    sources:
-    - nabirds_prepared
-    train: 60
-    val: 16
-  '0453':
-    sources:
-    - nabirds_prepared
-    train: 73
-    val: 19
-  '0454':
-    sources:
-    - nabirds_prepared
-    train: 56
-    val: 15
-  '0455':
-    sources:
-    - nabirds_prepared
-    train: 41
-    val: 11
-  '0456':
-    sources:
-    - nabirds_prepared
-    train: 24
-    val: 7
-  '0457':
-    sources:
-    - nabirds_prepared
-    train: 48
-    val: 13
-  0458:
-    sources:
-    - nabirds_prepared
-    train: 93
-    val: 24
-  0459:
-    sources:
-    - nabirds_prepared
-    train: 64
-    val: 16
-  '0460':
-    sources:
-    - nabirds_prepared
-    train: 44
-    val: 11
-  '0461':
-    sources:
-    - nabirds_prepared
-    train: 52
-    val: 13
-  '0462':
-    sources:
-    - nabirds_prepared
-    train: 48
-    val: 12
-  '0463':
-    sources:
-    - nabirds_prepared
-    train: 32
-    val: 9
-  '0464':
-    sources:
-    - nabirds_prepared
-    train: 22
-    val: 6
-  '0465':
-    sources:
-    - nabirds_prepared
-    train: 38
-    val: 10
-  '0466':
-    sources:
-    - nabirds_prepared
-    train: 31
-    val: 8
-  '0467':
-    sources:
-    - nabirds_prepared
-    train: 47
-    val: 12
-  0468:
-    sources:
-    - nabirds_prepared
-    train: 60
-    val: 15
-  0469:
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  '0470':
-    sources:
-    - nabirds_prepared
-    train: 92
-    val: 24
-  '0471':
-    sources:
-    - nabirds_prepared
-    train: 60
-    val: 15
-  '0472':
-    sources:
-    - nabirds_prepared
-    train: 65
-    val: 17
-  '0473':
-    sources:
-    - nabirds_prepared
-    train: 83
-    val: 21
-  '0474':
-    sources:
-    - nabirds_prepared
-    train: 52
-    val: 14
-  '0475':
-    sources:
-    - nabirds_prepared
-    train: 52
-    val: 13
-  '0476':
-    sources:
-    - nabirds_prepared
-    train: 49
-    val: 13
-  '0477':
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  0478:
-    sources:
-    - nabirds_prepared
-    train: 51
-    val: 13
-  0479:
-    sources:
-    - nabirds_prepared
-    train: 52
-    val: 13
-  0480:
-    sources:
-    - nabirds_prepared
-    train: 81
-    val: 21
-  0481:
-    sources:
-    - nabirds_prepared
-    train: 88
-    val: 23
-  0482:
-    sources:
-    - nabirds_prepared
-    train: 83
-    val: 21
-  0483:
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  0484:
-    sources:
-    - nabirds_prepared
-    train: 86
-    val: 22
-  0485:
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  0486:
-    sources:
-    - nabirds_prepared
-    train: 78
-    val: 20
-  0487:
-    sources:
-    - nabirds_prepared
-    train: 52
-    val: 14
-  0488:
-    sources:
-    - nabirds_prepared
-    train: 48
-    val: 12
-  0489:
-    sources:
-    - nabirds_prepared
-    train: 77
-    val: 20
-  0490:
-    sources:
-    - nabirds_prepared
-    train: 86
-    val: 22
-  0491:
-    sources:
-    - nabirds_prepared
-    train: 84
-    val: 22
-  0492:
-    sources:
-    - nabirds_prepared
-    train: 42
-    val: 11
-  0493:
-    sources:
-    - nabirds_prepared
-    train: 57
-    val: 15
-  0494:
-    sources:
-    - nabirds_prepared
-    train: 64
-    val: 16
-  0495:
-    sources:
-    - nabirds_prepared
-    train: 76
-    val: 19
-  0496:
-    sources:
-    - nabirds_prepared
-    train: 61
-    val: 16
-  0497:
-    sources:
-    - nabirds_prepared
-    train: 46
-    val: 12
-  0498:
-    sources:
-    - nabirds_prepared
-    train: 89
-    val: 23
-  0499:
-    sources:
-    - nabirds_prepared
-    train: 94
-    val: 24
-  '0500':
-    sources:
-    - nabirds_prepared
-    train: 68
-    val: 18
-  '0501':
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  '0502':
-    sources:
-    - nabirds_prepared
-    train: 40
-    val: 10
-  '0503':
-    sources:
-    - nabirds_prepared
-    train: 88
-    val: 23
-  '0504':
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  '0505':
-    sources:
-    - nabirds_prepared
-    train: 64
-    val: 16
-  '0506':
-    sources:
-    - nabirds_prepared
-    train: 52
-    val: 13
-  '0507':
-    sources:
-    - nabirds_prepared
-    train: 59
-    val: 15
-  0508:
-    sources:
-    - nabirds_prepared
-    train: 81
-    val: 21
-  0509:
-    sources:
-    - nabirds_prepared
-    train: 92
-    val: 24
-  '0510':
-    sources:
-    - nabirds_prepared
-    train: 90
-    val: 23
-  '0511':
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  '0512':
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  '0513':
-    sources:
-    - nabirds_prepared
-    train: 80
-    val: 21
-  '0514':
-    sources:
-    - nabirds_prepared
-    train: 76
-    val: 20
-  '0515':
-    sources:
-    - nabirds_prepared
-    train: 92
-    val: 24
-  '0516':
-    sources:
-    - nabirds_prepared
-    train: 86
-    val: 22
-  '0517':
-    sources:
-    - nabirds_prepared
-    train: 68
-    val: 18
-  0518:
-    sources:
-    - nabirds_prepared
-    train: 50
-    val: 13
-  0519:
-    sources:
-    - nabirds_prepared
-    train: 84
-    val: 21
-  '0520':
-    sources:
-    - nabirds_prepared
-    train: 73
-    val: 19
-  '0521':
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  '0522':
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  '0523':
-    sources:
-    - nabirds_prepared
-    train: 88
-    val: 22
-  '0524':
-    sources:
-    - nabirds_prepared
-    train: 43
-    val: 11
-  '0525':
-    sources:
-    - nabirds_prepared
-    train: 84
-    val: 21
-  '0526':
-    sources:
-    - nabirds_prepared
-    train: 60
-    val: 15
-  '0527':
-    sources:
-    - nabirds_prepared
-    train: 93
-    val: 24
-  0528:
-    sources:
-    - nabirds_prepared
-    train: 93
-    val: 24
-  0529:
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  '0530':
-    sources:
-    - nabirds_prepared
-    train: 82
-    val: 21
-  '0531':
-    sources:
-    - nabirds_prepared
-    train: 60
-    val: 15
-  '0532':
-    sources:
-    - nabirds_prepared
-    train: 36
-    val: 10
-  '0533':
-    sources:
-    - nabirds_prepared
-    train: 75
-    val: 19
-  '0534':
-    sources:
-    - nabirds_prepared
-    train: 56
-    val: 15
-  '0535':
-    sources:
-    - nabirds_prepared
-    train: 52
-    val: 13
-  '0536':
-    sources:
-    - nabirds_prepared
-    train: 87
-    val: 22
-  '0537':
-    sources:
-    - nabirds_prepared
-    train: 59
-    val: 15
-  0538:
-    sources:
-    - nabirds_prepared
-    train: 75
-    val: 19
-  0539:
-    sources:
-    - nabirds_prepared
-    train: 82
-    val: 21
-  '0540':
-    sources:
-    - nabirds_prepared
-    train: 57
-    val: 15
-  '0541':
-    sources:
-    - nabirds_prepared
-    train: 82
-    val: 21
-  '0542':
-    sources:
-    - nabirds_prepared
-    train: 79
-    val: 20
-  '0543':
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  '0544':
-    sources:
-    - nabirds_prepared
-    train: 78
-    val: 20
-  '0545':
-    sources:
-    - nabirds_prepared
-    train: 68
-    val: 18
-  '0546':
-    sources:
-    - nabirds_prepared
-    train: 45
-    val: 12
-  '0547':
-    sources:
-    - nabirds_prepared
-    train: 42
-    val: 11
-  0548:
-    sources:
-    - nabirds_prepared
-    train: 52
-    val: 14
-  0549:
-    sources:
-    - nabirds_prepared
-    train: 87
-    val: 22
-  '0550':
-    sources:
-    - nabirds_prepared
-    train: 79
-    val: 20
-  '0551':
-    sources:
-    - nabirds_prepared
-    train: 77
-    val: 20
-  '0552':
-    sources:
-    - nabirds_prepared
-    train: 61
-    val: 16
-  '0553':
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  '0554':
-    sources:
-    - nabirds_prepared
-    train: 95
-    val: 24
-  '0555':
-    sources:
-    - nabirds_prepared
-    train: 78
-    val: 20
-  '0556':
-    sources:
-    - nabirds_prepared
-    train: 68
-    val: 17
-  '0557':
-    sources:
-    - nabirds_prepared
-    train: 79
-    val: 20
-  0558:
-    sources:
-    - nabirds_prepared
-    train: 73
-    val: 19
-  0559:
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  '0560':
-    sources:
-    - nabirds_prepared
-    train: 94
-    val: 24
-  '0561':
-    sources:
-    - nabirds_prepared
-    train: 95
-    val: 24
-  0599:
-    sources:
-    - nabirds_prepared
-    train: 26
-    val: 7
-  '0600':
-    sources:
-    - nabirds_prepared
-    train: 29
-    val: 8
-  '0601':
-    sources:
-    - nabirds_prepared
-    train: 43
-    val: 11
-  '0602':
-    sources:
-    - nabirds_prepared
-    train: 68
-    val: 18
-  '0603':
-    sources:
-    - nabirds_prepared
-    train: 37
-    val: 10
-  '0604':
-    sources:
-    - nabirds_prepared
-    train: 64
-    val: 16
-  '0605':
-    sources:
-    - nabirds_prepared
-    train: 43
-    val: 11
-  '0606':
-    sources:
-    - nabirds_prepared
-    train: 43
-    val: 11
-  '0607':
-    sources:
-    - nabirds_prepared
-    train: 80
-    val: 21
-  0608:
-    sources:
-    - nabirds_prepared
-    train: 39
-    val: 10
-  0609:
-    sources:
-    - nabirds_prepared
-    train: 50
-    val: 13
-  '0610':
-    sources:
-    - nabirds_prepared
-    train: 40
-    val: 11
-  '0611':
-    sources:
-    - nabirds_prepared
-    train: 39
-    val: 10
-  '0612':
-    sources:
-    - nabirds_prepared
-    train: 36
-    val: 10
-  '0613':
-    sources:
-    - nabirds_prepared
-    train: 76
-    val: 20
-  '0614':
-    sources:
-    - nabirds_prepared
-    train: 31
-    val: 8
-  '0615':
-    sources:
-    - nabirds_prepared
-    train: 32
-    val: 9
-  '0616':
-    sources:
-    - nabirds_prepared
-    train: 94
-    val: 24
-  '0617':
-    sources:
-    - nabirds_prepared
-    train: 26
-    val: 7
-  0618:
-    sources:
-    - nabirds_prepared
-    train: 25
-    val: 7
-  0619:
-    sources:
-    - nabirds_prepared
-    train: 63
-    val: 16
-  '0620':
-    sources:
-    - nabirds_prepared
-    train: 37
-    val: 10
-  '0621':
-    sources:
-    - nabirds_prepared
-    train: 37
-    val: 10
-  '0622':
-    sources:
-    - nabirds_prepared
-    train: 32
-    val: 9
-  '0623':
-    sources:
-    - nabirds_prepared
-    train: 27
-    val: 7
-  '0624':
-    sources:
-    - nabirds_prepared
-    train: 40
-    val: 10
-  '0625':
-    sources:
-    - nabirds_prepared
-    train: 31
-    val: 8
-  '0626':
-    sources:
-    - nabirds_prepared
-    train: 49
-    val: 13
-  '0627':
-    sources:
-    - nabirds_prepared
-    train: 21
-    val: 6
-  0628:
-    sources:
-    - nabirds_prepared
-    train: 35
-    val: 9
-  0629:
-    sources:
-    - nabirds_prepared
-    train: 38
-    val: 10
-  '0630':
-    sources:
-    - nabirds_prepared
-    train: 32
-    val: 8
-  '0631':
-    sources:
-    - nabirds_prepared
-    train: 52
-    val: 13
-  '0632':
-    sources:
-    - nabirds_prepared
-    train: 46
-    val: 12
-  '0633':
-    sources:
-    - nabirds_prepared
-    train: 25
-    val: 7
-  '0634':
-    sources:
-    - nabirds_prepared
-    train: 52
-    val: 14
-  '0635':
-    sources:
-    - nabirds_prepared
-    train: 69
-    val: 18
-  '0636':
-    sources:
-    - nabirds_prepared
-    train: 62
-    val: 16
-  '0637':
-    sources:
-    - nabirds_prepared
-    train: 40
-    val: 11
-  0638:
-    sources:
-    - nabirds_prepared
-    train: 28
-    val: 8
-  0639:
-    sources:
-    - nabirds_prepared
-    train: 25
-    val: 7
-  '0640':
-    sources:
-    - nabirds_prepared
-    train: 75
-    val: 19
-  '0641':
-    sources:
-    - nabirds_prepared
-    train: 43
-    val: 11
-  '0642':
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  '0643':
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  '0644':
-    sources:
-    - nabirds_prepared
-    train: 49
-    val: 13
-  '0645':
-    sources:
-    - nabirds_prepared
-    train: 51
-    val: 13
-  '0646':
-    sources:
-    - nabirds_prepared
-    train: 31
-    val: 8
-  '0647':
-    sources:
-    - nabirds_prepared
-    train: 80
-    val: 21
-  0648:
-    sources:
-    - nabirds_prepared
-    train: 33
-    val: 9
-  0649:
-    sources:
-    - nabirds_prepared
-    train: 69
-    val: 18
-  '0650':
-    sources:
-    - nabirds_prepared
-    train: 36
-    val: 10
-  '0651':
-    sources:
-    - nabirds_prepared
-    train: 79
-    val: 20
-  '0652':
-    sources:
-    - nabirds_prepared
-    train: 65
-    val: 17
-  '0653':
-    sources:
-    - nabirds_prepared
-    train: 50
-    val: 13
-  '0654':
-    sources:
-    - nabirds_prepared
-    train: 82
-    val: 21
-  '0655':
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  '0656':
-    sources:
-    - nabirds_prepared
-    train: 87
-    val: 22
-  '0657':
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  0658:
-    sources:
-    - nabirds_prepared
-    train: 64
-    val: 17
-  0659:
-    sources:
-    - nabirds_prepared
-    train: 37
-    val: 10
-  '0660':
-    sources:
-    - nabirds_prepared
-    train: 68
-    val: 18
-  '0661':
-    sources:
-    - nabirds_prepared
-    train: 44
-    val: 12
-  '0662':
-    sources:
-    - nabirds_prepared
-    train: 88
-    val: 22
-  '0663':
-    sources:
-    - nabirds_prepared
-    train: 42
-    val: 11
-  '0664':
-    sources:
-    - nabirds_prepared
-    train: 16
-    val: 5
-  '0665':
-    sources:
-    - nabirds_prepared
-    train: 24
-    val: 7
-  '0666':
-    sources:
-    - nabirds_prepared
-    train: 66
-    val: 17
-  '0667':
-    sources:
-    - nabirds_prepared
-    train: 78
-    val: 20
-  0668:
-    sources:
-    - nabirds_prepared
-    train: 76
-    val: 19
-  0669:
-    sources:
-    - nabirds_prepared
-    train: 94
-    val: 24
-  '0670':
-    sources:
-    - nabirds_prepared
-    train: 47
-    val: 12
-  '0671':
-    sources:
-    - nabirds_prepared
-    train: 33
-    val: 9
-  '0672':
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  '0673':
-    sources:
-    - nabirds_prepared
-    train: 95
-    val: 24
-  '0674':
-    sources:
-    - nabirds_prepared
-    train: 87
-    val: 22
-  '0675':
-    sources:
-    - nabirds_prepared
-    train: 33
-    val: 9
-  '0676':
-    sources:
-    - nabirds_prepared
-    train: 86
-    val: 22
-  '0677':
-    sources:
-    - nabirds_prepared
-    train: 44
-    val: 12
-  0678:
-    sources:
-    - nabirds_prepared
-    train: 56
-    val: 14
-  0679:
-    sources:
-    - nabirds_prepared
-    train: 56
-    val: 14
-  0680:
-    sources:
-    - nabirds_prepared
-    train: 57
-    val: 15
-  0681:
-    sources:
-    - nabirds_prepared
-    train: 95
-    val: 24
-  0696:
-    sources:
-    - nabirds_prepared
-    train: 36
-    val: 9
-  0697:
-    sources:
-    - nabirds_prepared
-    train: 35
-    val: 9
-  0698:
-    sources:
-    - nabirds_prepared
-    train: 60
-    val: 16
-  0699:
-    sources:
-    - nabirds_prepared
-    train: 35
-    val: 9
-  '0700':
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  '0746':
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  '0747':
-    sources:
-    - nabirds_prepared
-    train: 92
-    val: 24
-  0748:
-    sources:
-    - nabirds_prepared
-    train: 92
-    val: 24
-  0749:
-    sources:
-    - nabirds_prepared
-    train: 88
-    val: 23
-  '0750':
-    sources:
-    - nabirds_prepared
-    train: 72
-    val: 19
-  '0751':
-    sources:
-    - nabirds_prepared
-    train: 70
-    val: 18
-  '0752':
-    sources:
-    - nabirds_prepared
-    train: 56
-    val: 14
-  '0753':
-    sources:
-    - nabirds_prepared
-    train: 95
-    val: 24
-  '0754':
-    sources:
-    - nabirds_prepared
-    train: 28
-    val: 7
-  '0755':
-    sources:
-    - nabirds_prepared
-    train: 19
-    val: 5
-  '0756':
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  '0757':
-    sources:
-    - nabirds_prepared
-    train: 82
-    val: 21
-  0758:
-    sources:
-    - nabirds_prepared
-    train: 79
-    val: 20
-  0759:
-    sources:
-    - nabirds_prepared
-    train: 38
-    val: 10
-  '0760':
-    sources:
-    - nabirds_prepared
-    train: 92
-    val: 24
-  '0761':
-    sources:
-    - nabirds_prepared
-    train: 72
-    val: 18
-  '0762':
-    sources:
-    - nabirds_prepared
-    train: 95
-    val: 24
-  '0763':
-    sources:
-    - nabirds_prepared
-    train: 24
-    val: 6
-  '0764':
-    sources:
-    - nabirds_prepared
-    train: 95
-    val: 24
-  '0765':
-    sources:
-    - nabirds_prepared
-    train: 51
-    val: 13
-  '0766':
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  '0767':
-    sources:
-    - nabirds_prepared
-    train: 70
-    val: 18
-  0768:
-    sources:
-    - nabirds_prepared
-    train: 78
-    val: 20
-  0769:
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  '0770':
-    sources:
-    - nabirds_prepared
-    train: 77
-    val: 20
-  '0771':
-    sources:
-    - nabirds_prepared
-    train: 75
-    val: 19
-  '0772':
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  '0773':
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  '0774':
-    sources:
-    - nabirds_prepared
-    train: 87
-    val: 22
-  '0775':
-    sources:
-    - nabirds_prepared
-    train: 88
-    val: 23
-  '0776':
-    sources:
-    - nabirds_prepared
-    train: 81
-    val: 21
-  '0777':
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  0778:
-    sources:
-    - nabirds_prepared
-    train: 95
-    val: 24
-  0779:
-    sources:
-    - nabirds_prepared
-    train: 92
-    val: 23
-  0780:
-    sources:
-    - nabirds_prepared
-    train: 95
-    val: 24
-  0781:
-    sources:
-    - nabirds_prepared
-    train: 72
-    val: 19
-  0782:
-    sources:
-    - nabirds_prepared
-    train: 52
-    val: 14
-  0783:
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  0784:
-    sources:
-    - nabirds_prepared
-    train: 74
-    val: 19
-  0785:
-    sources:
-    - nabirds_prepared
-    train: 78
-    val: 20
-  0786:
-    sources:
-    - nabirds_prepared
-    train: 87
-    val: 22
-  0787:
-    sources:
-    - nabirds_prepared
-    train: 45
-    val: 12
-  0788:
-    sources:
-    - nabirds_prepared
-    train: 82
-    val: 21
-  0789:
-    sources:
-    - nabirds_prepared
-    train: 64
-    val: 16
-  0790:
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  0791:
-    sources:
-    - nabirds_prepared
-    train: 52
-    val: 13
-  0792:
-    sources:
-    - nabirds_prepared
-    train: 42
-    val: 11
-  0793:
-    sources:
-    - nabirds_prepared
-    train: 95
-    val: 24
-  0794:
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  0795:
-    sources:
-    - nabirds_prepared
-    train: 85
-    val: 22
-  0796:
-    sources:
-    - nabirds_prepared
-    train: 95
-    val: 24
-  0797:
-    sources:
-    - nabirds_prepared
-    train: 90
-    val: 23
-  0798:
-    sources:
-    - nabirds_prepared
-    train: 90
-    val: 23
-  0799:
-    sources:
-    - nabirds_prepared
-    train: 28
-    val: 8
-  0800:
-    sources:
-    - nabirds_prepared
-    train: 48
-    val: 13
-  0801:
-    sources:
-    - nabirds_prepared
-    train: 39
-    val: 10
-  0802:
-    sources:
-    - nabirds_prepared
-    train: 92
-    val: 24
-  0803:
-    sources:
-    - nabirds_prepared
-    train: 90
-    val: 23
-  0804:
-    sources:
-    - nabirds_prepared
-    train: 92
-    val: 24
-  0805:
-    sources:
-    - nabirds_prepared
-    train: 60
-    val: 15
-  0806:
-    sources:
-    - nabirds_prepared
-    train: 61
-    val: 16
-  0807:
-    sources:
-    - nabirds_prepared
-    train: 28
-    val: 7
-  0808:
-    sources:
-    - nabirds_prepared
-    train: 59
-    val: 15
-  0809:
-    sources:
-    - nabirds_prepared
-    train: 49
-    val: 13
-  0810:
-    sources:
-    - nabirds_prepared
-    train: 84
-    val: 22
-  0811:
-    sources:
-    - nabirds_prepared
-    train: 94
-    val: 24
-  0812:
-    sources:
-    - nabirds_prepared
-    train: 76
-    val: 20
-  0813:
-    sources:
-    - nabirds_prepared
-    train: 87
-    val: 22
-  0814:
-    sources:
-    - nabirds_prepared
-    train: 91
-    val: 23
-  0815:
-    sources:
-    - nabirds_prepared
-    train: 38
-    val: 10
-  0816:
-    sources:
-    - nabirds_prepared
-    train: 47
-    val: 12
-  0817:
-    sources:
-    - nabirds_prepared
-    train: 65
-    val: 17
-  0818:
-    sources:
-    - nabirds_prepared
-    train: 37
-    val: 10
-  0819:
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  0820:
-    sources:
-    - nabirds_prepared
-    train: 56
-    val: 14
-  0821:
-    sources:
-    - nabirds_prepared
-    train: 66
-    val: 17
-  0822:
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  0823:
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  0824:
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  0825:
-    sources:
-    - nabirds_prepared
-    train: 64
-    val: 16
-  0826:
-    sources:
-    - nabirds_prepared
-    train: 57
-    val: 15
-  0827:
-    sources:
-    - nabirds_prepared
-    train: 93
-    val: 24
-  0828:
-    sources:
-    - nabirds_prepared
-    train: 68
-    val: 18
-  0829:
-    sources:
-    - nabirds_prepared
-    train: 51
-    val: 13
-  0830:
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  0831:
-    sources:
-    - nabirds_prepared
-    train: 94
-    val: 24
-  0832:
-    sources:
-    - nabirds_prepared
-    train: 91
-    val: 23
-  0833:
-    sources:
-    - nabirds_prepared
-    train: 29
-    val: 8
-  0834:
-    sources:
-    - nabirds_prepared
-    train: 83
-    val: 21
-  0835:
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  0836:
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  0837:
-    sources:
-    - nabirds_prepared
-    train: 43
-    val: 11
-  0838:
-    sources:
-    - nabirds_prepared
-    train: 65
-    val: 17
-  0839:
-    sources:
-    - nabirds_prepared
-    train: 59
-    val: 15
-  0840:
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  0841:
-    sources:
-    - nabirds_prepared
-    train: 51
-    val: 13
-  0842:
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  0843:
-    sources:
-    - nabirds_prepared
-    train: 84
-    val: 22
-  0844:
-    sources:
-    - nabirds_prepared
-    train: 80
-    val: 21
-  0845:
-    sources:
-    - nabirds_prepared
-    train: 71
-    val: 18
-  0846:
-    sources:
-    - nabirds_prepared
-    train: 69
-    val: 18
-  0847:
-    sources:
-    - nabirds_prepared
-    train: 85
-    val: 22
-  0848:
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  0849:
-    sources:
-    - nabirds_prepared
-    train: 74
-    val: 19
-  0850:
-    sources:
-    - nabirds_prepared
-    train: 92
-    val: 24
-  0851:
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  0852:
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  0853:
-    sources:
-    - nabirds_prepared
-    train: 88
-    val: 23
-  0854:
-    sources:
-    - nabirds_prepared
-    train: 62
-    val: 16
-  0855:
-    sources:
-    - nabirds_prepared
-    train: 60
-    val: 15
-  0856:
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  0857:
-    sources:
-    - nabirds_prepared
-    train: 94
-    val: 24
-  0858:
-    sources:
-    - nabirds_prepared
-    train: 63
-    val: 16
-  0859:
-    sources:
-    - nabirds_prepared
-    train: 77
-    val: 20
-  0860:
-    sources:
-    - nabirds_prepared
-    train: 82
-    val: 21
-  0861:
-    sources:
-    - nabirds_prepared
-    train: 68
-    val: 18
-  0862:
-    sources:
-    - nabirds_prepared
-    train: 88
-    val: 23
-  0863:
-    sources:
-    - nabirds_prepared
-    train: 59
-    val: 15
-  0864:
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  0865:
-    sources:
-    - nabirds_prepared
-    train: 82
-    val: 21
-  0866:
-    sources:
-    - nabirds_prepared
-    train: 92
-    val: 24
-  0867:
-    sources:
-    - nabirds_prepared
-    train: 91
-    val: 23
-  0868:
-    sources:
-    - nabirds_prepared
-    train: 95
-    val: 24
-  0869:
-    sources:
-    - nabirds_prepared
-    train: 52
-    val: 14
-  0870:
-    sources:
-    - nabirds_prepared
-    train: 61
-    val: 16
-  0871:
-    sources:
-    - nabirds_prepared
-    train: 87
-    val: 22
-  0872:
-    sources:
-    - nabirds_prepared
-    train: 82
-    val: 21
-  0873:
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  0874:
-    sources:
-    - nabirds_prepared
-    train: 88
-    val: 23
-  0875:
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  0876:
-    sources:
-    - nabirds_prepared
-    train: 83
-    val: 21
-  0877:
-    sources:
-    - nabirds_prepared
-    train: 86
-    val: 22
-  0878:
-    sources:
-    - nabirds_prepared
-    train: 82
-    val: 21
-  0879:
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  0880:
-    sources:
-    - nabirds_prepared
-    train: 60
-    val: 15
-  0881:
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  0882:
-    sources:
-    - nabirds_prepared
-    train: 52
-    val: 14
-  0883:
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  0884:
-    sources:
-    - nabirds_prepared
-    train: 94
-    val: 24
-  0885:
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  0886:
-    sources:
-    - nabirds_prepared
-    train: 92
-    val: 23
-  0887:
-    sources:
-    - nabirds_prepared
-    train: 49
-    val: 13
-  0888:
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  0889:
-    sources:
-    - nabirds_prepared
-    train: 88
-    val: 22
-  0890:
-    sources:
-    - nabirds_prepared
-    train: 64
-    val: 16
-  0891:
-    sources:
-    - nabirds_prepared
-    train: 67
-    val: 17
-  0892:
-    sources:
-    - nabirds_prepared
-    train: 73
-    val: 19
-  0893:
-    sources:
-    - nabirds_prepared
-    train: 51
-    val: 13
-  0894:
-    sources:
-    - nabirds_prepared
-    train: 88
-    val: 22
-  0895:
-    sources:
-    - nabirds_prepared
-    train: 87
-    val: 22
-  0896:
-    sources:
-    - nabirds_prepared
-    train: 62
-    val: 16
-  0897:
-    sources:
-    - nabirds_prepared
-    train: 82
-    val: 21
-  0898:
-    sources:
-    - nabirds_prepared
-    train: 92
-    val: 23
-  0899:
-    sources:
-    - nabirds_prepared
-    train: 89
-    val: 23
-  0900:
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  0901:
-    sources:
-    - nabirds_prepared
-    train: 63
-    val: 16
-  0902:
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  0903:
-    sources:
-    - nabirds_prepared
-    train: 92
-    val: 24
-  0904:
-    sources:
-    - nabirds_prepared
-    train: 90
-    val: 23
-  0905:
-    sources:
-    - nabirds_prepared
-    train: 47
-    val: 12
-  0906:
-    sources:
-    - nabirds_prepared
-    train: 48
-    val: 13
-  0907:
-    sources:
-    - nabirds_prepared
-    train: 72
-    val: 18
-  0908:
-    sources:
-    - nabirds_prepared
-    train: 92
-    val: 24
-  0909:
-    sources:
-    - nabirds_prepared
-    train: 60
-    val: 16
-  0910:
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  0911:
-    sources:
-    - nabirds_prepared
-    train: 72
-    val: 18
-  0912:
-    sources:
-    - nabirds_prepared
-    train: 94
-    val: 24
-  0913:
-    sources:
-    - nabirds_prepared
-    train: 91
-    val: 23
-  0914:
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  0915:
-    sources:
-    - nabirds_prepared
-    train: 56
-    val: 15
-  0916:
-    sources:
-    - nabirds_prepared
-    train: 39
-    val: 10
-  0917:
-    sources:
-    - nabirds_prepared
-    train: 51
-    val: 13
-  0918:
-    sources:
-    - nabirds_prepared
-    train: 47
-    val: 12
-  0919:
-    sources:
-    - nabirds_prepared
-    train: 40
-    val: 10
-  0920:
-    sources:
-    - nabirds_prepared
-    train: 60
-    val: 15
-  0921:
-    sources:
-    - nabirds_prepared
-    train: 48
-    val: 12
-  0922:
-    sources:
-    - nabirds_prepared
-    train: 86
-    val: 22
-  0923:
-    sources:
-    - nabirds_prepared
-    train: 84
-    val: 21
-  0924:
-    sources:
-    - nabirds_prepared
-    train: 86
-    val: 22
-  0925:
-    sources:
-    - nabirds_prepared
-    train: 90
-    val: 23
-  0926:
-    sources:
-    - nabirds_prepared
-    train: 95
-    val: 24
-  0927:
-    sources:
-    - nabirds_prepared
-    train: 56
-    val: 14
-  0928:
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  0929:
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  0930:
-    sources:
-    - nabirds_prepared
-    train: 94
-    val: 24
-  0931:
-    sources:
-    - nabirds_prepared
-    train: 65
-    val: 17
-  0932:
-    sources:
-    - nabirds_prepared
-    train: 90
-    val: 23
-  0933:
-    sources:
-    - nabirds_prepared
-    train: 64
-    val: 16
-  0934:
-    sources:
-    - nabirds_prepared
-    train: 87
-    val: 22
-  0935:
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  0936:
-    sources:
-    - nabirds_prepared
-    train: 61
-    val: 16
-  0937:
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  0938:
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  0939:
-    sources:
-    - nabirds_prepared
-    train: 75
-    val: 19
-  0940:
-    sources:
-    - nabirds_prepared
-    train: 45
-    val: 12
-  0941:
-    sources:
-    - nabirds_prepared
-    train: 55
-    val: 14
-  0942:
-    sources:
-    - nabirds_prepared
-    train: 60
-    val: 15
-  0943:
-    sources:
-    - nabirds_prepared
-    train: 58
-    val: 15
-  0944:
-    sources:
-    - nabirds_prepared
-    train: 80
-    val: 20
-  0945:
-    sources:
-    - nabirds_prepared
-    train: 68
-    val: 17
-  0946:
-    sources:
-    - nabirds_prepared
-    train: 89
-    val: 23
-  0947:
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  0948:
-    sources:
-    - nabirds_prepared
-    train: 76
-    val: 20
-  0949:
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  0950:
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  0951:
-    sources:
-    - nabirds_prepared
-    train: 44
-    val: 11
-  0952:
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  0953:
-    sources:
-    - nabirds_prepared
-    train: 48
-    val: 13
-  0954:
-    sources:
-    - nabirds_prepared
-    train: 71
-    val: 18
-  0955:
-    sources:
-    - nabirds_prepared
-    train: 78
-    val: 20
-  0956:
-    sources:
-    - nabirds_prepared
-    train: 47
-    val: 12
-  0957:
-    sources:
-    - nabirds_prepared
-    train: 93
-    val: 24
-  0958:
-    sources:
-    - nabirds_prepared
-    train: 94
-    val: 24
-  0959:
-    sources:
-    - nabirds_prepared
-    train: 53
-    val: 14
-  0960:
-    sources:
-    - nabirds_prepared
-    train: 92
-    val: 23
-  0961:
-    sources:
-    - nabirds_prepared
-    train: 56
-    val: 15
-  0962:
-    sources:
-    - nabirds_prepared
-    train: 83
-    val: 21
-  0963:
-    sources:
-    - nabirds_prepared
-    train: 92
-    val: 24
-  0964:
-    sources:
-    - nabirds_prepared
-    train: 95
-    val: 24
-  0965:
-    sources:
-    - nabirds_prepared
-    train: 84
-    val: 21
-  0966:
-    sources:
-    - nabirds_prepared
-    train: 48
-    val: 12
-  0967:
-    sources:
-    - nabirds_prepared
-    train: 62
-    val: 16
-  0968:
-    sources:
-    - nabirds_prepared
-    train: 89
-    val: 23
-  0969:
-    sources:
-    - nabirds_prepared
-    train: 57
-    val: 15
-  0970:
-    sources:
-    - nabirds_prepared
-    train: 53
-    val: 14
-  0971:
-    sources:
-    - nabirds_prepared
-    train: 66
-    val: 17
-  0972:
-    sources:
-    - nabirds_prepared
-    train: 53
-    val: 14
-  0973:
-    sources:
-    - nabirds_prepared
-    train: 95
-    val: 24
-  0974:
-    sources:
-    - nabirds_prepared
-    train: 90
-    val: 23
-  0975:
-    sources:
-    - nabirds_prepared
-    train: 10
-    val: 3
-  0976:
-    sources:
-    - nabirds_prepared
-    train: 78
-    val: 20
-  0977:
-    sources:
-    - nabirds_prepared
-    train: 52
-    val: 14
-  0978:
-    sources:
-    - nabirds_prepared
-    train: 52
-    val: 13
-  0979:
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  0980:
-    sources:
-    - nabirds_prepared
-    train: 80
-    val: 21
-  0981:
-    sources:
-    - nabirds_prepared
-    train: 71
-    val: 18
-  0982:
-    sources:
-    - nabirds_prepared
-    train: 64
-    val: 17
-  0983:
-    sources:
-    - nabirds_prepared
-    train: 35
-    val: 9
-  0984:
-    sources:
-    - nabirds_prepared
-    train: 70
-    val: 18
-  0985:
-    sources:
-    - nabirds_prepared
-    train: 69
-    val: 18
-  0986:
-    sources:
-    - nabirds_prepared
-    train: 55
-    val: 14
-  0987:
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  0988:
-    sources:
-    - nabirds_prepared
-    train: 57
-    val: 15
-  0989:
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  0990:
-    sources:
-    - nabirds_prepared
-    train: 82
-    val: 21
-  0991:
-    sources:
-    - nabirds_prepared
-    train: 55
-    val: 14
-  0992:
-    sources:
-    - nabirds_prepared
-    train: 51
-    val: 13
-  0993:
-    sources:
-    - nabirds_prepared
-    train: 78
-    val: 20
-  0994:
-    sources:
-    - nabirds_prepared
-    train: 60
-    val: 16
-  0995:
-    sources:
-    - nabirds_prepared
-    train: 72
-    val: 19
-  0996:
-    sources:
-    - nabirds_prepared
-    train: 44
-    val: 11
-  0997:
-    sources:
-    - nabirds_prepared
-    train: 89
-    val: 23
-  0998:
-    sources:
-    - nabirds_prepared
-    train: 53
-    val: 14
-  0999:
-    sources:
-    - nabirds_prepared
-    train: 46
-    val: 12
-  '1000':
-    sources:
-    - nabirds_prepared
-    train: 58
-    val: 15
-  '1001':
-    sources:
-    - nabirds_prepared
-    train: 96
-    val: 24
-  '1002':
-    sources:
-    - nabirds_prepared
-    train: 74
-    val: 19
-  '1003':
-    sources:
-    - nabirds_prepared
-    train: 93
-    val: 24
-  '1004':
-    sources:
-    - nabirds_prepared
-    train: 60
-    val: 16
-  '1005':
-    sources:
-    - nabirds_prepared
-    train: 57
-    val: 15
-  '1006':
-    sources:
-    - nabirds_prepared
-    train: 20
-    val: 5
-  '1007':
-    sources:
-    - nabirds_prepared
-    train: 29
-    val: 8
-  '1008':
-    sources:
-    - nabirds_prepared
-    train: 44
-    val: 11
-  '1009':
-    sources:
-    - nabirds_prepared
-    train: 70
-    val: 18
-  '1010':
-    sources:
-    - nabirds_prepared
-    train: 57
-    val: 15
-  American_Kestrel:
+  Abert's_Towhee:
     sources:
     - bird_species
     train: 0
     val: 0
-  Bald_Eagle:
+  Acorn_Woodpecker:
     sources:
     - bird_species
     train: 0
     val: 0
-  Cooper_Hawk:
+  Allen's_Hummingbird_(Adult_Male):
     sources:
     - bird_species
     train: 0
     val: 0
-  Golden_Eagle:
+  Allen's_Hummingbird_(Female,_immature):
     sources:
     - bird_species
     train: 0
     val: 0
-  Great_Heron:
+  American_Avocet:
     sources:
     - bird_species
     train: 0
     val: 0
-  Griffon_Vulture:
+  American_Black_Duck:
     sources:
     - bird_species
     train: 0
     val: 0
-  Northern_Harrier:
+  American_Coot:
     sources:
     - bird_species
     train: 0
     val: 0
-  Peregrine_Falcon:
+  American_Crow:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  American_Dipper:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  American_Goldfinch_(Breeding_Male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  American_Goldfinch_(Female_Nonbreeding_Male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  American_Kestrel_(Adult_male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  American_Kestrel_(Female,_immature):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  American_Oystercatcher:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  American_Pipit:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  American_Redstart_(Adult_Male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  American_Redstart_(Female_juvenile):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  American_Robin_(Adult):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  American_Robin_(Juvenile):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  American_Tree_Sparrow:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  American_White_Pelican:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  American_Wigeon_(Breeding_male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  American_Wigeon_(Female_Eclipse_male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  American_Woodcock:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Anhinga:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Anna's_Hummingbird_(Adult_Male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Anna's_Hummingbird_(Female,_immature):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Ash-throated_Flycatcher:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Bald_Eagle_(Adult,_subadult):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Bald_Eagle_(Immature,_juvenile):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Baltimore_Oriole_(Adult_male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Baltimore_Oriole_(Female_Immature_male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Band-tailed_Pigeon:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Bank_Swallow:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Barn_Owl:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Barn_Swallow:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Barred_Owl:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Barrow's_Goldeneye_(Breeding_male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Barrow's_Goldeneye_(Female_Eclipse_male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Bay-breasted_Warbler_(Breeding_male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Bay-breasted_Warbler_(Female,_Nonbreeding_male,_Immature):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Bell's_Vireo:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Belted_Kingfisher:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Bewick's_Wren:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Black-and-white_Warbler:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Black-bellied_Plover_(Breeding):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Black-bellied_Plover_(Nonbreeding_juvenile):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Black-bellied_Whistling-Duck:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Black-billed_Cuckoo:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Black-billed_Magpie:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Black-capped_Chickadee:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Black-chinned_Hummingbird_(Adult_Male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Black-chinned_Hummingbird_(Female,_immature):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Black-crested_Titmouse:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Black-crowned_Night-Heron_(Adult):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Black-crowned_Night-Heron_(Immature):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Black-headed_Grosbeak_(Adult_Male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Black-headed_Grosbeak_(Female_immature_male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Black-legged_Kittiwake_(Adult):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Black-legged_Kittiwake_(Immature):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Black-necked_Stilt:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Black-tailed_Gnatcatcher:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Black-throated_Blue_Warbler_(Adult_Male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Black-throated_Blue_Warbler_(Female_Immature_male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Black-throated_Gray_Warbler:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Black-throated_Green_Warbler:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Black_Guillemot_(Breeding):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Black_Guillemot_(Nonbreeding,_juvenile):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Black_Oystercatcher:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Black_Phoebe:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Black_Rosy-Finch:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Black_Scoter_(Female_juvenile):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Black_Scoter_(Male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Black_Skimmer:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Black_Tern:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Black_Turnstone:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Black_Vulture:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Blackburnian_Warbler:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Blackpoll_Warbler_(Breeding_male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Blackpoll_Warbler_(Female_juvenile):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Blue-gray_Gnatcatcher:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Blue-headed_Vireo:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Blue-winged_Teal__(Female_juvenile):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Blue-winged_Teal__(Male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Blue-winged_Warbler:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Blue_Grosbeak_(Adult_Male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Blue_Grosbeak_(Female_juvenile):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Blue_Jay:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Boat-tailed_Grackle:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Bobolink_(Breeding_male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Bobolink_(Female_juvenile_nonbreeding_male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Bohemian_Waxwing:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Bonaparte's_Gull:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Boreal_Chickadee:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Brandt's_Cormorant:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Brant:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Brewer's_Blackbird_(Female_Juvenile):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Brewer's_Blackbird_(Male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Brewer's_Sparrow:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Bridled_Titmouse:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Broad-billed_Hummingbird_(Adult_Male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Broad-billed_Hummingbird_(Female,_immature):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Broad-tailed_Hummingbird_(Adult_Male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Broad-tailed_Hummingbird_(Female,_immature):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Broad-winged_Hawk_(Adult):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Broad-winged_Hawk_(Immature):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Bronzed_Cowbird:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Brown-capped_Rosy-Finch:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Brown-headed_Cowbird_(Female_Juvenile):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Brown-headed_Cowbird_(Male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Brown-headed_Nuthatch:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Brown_Creeper:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Brown_Pelican:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Brown_Thrasher:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Bufflehead_(Breeding_male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Bufflehead_(Female_immature_male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Bullock's_Oriole_(Adult_male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Bullock's_Oriole_(Female_Immature_male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Burrowing_Owl:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Bushtit:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Cackling_Goose:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Cactus_Wren:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  California_Gull_(Adult):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  California_Gull_(Immature):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  California_Quail_(Female_juvenile):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  California_Quail_(Male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  California_Thrasher:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  California_Towhee:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Calliope_Hummingbird_(Adult_Male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Calliope_Hummingbird_(Female,_immature):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Canada_Goose:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Canada_Warbler:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Canadian_Goose:
+    sources:
+    - video_training
+    train: 96
+    val: 36
+  Canvasback_(Breeding_male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Canvasback_(Female_Eclipse_male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Canyon_Towhee:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Canyon_Wren:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Cape_May_Warbler:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Carolina_Chickadee:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Carolina_Wren:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Caspian_Tern:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Cassin's_Finch_(Adult_Male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Cassin's_Finch_(Female_immature):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Cassin's_Kingbird:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Cassin's_Vireo:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Cattle_Egret:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Cave_Swallow:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Cedar_Waxwing:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Chestnut-backed_Chickadee:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Chestnut-sided_Warbler_(Breeding_male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Chestnut-sided_Warbler_(Female_immature_male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Chihuahuan_Raven:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Chimney_Swift:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Chipping_Sparrow_(Breeding):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Chipping_Sparrow_(Immature_nonbreeding_adult):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Cinnamon_Teal_(Female_juvenile):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Cinnamon_Teal_(Male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Clark's_Grebe:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Clark's_Nutcracker:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Clay-colored_Sparrow:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Cliff_Swallow:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Common_Eider_(Adult_male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Common_Eider_(Female_juvenile):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Common_Eider_(Immature_Eclipse_male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Common_Gallinule_(Adult):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Common_Gallinule_(Immature):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Common_Goldeneye_(Breeding_male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Common_Goldeneye_(Female_Eclipse_male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Common_Grackle:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Common_Ground-Dove:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Common_Loon_(Breeding):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Common_Loon_(Nonbreeding_juvenile):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Common_Merganser_(Breeding_male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Common_Merganser_(Female_immature_male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Common_Nighthawk:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Common_Raven:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Common_Redpoll:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Common_Tern:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Common_Yellowthroat_(Adult_Male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Common_Yellowthroat_(Female_immature_male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Cooper's_Hawk_(Adult):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Cooper's_Hawk_(Immature):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Cordilleran_Flycatcher:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Cormorant:
+    sources:
+    - video_training
+    train: 96
+    val: 36
+  Costa's_Hummingbird_(Adult_Male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Costa's_Hummingbird_(Female,_immature):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Crested_Caracara:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Curve-billed_Thrasher:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Dark-eyed_Junco_(Oregon):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Dark-eyed_Junco_(Pink-sided):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Dark-eyed_Junco_(Red-backed_Gray-headed):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Dark-eyed_Junco_(Slate-colored):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Dark-eyed_Junco_(White-winged):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Dickcissel:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Double-crested_Cormorant_(Adult):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Double-crested_Cormorant_(Immature):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Downy_Woodpecker:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Duck:
+    sources:
+    - video_training
+    train: 191
+    val: 71
+  Dunlin_(Breeding):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Dunlin_(Nonbreeding_juvenile):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Eared_Grebe_(Breeding):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Eared_Grebe_(Nonbreeding_juvenile):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Eastern_Bluebird:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Eastern_Kingbird:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Eastern_Meadowlark:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Eastern_Phoebe:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Eastern_Screech-Owl:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Eastern_Towhee:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Eastern_Wood-Pewee:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Eurasian_Collared-Dove:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  European_Starling_(Breeding_Adult):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  European_Starling_(Juvenile):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  European_Starling_(Nonbreeding_Adult):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Evening_Grosbeak_(Adult_Male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Evening_Grosbeak_(Female_Juvenile):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Field_Sparrow:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Fish_Crow:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Florida_Scrub-Jay:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Forster's_Tern:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Fox_Sparrow_(Red):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Fox_Sparrow_(Sooty):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Fox_Sparrow_(Thick-billed_Slate-colored):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Gadwall_(Breeding_male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Gadwall_(Female_Eclipse_male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Gambel's_Quail_(Female_juvenile):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Gambel's_Quail_(Male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Gila_Woodpecker:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Glaucous-winged_Gull_(Adult):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Glaucous-winged_Gull_(Immature):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Glossy_Ibis:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Golden-crowned_Kinglet:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Golden-crowned_Sparrow_(Adult):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Golden-crowned_Sparrow_(Immature):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Golden-fronted_Woodpecker:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Golden_Eagle_(Adult):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Golden_Eagle_(Immature):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Gray-crowned_Rosy-Finch:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Gray_Catbird:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Gray_Jay:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Great-tailed_Grackle:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Great_Black-backed_Gull_(Adult):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Great_Black-backed_Gull_(Immature):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Great_Blue_Heron:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Great_Cormorant_(Adult):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Great_Cormorant_(Immature):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Great_Crested_Flycatcher:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Great_Egret:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Great_Horned_Owl:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Greater_Roadrunner:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Greater_Scaup_(Breeding_male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Greater_Scaup_(Female_Eclipse_male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Greater_White-fronted_Goose:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Greater_Yellowlegs:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Green-tailed_Towhee:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Green-winged_Teal_(Male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Green-winged_Teal__(Female_juvenile):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Green_Heron:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Hairy_Woodpecker:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Harlequin_Duck_(Female_juvenile):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Harlequin_Duck_(Male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Harris's_Hawk:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Harris's_Sparrow_(Adult):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Harris's_Sparrow_(Immature):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Heermann's_Gull_(Adult):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Heermann's_Gull_(Immature):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Hermit_Thrush:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Hermit_Warbler:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Herring_Gull_(Adult):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Herring_Gull_(Immature):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Hoary_Redpoll:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Hooded_Merganser_(Breeding_male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Hooded_Merganser_(Female_immature_male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Hooded_Oriole_(Adult_male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Hooded_Oriole_(Female_Immature_male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Hooded_Warbler:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Horned_Grebe_(Breeding):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Horned_Grebe_(Nonbreeding_juvenile):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Horned_Lark:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  House_Finch_(Adult_Male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  House_Finch_(Female_immature):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  House_Sparrow_(Female_Juvenile):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  House_Sparrow_(Male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  House_Wren:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Hutton's_Vireo:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Inca_Dove:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Indigo_Bunting_(Adult_Male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Indigo_Bunting_(Female_juvenile):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Juniper_Titmouse:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Killdeer:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Ladder-backed_Woodpecker:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Lark_Bunting_(Breeding_male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Lark_Bunting_(Female_Nonbreeding_male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Lark_Sparrow:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Laughing_Gull_(Breeding):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Laughing_Gull_(Nonbreeding_Immature):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Lazuli_Bunting_(Adult_Male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Lazuli_Bunting_(Female_juvenile):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Least_Flycatcher:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Least_Sandpiper:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Lesser_Goldfinch_(Adult_Male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Lesser_Goldfinch_(Female_juvenile):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Lesser_Scaup_(Breeding_male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Lesser_Scaup_(Female_Eclipse_male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Lesser_Yellowlegs:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Lincoln's_Sparrow:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Little_Blue_Heron_(Adult):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Little_Blue_Heron_(Immature):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Loggerhead_Shrike:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Long-billed_Curlew:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Long-tailed_Duck_(Female_juvenile):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Long-tailed_Duck_(Summer_male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Long-tailed_Duck_(Winter_male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Louisiana_Waterthrush:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  MacGillivray's_Warbler:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Magnolia_Warbler_(Breeding_male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Magnolia_Warbler_(Female_immature_male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Mallard_(Breeding_male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Mallard_(Female_Eclipse_male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Marbled_Godwit:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Marsh_Wren:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Merlin:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Mew_Gull:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Mexican_Jay:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Mississippi_Kite:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Monk_Parakeet:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Mottled_Duck:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Mountain_Bluebird:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Mountain_Chickadee:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Mourning_Dove:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Mourning_Warbler:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Mute_Swan:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Nashville_Warbler:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Neotropic_Cormorant:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Northern_Bobwhite:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Northern_Cardinal_(Adult_Male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Northern_Cardinal_(Female_Juvenile):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Northern_Flicker_(Red-shafted):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Northern_Flicker_(Yellow-shafted):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Northern_Gannet_(Adult,_Subadult):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Northern_Gannet_(Immature_Juvenile):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Northern_Harrier_(Adult_male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Northern_Harrier_(Female,_immature):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Northern_Mockingbird:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Northern_Parula:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Northern_Pintail_(Breeding_male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Northern_Pintail_(Female_Eclipse_male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Northern_Pygmy-Owl:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Northern_Rough-winged_Swallow:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Northern_Saw-whet_Owl:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Northern_Shoveler_(Breeding_male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Northern_Shoveler_(Female_Eclipse_male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Northern_Shrike:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Northern_Waterthrush:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Northwestern_Crow:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Nuttall's_Woodpecker:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Oak_Titmouse:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Orange-crowned_Warbler:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Orchard_Oriole_(Adult_Male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Orchard_Oriole_(Female_Juvenile):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Orchard_Oriole_(Immature_Male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Osprey:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Ovenbird:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Pacific-slope_Flycatcher:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Pacific_Loon_(Breeding):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Pacific_Loon_(Nonbreeding_juvenile):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Pacific_Wren:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Painted_Bunting_(Adult_Male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Painted_Bunting_(Female_juvenile):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Palm_Warbler:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Pelagic_Cormorant:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Peregrine_Falcon_(Adult):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Peregrine_Falcon_(Immature):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Phainopepla_(Female_juvenile):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Phainopepla_(Male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Pied-billed_Grebe:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Pigeon_Guillemot_(Breeding):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Pigeon_Guillemot_(Nonbreeding,_juvenile):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Pileated_Woodpecker:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Pine_Grosbeak_(Adult_Male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Pine_Grosbeak_(Female_juvenile):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Pine_Siskin:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Pine_Warbler:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Plumbeous_Vireo:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Prairie_Falcon:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Prairie_Warbler:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Prothonotary_Warbler:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Purple_Finch_(Adult_Male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Purple_Finch_(Female_immature):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Purple_Gallinule_(Adult):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Purple_Gallinule_(Immature):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Purple_Martin_(Adult_male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Purple_Martin_(Female_juvenile):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Pygmy_Nuthatch:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Pyrrhuloxia:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Red-bellied_Woodpecker:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Red-breasted_Merganser_(Breeding_male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Red-breasted_Merganser_(Female_immature_male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Red-breasted_Nuthatch:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Red-breasted_Sapsucker:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Red-eyed_Vireo:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Red-headed_Woodpecker_(Adult):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Red-headed_Woodpecker_(Immature):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Red-naped_Sapsucker:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Red-necked_Grebe_(Breeding):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Red-necked_Grebe_(Nonbreeding_juvenile):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Red-shouldered_Hawk_(Adult_):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Red-shouldered_Hawk_(Immature):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Red-tailed_Hawk_(Dark_morph):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Red-tailed_Hawk_(Light_morph_adult):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Red-tailed_Hawk_(Light_morph_immature):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Red-throated_Loon_(Breeding):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Red-throated_Loon_(Nonbreeding_juvenile):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Red-winged_Blackbird_(Female_juvenile):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Red-winged_Blackbird_(Male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Red_Crossbill_(Adult_Male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Red_Crossbill_(Female_juvenile):
     sources:
     - bird_species
     train: 0
     val: 0
   Red_Tailed_Hawk:
     sources:
+    - video_training
+    train: 1052
+    val: 392
+  Reddish_Egret_(Dark_morph):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Reddish_Egret_(White_morph):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Redhead_(Breeding_male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Redhead_(Female_Eclipse_male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Ring-billed_Gull_(Adult):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Ring-billed_Gull_(Immature):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Ring-necked_Duck_(Breeding_male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Ring-necked_Duck_(Female_Eclipse_male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Ring-necked_Pheasant_(Female_juvenile):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Ring-necked_Pheasant_(Male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Rock_Pigeon:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Rose-breasted_Grosbeak_(Adult_Male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Rose-breasted_Grosbeak_(Female_immature_male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Roseate_Spoonbill:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Ross's_Goose:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Rough-legged_Hawk_(Dark_morph):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Rough-legged_Hawk_(Light_morph):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Royal_Tern:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Ruby-crowned_Kinglet:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Ruby-throated_Hummingbird_(Adult_Male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Ruby-throated_Hummingbird_(Female,_immature):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Ruddy_Duck_(Breeding_male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Ruddy_Duck_(Female_juvenile):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Ruddy_Duck_(Winter_male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Ruddy_Turnstone:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Ruffed_Grouse:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Rufous-crowned_Sparrow:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Rufous_Hummingbird_(Adult_Male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Rufous_Hummingbird_(Female,_immature):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Rusty_Blackbird:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Sanderling_(Breeding):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Sanderling_(Nonbreeding_juvenile):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Sandhill_Crane:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Savannah_Sparrow:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Say's_Phoebe:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Scaled_Quail:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Scarlet_Tanager_(Breeding_Male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Scarlet_Tanager_(Female_Nonbreeding_Male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Scissor-tailed_Flycatcher:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Semipalmated_Plover:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Semipalmated_Sandpiper:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Sharp-shinned_Hawk_(Adult_):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Sharp-shinned_Hawk_(Immature):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Short-billed_Dowitcher:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Snow_Bunting_(Breeding_adult):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Snow_Bunting_(Nonbreeding):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Snow_Goose_(Blue_morph):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Snow_Goose_(White_morph):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Snowy_Egret:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Snowy_Owl:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Solitary_Sandpiper:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Song_Sparrow:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Spotted_Sandpiper_(Breeding):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Spotted_Sandpiper_(Nonbreeding_juvenile):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Spotted_Towhee:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Steller's_Jay:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Summer_Tanager_(Adult_Male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Summer_Tanager_(Female):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Summer_Tanager_(Immature_Male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Surf_Scoter_(Female_immature):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Surf_Scoter_(Male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Surfbird:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Swainson's_Hawk_(Dark_morph_):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Swainson's_Hawk_(Immature):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Swainson's_Hawk_(Light_morph_):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Swainson's_Thrush:
+    sources:
     - bird_species
     train: 0
     val: 0
   Swainsons_Hawk:
     sources:
+    - video_training
+    train: 479
+    val: 179
+  Swallow-tailed_Kite:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Swamp_Sparrow:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Tennessee_Warbler:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Townsend's_Solitaire:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Townsend's_Warbler:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Tree_Swallow:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Tricolored_Heron:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Trumpeter_Swan:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Tufted_Titmouse:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Tundra_Swan:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Turkey_Vulture:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Varied_Thrush:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Vaux's_Swift:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Veery:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Verdin:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Vermilion_Flycatcher_(Adult_male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Vermilion_Flycatcher_(Female,_immature):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Vesper_Sparrow:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Violet-green_Swallow:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Vulture:
+    sources:
+    - video_training
+    train: 98
+    val: 38
+  Warbling_Vireo:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Western_Bluebird:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Western_Grebe:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Western_Gull_(Adult):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Western_Gull_(Immature):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Western_Kingbird:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Western_Meadowlark:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Western_Sandpiper:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Western_Screech-Owl:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Western_Scrub-Jay:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Western_Tanager_(Breeding_Male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Western_Tanager_(Female_Nonbreeding_Male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Western_Wood-Pewee:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Whimbrel:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  White-breasted_Nuthatch:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  White-crowned_Sparrow_(Adult):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  White-crowned_Sparrow_(Immature):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  White-eyed_Vireo:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  White-faced_Ibis:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  White-tailed_Kite:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  White-throated_Sparrow_(Tan-striped_immature):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  White-throated_Sparrow_(White-striped):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  White-throated_Swift:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  White-winged_Crossbill_(Adult_Male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  White-winged_Crossbill_(Female_juvenile):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  White-winged_Dove:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  White-winged_Scoter_(Female_juvenile):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  White-winged_Scoter_(Male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  White_Ibis_(Adult):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  White_Ibis_(Immature):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Wild_Turkey:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Willet:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Wilson's_Phalarope_(Breeding):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Wilson's_Phalarope_(Nonbreeding,_juvenile):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Wilson's_Snipe:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Wilson's_Warbler:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Winter_Wren:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Wood_Duck_(Breeding_male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Wood_Duck_(Female_Eclipse_male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Wood_Stork:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Wood_Thrush:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Wrentit:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Yellow-bellied_Sapsucker:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Yellow-billed_Cuckoo:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Yellow-billed_Magpie:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Yellow-breasted_Chat:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Yellow-crowned_Night-Heron_(Adult):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Yellow-crowned_Night-Heron_(Immature):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Yellow-headed_Blackbird_(Adult_Male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Yellow-headed_Blackbird_(Female_Immature_Male):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Yellow-rumped_Warbler_(Breeding_Audubon's):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Yellow-rumped_Warbler_(Breeding_Myrtle):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Yellow-rumped_Warbler_(Winter_juvenile_Audubon's):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Yellow-rumped_Warbler_(Winter_juvenile_Myrtle):
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Yellow-throated_Vireo:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Yellow-throated_Warbler:
+    sources:
+    - bird_species
+    train: 0
+    val: 0
+  Yellow_Warbler:
+    sources:
     - bird_species
     train: 0
     val: 0
 classes:
-- 0295
-- 0296
-- 0297
-- 0298
-- 0299
-- '0313'
-- '0314'
-- '0315'
-- '0316'
-- '0317'
-- 0318
-- 0319
-- '0320'
-- '0321'
-- '0322'
-- '0323'
-- '0324'
-- '0325'
-- '0326'
-- '0327'
-- 0328
-- 0329
-- '0330'
-- '0331'
-- '0332'
-- '0333'
-- '0334'
-- '0335'
-- '0336'
-- '0337'
-- 0338
-- 0339
-- '0340'
-- '0341'
-- '0342'
-- '0343'
-- '0344'
-- '0345'
-- '0346'
-- '0347'
-- 0348
-- 0349
-- '0350'
-- '0351'
-- '0352'
-- '0353'
-- '0354'
-- '0355'
-- '0356'
-- '0357'
-- 0358
-- 0359
-- '0360'
-- '0361'
-- '0362'
-- '0363'
-- '0364'
-- '0365'
-- '0366'
-- '0367'
-- 0368
-- 0369
-- '0370'
-- '0371'
-- '0372'
-- '0373'
-- '0374'
-- '0375'
-- '0376'
-- '0377'
-- 0378
-- 0379
-- 0380
-- 0381
-- 0382
-- 0392
-- 0393
-- 0394
-- 0395
-- 0396
-- 0397
-- 0398
-- 0399
-- '0400'
-- '0401'
-- '0402'
-- '0446'
-- '0447'
-- 0448
-- 0449
-- '0450'
-- '0451'
-- '0452'
-- '0453'
-- '0454'
-- '0455'
-- '0456'
-- '0457'
-- 0458
-- 0459
-- '0460'
-- '0461'
-- '0462'
-- '0463'
-- '0464'
-- '0465'
-- '0466'
-- '0467'
-- 0468
-- 0469
-- '0470'
-- '0471'
-- '0472'
-- '0473'
-- '0474'
-- '0475'
-- '0476'
-- '0477'
-- 0478
-- 0479
-- 0480
-- 0481
-- 0482
-- 0483
-- 0484
-- 0485
-- 0486
-- 0487
-- 0488
-- 0489
-- 0490
-- 0491
-- 0492
-- 0493
-- 0494
-- 0495
-- 0496
-- 0497
-- 0498
-- 0499
-- '0500'
-- '0501'
-- '0502'
-- '0503'
-- '0504'
-- '0505'
-- '0506'
-- '0507'
-- 0508
-- 0509
-- '0510'
-- '0511'
-- '0512'
-- '0513'
-- '0514'
-- '0515'
-- '0516'
-- '0517'
-- 0518
-- 0519
-- '0520'
-- '0521'
-- '0522'
-- '0523'
-- '0524'
-- '0525'
-- '0526'
-- '0527'
-- 0528
-- 0529
-- '0530'
-- '0531'
-- '0532'
-- '0533'
-- '0534'
-- '0535'
-- '0536'
-- '0537'
-- 0538
-- 0539
-- '0540'
-- '0541'
-- '0542'
-- '0543'
-- '0544'
-- '0545'
-- '0546'
-- '0547'
-- 0548
-- 0549
-- '0550'
-- '0551'
-- '0552'
-- '0553'
-- '0554'
-- '0555'
-- '0556'
-- '0557'
-- 0558
-- 0559
-- '0560'
-- '0561'
-- 0599
-- '0600'
-- '0601'
-- '0602'
-- '0603'
-- '0604'
-- '0605'
-- '0606'
-- '0607'
-- 0608
-- 0609
-- '0610'
-- '0611'
-- '0612'
-- '0613'
-- '0614'
-- '0615'
-- '0616'
-- '0617'
-- 0618
-- 0619
-- '0620'
-- '0621'
-- '0622'
-- '0623'
-- '0624'
-- '0625'
-- '0626'
-- '0627'
-- 0628
-- 0629
-- '0630'
-- '0631'
-- '0632'
-- '0633'
-- '0634'
-- '0635'
-- '0636'
-- '0637'
-- 0638
-- 0639
-- '0640'
-- '0641'
-- '0642'
-- '0643'
-- '0644'
-- '0645'
-- '0646'
-- '0647'
-- 0648
-- 0649
-- '0650'
-- '0651'
-- '0652'
-- '0653'
-- '0654'
-- '0655'
-- '0656'
-- '0657'
-- 0658
-- 0659
-- '0660'
-- '0661'
-- '0662'
-- '0663'
-- '0664'
-- '0665'
-- '0666'
-- '0667'
-- 0668
-- 0669
-- '0670'
-- '0671'
-- '0672'
-- '0673'
-- '0674'
-- '0675'
-- '0676'
-- '0677'
-- 0678
-- 0679
-- 0680
-- 0681
-- 0696
-- 0697
-- 0698
-- 0699
-- '0700'
-- '0746'
-- '0747'
-- 0748
-- 0749
-- '0750'
-- '0751'
-- '0752'
-- '0753'
-- '0754'
-- '0755'
-- '0756'
-- '0757'
-- 0758
-- 0759
-- '0760'
-- '0761'
-- '0762'
-- '0763'
-- '0764'
-- '0765'
-- '0766'
-- '0767'
-- 0768
-- 0769
-- '0770'
-- '0771'
-- '0772'
-- '0773'
-- '0774'
-- '0775'
-- '0776'
-- '0777'
-- 0778
-- 0779
-- 0780
-- 0781
-- 0782
-- 0783
-- 0784
-- 0785
-- 0786
-- 0787
-- 0788
-- 0789
-- 0790
-- 0791
-- 0792
-- 0793
-- 0794
-- 0795
-- 0796
-- 0797
-- 0798
-- 0799
-- 0800
-- 0801
-- 0802
-- 0803
-- 0804
-- 0805
-- 0806
-- 0807
-- 0808
-- 0809
-- 0810
-- 0811
-- 0812
-- 0813
-- 0814
-- 0815
-- 0816
-- 0817
-- 0818
-- 0819
-- 0820
-- 0821
-- 0822
-- 0823
-- 0824
-- 0825
-- 0826
-- 0827
-- 0828
-- 0829
-- 0830
-- 0831
-- 0832
-- 0833
-- 0834
-- 0835
-- 0836
-- 0837
-- 0838
-- 0839
-- 0840
-- 0841
-- 0842
-- 0843
-- 0844
-- 0845
-- 0846
-- 0847
-- 0848
-- 0849
-- 0850
-- 0851
-- 0852
-- 0853
-- 0854
-- 0855
-- 0856
-- 0857
-- 0858
-- 0859
-- 0860
-- 0861
-- 0862
-- 0863
-- 0864
-- 0865
-- 0866
-- 0867
-- 0868
-- 0869
-- 0870
-- 0871
-- 0872
-- 0873
-- 0874
-- 0875
-- 0876
-- 0877
-- 0878
-- 0879
-- 0880
-- 0881
-- 0882
-- 0883
-- 0884
-- 0885
-- 0886
-- 0887
-- 0888
-- 0889
-- 0890
-- 0891
-- 0892
-- 0893
-- 0894
-- 0895
-- 0896
-- 0897
-- 0898
-- 0899
-- 0900
-- 0901
-- 0902
-- 0903
-- 0904
-- 0905
-- 0906
-- 0907
-- 0908
-- 0909
-- 0910
-- 0911
-- 0912
-- 0913
-- 0914
-- 0915
-- 0916
-- 0917
-- 0918
-- 0919
-- 0920
-- 0921
-- 0922
-- 0923
-- 0924
-- 0925
-- 0926
-- 0927
-- 0928
-- 0929
-- 0930
-- 0931
-- 0932
-- 0933
-- 0934
-- 0935
-- 0936
-- 0937
-- 0938
-- 0939
-- 0940
-- 0941
-- 0942
-- 0943
-- 0944
-- 0945
-- 0946
-- 0947
-- 0948
-- 0949
-- 0950
-- 0951
-- 0952
-- 0953
-- 0954
-- 0955
-- 0956
-- 0957
-- 0958
-- 0959
-- 0960
-- 0961
-- 0962
-- 0963
-- 0964
-- 0965
-- 0966
-- 0967
-- 0968
-- 0969
-- 0970
-- 0971
-- 0972
-- 0973
-- 0974
-- 0975
-- 0976
-- 0977
-- 0978
-- 0979
-- 0980
-- 0981
-- 0982
-- 0983
-- 0984
-- 0985
-- 0986
-- 0987
-- 0988
-- 0989
-- 0990
-- 0991
-- 0992
-- 0993
-- 0994
-- 0995
-- 0996
-- 0997
-- 0998
-- 0999
-- '1000'
-- '1001'
-- '1002'
-- '1003'
-- '1004'
-- '1005'
-- '1006'
-- '1007'
-- '1008'
-- '1009'
-- '1010'
-- American_Kestrel
-- Bald_Eagle
-- Cooper_Hawk
-- Golden_Eagle
-- Great_Heron
-- Griffon_Vulture
-- Northern_Harrier
-- Peregrine_Falcon
+- Abert's_Towhee
+- Acorn_Woodpecker
+- Allen's_Hummingbird_(Adult_Male)
+- Allen's_Hummingbird_(Female,_immature)
+- American_Avocet
+- American_Black_Duck
+- American_Coot
+- American_Crow
+- American_Dipper
+- American_Goldfinch_(Breeding_Male)
+- American_Goldfinch_(Female_Nonbreeding_Male)
+- American_Kestrel_(Adult_male)
+- American_Kestrel_(Female,_immature)
+- American_Oystercatcher
+- American_Pipit
+- American_Redstart_(Adult_Male)
+- American_Redstart_(Female_juvenile)
+- American_Robin_(Adult)
+- American_Robin_(Juvenile)
+- American_Tree_Sparrow
+- American_White_Pelican
+- American_Wigeon_(Breeding_male)
+- American_Wigeon_(Female_Eclipse_male)
+- American_Woodcock
+- Anhinga
+- Anna's_Hummingbird_(Adult_Male)
+- Anna's_Hummingbird_(Female,_immature)
+- Ash-throated_Flycatcher
+- Bald_Eagle_(Adult,_subadult)
+- Bald_Eagle_(Immature,_juvenile)
+- Baltimore_Oriole_(Adult_male)
+- Baltimore_Oriole_(Female_Immature_male)
+- Band-tailed_Pigeon
+- Bank_Swallow
+- Barn_Owl
+- Barn_Swallow
+- Barred_Owl
+- Barrow's_Goldeneye_(Breeding_male)
+- Barrow's_Goldeneye_(Female_Eclipse_male)
+- Bay-breasted_Warbler_(Breeding_male)
+- Bay-breasted_Warbler_(Female,_Nonbreeding_male,_Immature)
+- Bell's_Vireo
+- Belted_Kingfisher
+- Bewick's_Wren
+- Black-and-white_Warbler
+- Black-bellied_Plover_(Breeding)
+- Black-bellied_Plover_(Nonbreeding_juvenile)
+- Black-bellied_Whistling-Duck
+- Black-billed_Cuckoo
+- Black-billed_Magpie
+- Black-capped_Chickadee
+- Black-chinned_Hummingbird_(Adult_Male)
+- Black-chinned_Hummingbird_(Female,_immature)
+- Black-crested_Titmouse
+- Black-crowned_Night-Heron_(Adult)
+- Black-crowned_Night-Heron_(Immature)
+- Black-headed_Grosbeak_(Adult_Male)
+- Black-headed_Grosbeak_(Female_immature_male)
+- Black-legged_Kittiwake_(Adult)
+- Black-legged_Kittiwake_(Immature)
+- Black-necked_Stilt
+- Black-tailed_Gnatcatcher
+- Black-throated_Blue_Warbler_(Adult_Male)
+- Black-throated_Blue_Warbler_(Female_Immature_male)
+- Black-throated_Gray_Warbler
+- Black-throated_Green_Warbler
+- Black_Guillemot_(Breeding)
+- Black_Guillemot_(Nonbreeding,_juvenile)
+- Black_Oystercatcher
+- Black_Phoebe
+- Black_Rosy-Finch
+- Black_Scoter_(Female_juvenile)
+- Black_Scoter_(Male)
+- Black_Skimmer
+- Black_Tern
+- Black_Turnstone
+- Black_Vulture
+- Blackburnian_Warbler
+- Blackpoll_Warbler_(Breeding_male)
+- Blackpoll_Warbler_(Female_juvenile)
+- Blue-gray_Gnatcatcher
+- Blue-headed_Vireo
+- Blue-winged_Teal__(Female_juvenile)
+- Blue-winged_Teal__(Male)
+- Blue-winged_Warbler
+- Blue_Grosbeak_(Adult_Male)
+- Blue_Grosbeak_(Female_juvenile)
+- Blue_Jay
+- Boat-tailed_Grackle
+- Bobolink_(Breeding_male)
+- Bobolink_(Female_juvenile_nonbreeding_male)
+- Bohemian_Waxwing
+- Bonaparte's_Gull
+- Boreal_Chickadee
+- Brandt's_Cormorant
+- Brant
+- Brewer's_Blackbird_(Female_Juvenile)
+- Brewer's_Blackbird_(Male)
+- Brewer's_Sparrow
+- Bridled_Titmouse
+- Broad-billed_Hummingbird_(Adult_Male)
+- Broad-billed_Hummingbird_(Female,_immature)
+- Broad-tailed_Hummingbird_(Adult_Male)
+- Broad-tailed_Hummingbird_(Female,_immature)
+- Broad-winged_Hawk_(Adult)
+- Broad-winged_Hawk_(Immature)
+- Bronzed_Cowbird
+- Brown-capped_Rosy-Finch
+- Brown-headed_Cowbird_(Female_Juvenile)
+- Brown-headed_Cowbird_(Male)
+- Brown-headed_Nuthatch
+- Brown_Creeper
+- Brown_Pelican
+- Brown_Thrasher
+- Bufflehead_(Breeding_male)
+- Bufflehead_(Female_immature_male)
+- Bullock's_Oriole_(Adult_male)
+- Bullock's_Oriole_(Female_Immature_male)
+- Burrowing_Owl
+- Bushtit
+- Cackling_Goose
+- Cactus_Wren
+- California_Gull_(Adult)
+- California_Gull_(Immature)
+- California_Quail_(Female_juvenile)
+- California_Quail_(Male)
+- California_Thrasher
+- California_Towhee
+- Calliope_Hummingbird_(Adult_Male)
+- Calliope_Hummingbird_(Female,_immature)
+- Canada_Goose
+- Canada_Warbler
+- Canadian_Goose
+- Canvasback_(Breeding_male)
+- Canvasback_(Female_Eclipse_male)
+- Canyon_Towhee
+- Canyon_Wren
+- Cape_May_Warbler
+- Carolina_Chickadee
+- Carolina_Wren
+- Caspian_Tern
+- Cassin's_Finch_(Adult_Male)
+- Cassin's_Finch_(Female_immature)
+- Cassin's_Kingbird
+- Cassin's_Vireo
+- Cattle_Egret
+- Cave_Swallow
+- Cedar_Waxwing
+- Chestnut-backed_Chickadee
+- Chestnut-sided_Warbler_(Breeding_male)
+- Chestnut-sided_Warbler_(Female_immature_male)
+- Chihuahuan_Raven
+- Chimney_Swift
+- Chipping_Sparrow_(Breeding)
+- Chipping_Sparrow_(Immature_nonbreeding_adult)
+- Cinnamon_Teal_(Female_juvenile)
+- Cinnamon_Teal_(Male)
+- Clark's_Grebe
+- Clark's_Nutcracker
+- Clay-colored_Sparrow
+- Cliff_Swallow
+- Common_Eider_(Adult_male)
+- Common_Eider_(Female_juvenile)
+- Common_Eider_(Immature_Eclipse_male)
+- Common_Gallinule_(Adult)
+- Common_Gallinule_(Immature)
+- Common_Goldeneye_(Breeding_male)
+- Common_Goldeneye_(Female_Eclipse_male)
+- Common_Grackle
+- Common_Ground-Dove
+- Common_Loon_(Breeding)
+- Common_Loon_(Nonbreeding_juvenile)
+- Common_Merganser_(Breeding_male)
+- Common_Merganser_(Female_immature_male)
+- Common_Nighthawk
+- Common_Raven
+- Common_Redpoll
+- Common_Tern
+- Common_Yellowthroat_(Adult_Male)
+- Common_Yellowthroat_(Female_immature_male)
+- Cooper's_Hawk_(Adult)
+- Cooper's_Hawk_(Immature)
+- Cordilleran_Flycatcher
+- Cormorant
+- Costa's_Hummingbird_(Adult_Male)
+- Costa's_Hummingbird_(Female,_immature)
+- Crested_Caracara
+- Curve-billed_Thrasher
+- Dark-eyed_Junco_(Oregon)
+- Dark-eyed_Junco_(Pink-sided)
+- Dark-eyed_Junco_(Red-backed_Gray-headed)
+- Dark-eyed_Junco_(Slate-colored)
+- Dark-eyed_Junco_(White-winged)
+- Dickcissel
+- Double-crested_Cormorant_(Adult)
+- Double-crested_Cormorant_(Immature)
+- Downy_Woodpecker
+- Duck
+- Dunlin_(Breeding)
+- Dunlin_(Nonbreeding_juvenile)
+- Eared_Grebe_(Breeding)
+- Eared_Grebe_(Nonbreeding_juvenile)
+- Eastern_Bluebird
+- Eastern_Kingbird
+- Eastern_Meadowlark
+- Eastern_Phoebe
+- Eastern_Screech-Owl
+- Eastern_Towhee
+- Eastern_Wood-Pewee
+- Eurasian_Collared-Dove
+- European_Starling_(Breeding_Adult)
+- European_Starling_(Juvenile)
+- European_Starling_(Nonbreeding_Adult)
+- Evening_Grosbeak_(Adult_Male)
+- Evening_Grosbeak_(Female_Juvenile)
+- Field_Sparrow
+- Fish_Crow
+- Florida_Scrub-Jay
+- Forster's_Tern
+- Fox_Sparrow_(Red)
+- Fox_Sparrow_(Sooty)
+- Fox_Sparrow_(Thick-billed_Slate-colored)
+- Gadwall_(Breeding_male)
+- Gadwall_(Female_Eclipse_male)
+- Gambel's_Quail_(Female_juvenile)
+- Gambel's_Quail_(Male)
+- Gila_Woodpecker
+- Glaucous-winged_Gull_(Adult)
+- Glaucous-winged_Gull_(Immature)
+- Glossy_Ibis
+- Golden-crowned_Kinglet
+- Golden-crowned_Sparrow_(Adult)
+- Golden-crowned_Sparrow_(Immature)
+- Golden-fronted_Woodpecker
+- Golden_Eagle_(Adult)
+- Golden_Eagle_(Immature)
+- Gray-crowned_Rosy-Finch
+- Gray_Catbird
+- Gray_Jay
+- Great-tailed_Grackle
+- Great_Black-backed_Gull_(Adult)
+- Great_Black-backed_Gull_(Immature)
+- Great_Blue_Heron
+- Great_Cormorant_(Adult)
+- Great_Cormorant_(Immature)
+- Great_Crested_Flycatcher
+- Great_Egret
+- Great_Horned_Owl
+- Greater_Roadrunner
+- Greater_Scaup_(Breeding_male)
+- Greater_Scaup_(Female_Eclipse_male)
+- Greater_White-fronted_Goose
+- Greater_Yellowlegs
+- Green-tailed_Towhee
+- Green-winged_Teal_(Male)
+- Green-winged_Teal__(Female_juvenile)
+- Green_Heron
+- Hairy_Woodpecker
+- Harlequin_Duck_(Female_juvenile)
+- Harlequin_Duck_(Male)
+- Harris's_Hawk
+- Harris's_Sparrow_(Adult)
+- Harris's_Sparrow_(Immature)
+- Heermann's_Gull_(Adult)
+- Heermann's_Gull_(Immature)
+- Hermit_Thrush
+- Hermit_Warbler
+- Herring_Gull_(Adult)
+- Herring_Gull_(Immature)
+- Hoary_Redpoll
+- Hooded_Merganser_(Breeding_male)
+- Hooded_Merganser_(Female_immature_male)
+- Hooded_Oriole_(Adult_male)
+- Hooded_Oriole_(Female_Immature_male)
+- Hooded_Warbler
+- Horned_Grebe_(Breeding)
+- Horned_Grebe_(Nonbreeding_juvenile)
+- Horned_Lark
+- House_Finch_(Adult_Male)
+- House_Finch_(Female_immature)
+- House_Sparrow_(Female_Juvenile)
+- House_Sparrow_(Male)
+- House_Wren
+- Hutton's_Vireo
+- Inca_Dove
+- Indigo_Bunting_(Adult_Male)
+- Indigo_Bunting_(Female_juvenile)
+- Juniper_Titmouse
+- Killdeer
+- Ladder-backed_Woodpecker
+- Lark_Bunting_(Breeding_male)
+- Lark_Bunting_(Female_Nonbreeding_male)
+- Lark_Sparrow
+- Laughing_Gull_(Breeding)
+- Laughing_Gull_(Nonbreeding_Immature)
+- Lazuli_Bunting_(Adult_Male)
+- Lazuli_Bunting_(Female_juvenile)
+- Least_Flycatcher
+- Least_Sandpiper
+- Lesser_Goldfinch_(Adult_Male)
+- Lesser_Goldfinch_(Female_juvenile)
+- Lesser_Scaup_(Breeding_male)
+- Lesser_Scaup_(Female_Eclipse_male)
+- Lesser_Yellowlegs
+- Lincoln's_Sparrow
+- Little_Blue_Heron_(Adult)
+- Little_Blue_Heron_(Immature)
+- Loggerhead_Shrike
+- Long-billed_Curlew
+- Long-tailed_Duck_(Female_juvenile)
+- Long-tailed_Duck_(Summer_male)
+- Long-tailed_Duck_(Winter_male)
+- Louisiana_Waterthrush
+- MacGillivray's_Warbler
+- Magnolia_Warbler_(Breeding_male)
+- Magnolia_Warbler_(Female_immature_male)
+- Mallard_(Breeding_male)
+- Mallard_(Female_Eclipse_male)
+- Marbled_Godwit
+- Marsh_Wren
+- Merlin
+- Mew_Gull
+- Mexican_Jay
+- Mississippi_Kite
+- Monk_Parakeet
+- Mottled_Duck
+- Mountain_Bluebird
+- Mountain_Chickadee
+- Mourning_Dove
+- Mourning_Warbler
+- Mute_Swan
+- Nashville_Warbler
+- Neotropic_Cormorant
+- Northern_Bobwhite
+- Northern_Cardinal_(Adult_Male)
+- Northern_Cardinal_(Female_Juvenile)
+- Northern_Flicker_(Red-shafted)
+- Northern_Flicker_(Yellow-shafted)
+- Northern_Gannet_(Adult,_Subadult)
+- Northern_Gannet_(Immature_Juvenile)
+- Northern_Harrier_(Adult_male)
+- Northern_Harrier_(Female,_immature)
+- Northern_Mockingbird
+- Northern_Parula
+- Northern_Pintail_(Breeding_male)
+- Northern_Pintail_(Female_Eclipse_male)
+- Northern_Pygmy-Owl
+- Northern_Rough-winged_Swallow
+- Northern_Saw-whet_Owl
+- Northern_Shoveler_(Breeding_male)
+- Northern_Shoveler_(Female_Eclipse_male)
+- Northern_Shrike
+- Northern_Waterthrush
+- Northwestern_Crow
+- Nuttall's_Woodpecker
+- Oak_Titmouse
+- Orange-crowned_Warbler
+- Orchard_Oriole_(Adult_Male)
+- Orchard_Oriole_(Female_Juvenile)
+- Orchard_Oriole_(Immature_Male)
+- Osprey
+- Ovenbird
+- Pacific-slope_Flycatcher
+- Pacific_Loon_(Breeding)
+- Pacific_Loon_(Nonbreeding_juvenile)
+- Pacific_Wren
+- Painted_Bunting_(Adult_Male)
+- Painted_Bunting_(Female_juvenile)
+- Palm_Warbler
+- Pelagic_Cormorant
+- Peregrine_Falcon_(Adult)
+- Peregrine_Falcon_(Immature)
+- Phainopepla_(Female_juvenile)
+- Phainopepla_(Male)
+- Pied-billed_Grebe
+- Pigeon_Guillemot_(Breeding)
+- Pigeon_Guillemot_(Nonbreeding,_juvenile)
+- Pileated_Woodpecker
+- Pine_Grosbeak_(Adult_Male)
+- Pine_Grosbeak_(Female_juvenile)
+- Pine_Siskin
+- Pine_Warbler
+- Plumbeous_Vireo
+- Prairie_Falcon
+- Prairie_Warbler
+- Prothonotary_Warbler
+- Purple_Finch_(Adult_Male)
+- Purple_Finch_(Female_immature)
+- Purple_Gallinule_(Adult)
+- Purple_Gallinule_(Immature)
+- Purple_Martin_(Adult_male)
+- Purple_Martin_(Female_juvenile)
+- Pygmy_Nuthatch
+- Pyrrhuloxia
+- Red-bellied_Woodpecker
+- Red-breasted_Merganser_(Breeding_male)
+- Red-breasted_Merganser_(Female_immature_male)
+- Red-breasted_Nuthatch
+- Red-breasted_Sapsucker
+- Red-eyed_Vireo
+- Red-headed_Woodpecker_(Adult)
+- Red-headed_Woodpecker_(Immature)
+- Red-naped_Sapsucker
+- Red-necked_Grebe_(Breeding)
+- Red-necked_Grebe_(Nonbreeding_juvenile)
+- Red-shouldered_Hawk_(Adult_)
+- Red-shouldered_Hawk_(Immature)
+- Red-tailed_Hawk_(Dark_morph)
+- Red-tailed_Hawk_(Light_morph_adult)
+- Red-tailed_Hawk_(Light_morph_immature)
+- Red-throated_Loon_(Breeding)
+- Red-throated_Loon_(Nonbreeding_juvenile)
+- Red-winged_Blackbird_(Female_juvenile)
+- Red-winged_Blackbird_(Male)
+- Red_Crossbill_(Adult_Male)
+- Red_Crossbill_(Female_juvenile)
 - Red_Tailed_Hawk
+- Reddish_Egret_(Dark_morph)
+- Reddish_Egret_(White_morph)
+- Redhead_(Breeding_male)
+- Redhead_(Female_Eclipse_male)
+- Ring-billed_Gull_(Adult)
+- Ring-billed_Gull_(Immature)
+- Ring-necked_Duck_(Breeding_male)
+- Ring-necked_Duck_(Female_Eclipse_male)
+- Ring-necked_Pheasant_(Female_juvenile)
+- Ring-necked_Pheasant_(Male)
+- Rock_Pigeon
+- Rose-breasted_Grosbeak_(Adult_Male)
+- Rose-breasted_Grosbeak_(Female_immature_male)
+- Roseate_Spoonbill
+- Ross's_Goose
+- Rough-legged_Hawk_(Dark_morph)
+- Rough-legged_Hawk_(Light_morph)
+- Royal_Tern
+- Ruby-crowned_Kinglet
+- Ruby-throated_Hummingbird_(Adult_Male)
+- Ruby-throated_Hummingbird_(Female,_immature)
+- Ruddy_Duck_(Breeding_male)
+- Ruddy_Duck_(Female_juvenile)
+- Ruddy_Duck_(Winter_male)
+- Ruddy_Turnstone
+- Ruffed_Grouse
+- Rufous-crowned_Sparrow
+- Rufous_Hummingbird_(Adult_Male)
+- Rufous_Hummingbird_(Female,_immature)
+- Rusty_Blackbird
+- Sanderling_(Breeding)
+- Sanderling_(Nonbreeding_juvenile)
+- Sandhill_Crane
+- Savannah_Sparrow
+- Say's_Phoebe
+- Scaled_Quail
+- Scarlet_Tanager_(Breeding_Male)
+- Scarlet_Tanager_(Female_Nonbreeding_Male)
+- Scissor-tailed_Flycatcher
+- Semipalmated_Plover
+- Semipalmated_Sandpiper
+- Sharp-shinned_Hawk_(Adult_)
+- Sharp-shinned_Hawk_(Immature)
+- Short-billed_Dowitcher
+- Snow_Bunting_(Breeding_adult)
+- Snow_Bunting_(Nonbreeding)
+- Snow_Goose_(Blue_morph)
+- Snow_Goose_(White_morph)
+- Snowy_Egret
+- Snowy_Owl
+- Solitary_Sandpiper
+- Song_Sparrow
+- Spotted_Sandpiper_(Breeding)
+- Spotted_Sandpiper_(Nonbreeding_juvenile)
+- Spotted_Towhee
+- Steller's_Jay
+- Summer_Tanager_(Adult_Male)
+- Summer_Tanager_(Female)
+- Summer_Tanager_(Immature_Male)
+- Surf_Scoter_(Female_immature)
+- Surf_Scoter_(Male)
+- Surfbird
+- Swainson's_Hawk_(Dark_morph_)
+- Swainson's_Hawk_(Immature)
+- Swainson's_Hawk_(Light_morph_)
+- Swainson's_Thrush
 - Swainsons_Hawk
+- Swallow-tailed_Kite
+- Swamp_Sparrow
+- Tennessee_Warbler
+- Townsend's_Solitaire
+- Townsend's_Warbler
+- Tree_Swallow
+- Tricolored_Heron
+- Trumpeter_Swan
+- Tufted_Titmouse
+- Tundra_Swan
+- Turkey_Vulture
+- Varied_Thrush
+- Vaux's_Swift
+- Veery
+- Verdin
+- Vermilion_Flycatcher_(Adult_male)
+- Vermilion_Flycatcher_(Female,_immature)
+- Vesper_Sparrow
+- Violet-green_Swallow
+- Vulture
+- Warbling_Vireo
+- Western_Bluebird
+- Western_Grebe
+- Western_Gull_(Adult)
+- Western_Gull_(Immature)
+- Western_Kingbird
+- Western_Meadowlark
+- Western_Sandpiper
+- Western_Screech-Owl
+- Western_Scrub-Jay
+- Western_Tanager_(Breeding_Male)
+- Western_Tanager_(Female_Nonbreeding_Male)
+- Western_Wood-Pewee
+- Whimbrel
+- White-breasted_Nuthatch
+- White-crowned_Sparrow_(Adult)
+- White-crowned_Sparrow_(Immature)
+- White-eyed_Vireo
+- White-faced_Ibis
+- White-tailed_Kite
+- White-throated_Sparrow_(Tan-striped_immature)
+- White-throated_Sparrow_(White-striped)
+- White-throated_Swift
+- White-winged_Crossbill_(Adult_Male)
+- White-winged_Crossbill_(Female_juvenile)
+- White-winged_Dove
+- White-winged_Scoter_(Female_juvenile)
+- White-winged_Scoter_(Male)
+- White_Ibis_(Adult)
+- White_Ibis_(Immature)
+- Wild_Turkey
+- Willet
+- Wilson's_Phalarope_(Breeding)
+- Wilson's_Phalarope_(Nonbreeding,_juvenile)
+- Wilson's_Snipe
+- Wilson's_Warbler
+- Winter_Wren
+- Wood_Duck_(Breeding_male)
+- Wood_Duck_(Female_Eclipse_male)
+- Wood_Stork
+- Wood_Thrush
+- Wrentit
+- Yellow-bellied_Sapsucker
+- Yellow-billed_Cuckoo
+- Yellow-billed_Magpie
+- Yellow-breasted_Chat
+- Yellow-crowned_Night-Heron_(Adult)
+- Yellow-crowned_Night-Heron_(Immature)
+- Yellow-headed_Blackbird_(Adult_Male)
+- Yellow-headed_Blackbird_(Female_Immature_Male)
+- Yellow-rumped_Warbler_(Breeding_Audubon's)
+- Yellow-rumped_Warbler_(Breeding_Myrtle)
+- Yellow-rumped_Warbler_(Winter_juvenile_Audubon's)
+- Yellow-rumped_Warbler_(Winter_juvenile_Myrtle)
+- Yellow-throated_Vireo
+- Yellow-throated_Warbler
+- Yellow_Warbler
 dataset_name: Merged Bird Species Dataset
 format: YOLO Classification
-num_classes: 565
-path: /Users/johndaughtridge/Code/SkyGuard/data/bird_species_merged
+num_classes: 561
+path: C:\Users\johnd\source\SkyGuard\data\bird_species_merged
 source: Multiple sources (merged)
 sources:
   bird_species:
-    classes: 10
-    total_samples: 1650
-  nabirds_prepared:
     classes: 555
-    total_samples: 48562
-total_samples: 48562
-train_samples: 38655
-val_samples: 9907
+    total_samples: 97124
+  nabirds_prepared:
+    classes: 0
+    total_samples: 0
+  video_training:
+    classes: 6
+    total_samples: 5528
+total_samples: 2764
+train_samples: 2012
+val_samples: 752

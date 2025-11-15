@@ -198,7 +198,7 @@ def merge_datasets(
     
     # Print summary
     print("\n" + "=" * 60)
-    print("✅ Dataset merge completed!")
+    print("[SUCCESS] Dataset merge completed!")
     print("=" * 60)
     print(f"Output directory: {output_dir}")
     print(f"Total classes: {len(all_classes)}")
@@ -316,7 +316,7 @@ Example usage:
     
     if success:
         print("\n" + "=" * 60)
-        print("🎉 Dataset merge completed!")
+        print("[SUCCESS] Dataset merge completed!")
         print("=" * 60)
         print("\nNext steps:")
         print(f"1. Train the species classification model:")

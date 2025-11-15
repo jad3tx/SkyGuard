@@ -1,0 +1,46 @@
+classes:
+- Canadian_Goose
+- Cormorant
+- Duck
+- Red_Tailed_Hawk
+- Swainsons_Hawk
+- Vulture
+dataset_name: Custom Bird Species Dataset (from videos)
+format: YOLO Classification
+num_classes: 6
+path: C:\Users\johnd\source\SkyGuard\data\video_training
+source: User-provided videos
+species_stats:
+  Canadian_Goose:
+    total_frames: 200
+    train_frames: 160
+    val_frames: 40
+    videos: 2
+  Cormorant:
+    total_frames: 200
+    train_frames: 160
+    val_frames: 40
+    videos: 2
+  Duck:
+    total_frames: 400
+    train_frames: 320
+    val_frames: 80
+    videos: 4
+  Red_Tailed_Hawk:
+    total_frames: 2200
+    train_frames: 1760
+    val_frames: 440
+    videos: 22
+  Swainsons_Hawk:
+    total_frames: 1000
+    train_frames: 800
+    val_frames: 200
+    videos: 10
+  Vulture:
+    total_frames: 200
+    train_frames: 160
+    val_frames: 40
+    videos: 2
+total_samples: 4200
+train_samples: 3360
+val_samples: 840

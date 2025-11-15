@@ -18,9 +18,9 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 def train_classifier(
     data_dir: Path,
-    model_size: str = "n",
+    model_size: str = "s",
     epochs: int = 100,
-    imgsz: int = 224,
+    imgsz: int = 448,
     batch_size: int = 16,
     device: str = "auto",
     output_dir: Optional[Path] = None,
@@ -31,7 +31,7 @@ def train_classifier(
         data_dir: Directory containing the dataset (with train/val subdirectories)
         model_size: YOLO model size ('n', 's', 'm', 'l', 'x')
         epochs: Number of training epochs
-        imgsz: Image size for training (224 is standard for classification)
+        imgsz: Image size for training (448 for higher resolution)
         batch_size: Batch size for training
         device: Device to use ('auto', 'cpu', 'cuda', '0', etc.)
         output_dir: Output directory for trained model
@@ -192,7 +192,7 @@ def train_classifier(
             exist_ok=True,
             save=True,
             save_period=10,  # Save checkpoint every 10 epochs
-            patience=20,  # Early stopping patience
+            patience=15,  # Early stopping patience
             workers=4,
             verbose=True,
         )
@@ -270,7 +270,7 @@ def train_classifier(
                 print(f"   Ultralytics should generate results.csv automatically in: {output_dir}")
         
         # Update config
-        update_config(final_model_path)
+        update_config(final_model_path, imgsz)
         
         return True
         
@@ -281,11 +281,12 @@ def train_classifier(
         return False
 
 
-def update_config(model_path: Path) -> None:
+def update_config(model_path: Path, imgsz: int) -> None:
     """Update SkyGuard configuration with the species model.
     
     Args:
         model_path: Path to the trained species classification model
+        imgsz: Image size used for training (will be used for both width and height)
     """
     try:
         import yaml
@@ -306,7 +307,7 @@ def update_config(model_path: Path) -> None:
         # Update species classification settings
         config['ai']['species_backend'] = 'ultralytics'
         config['ai']['species_model_path'] = str(model_path.relative_to(PROJECT_ROOT))
-        config['ai']['species_input_size'] = [224, 224]
+        config['ai']['species_input_size'] = [imgsz, imgsz]
         
         # Save config
         with open(config_path, 'w', encoding='utf-8') as f:
@@ -345,8 +346,8 @@ def main():
     parser.add_argument(
         "--imgsz",
         type=int,
-        default=224,
-        help="Image size for training (224 is standard for classification)",
+        default=448,
+        help="Image size for training (448 for higher resolution)",
     )
     parser.add_argument(
         "--batch-size",
