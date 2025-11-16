@@ -118,7 +118,19 @@ class BirdSegmentationDetector:
                     return
                 self.species_model = YOLO(str(sp_path))
                 # Note: _classify_species uses self.species_model directly
-                self.logger.info(f"Species model loaded (ultralytics): {sp_path}")
+                # Get model info for logging
+                try:
+                    model_info = self.species_model.info()
+                    if model_info:
+                        layers, params, gradients, gflops = model_info
+                        self.logger.info(
+                            f"Species model loaded (ultralytics): {sp_path} | "
+                            f"Layers: {layers}, Params: {params:,}, GFLOPs: {gflops:.1f}"
+                        )
+                    else:
+                        self.logger.info(f"Species model loaded (ultralytics): {sp_path}")
+                except Exception:
+                    self.logger.info(f"Species model loaded (ultralytics): {sp_path}")
                 # Try to load class name mapping from dataset
                 self._load_species_class_name_map()
             elif self.species_backend == 'external':
