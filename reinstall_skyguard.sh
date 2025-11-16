@@ -55,7 +55,7 @@ while [[ $# -gt 0 ]]; do
             BRANCH="$2"
             shift 2
             ;;
-        --skip-backup)
+        --backup)
             SKIP_BACKUP=true
             shift
             ;;
@@ -128,7 +128,7 @@ if systemctl list-units --type=service --all | grep -q "skyguard-web.service"; t
 fi
 
 # Step 3: Backup configuration (optional)
-if [ "$SKIP_BACKUP" = false ] && [ -d "$SKYGUARD_PATH" ]; then
+if [ "$SKIP_BACKUP" = true ] && [ -d "$SKYGUARD_PATH" ]; then
     echo -e "\n${BLUE}💾 Step 3: Creating backup of configuration...${NC}"
     BACKUP_PATH="${SKYGUARD_PATH}.backup.$(date +%Y%m%d_%H%M%S)"
     

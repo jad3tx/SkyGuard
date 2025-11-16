@@ -1005,12 +1005,19 @@
                 const enabledBadge = speciesModel.enabled 
                     ? '<span class="badge bg-success">Enabled</span>' 
                     : '<span class="badge bg-secondary">Disabled</span>';
+                const loadedBadge = speciesModel.model_loaded 
+                    ? '<span class="badge bg-success">Loaded</span>' 
+                    : '<span class="badge bg-danger">Not Loaded</span>';
                 
                 speciesModelDiv.innerHTML = `
                     <table class="table table-sm">
                         <tr>
-                            <td><strong>Status:</strong></td>
+                            <td><strong>Enabled:</strong></td>
                             <td>${enabledBadge}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Loaded:</strong></td>
+                            <td>${loadedBadge}</td>
                         </tr>
                         <tr>
                             <td><strong>Model Path:</strong></td>

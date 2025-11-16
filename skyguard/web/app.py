@@ -98,10 +98,12 @@ class SkyGuardWebPortal:
                     },
                     'ai': {
                         'loaded': self._is_model_loaded(),
+                        'model_loaded': self._is_model_loaded(),  # Alias for consistency
                         'model_path': self.config.get('ai', {}).get('model_path', 'models/yolo11n-seg.pt'),
                         'confidence_threshold': self.config.get('ai', {}).get('confidence_threshold', 0.5),
                         'detection_log_level': self.config.get('ai', {}).get('detection_log_level', 'standard'),
                         'classes': self.config.get('ai', {}).get('classes', []),
+                        'species_model_loaded': self._is_species_model_loaded(),
                     },
                     'detections': {
                         'total': self._get_total_detections(),
@@ -435,8 +437,19 @@ class SkyGuardWebPortal:
                 }
                 
                 # Species model information
+                species_model_loaded = False
+                if self.detector:
+                    try:
+                        species_model_loaded = (
+                            self.detector.species_model is not None 
+                            and self.detector.species_model != "dummy"
+                        )
+                    except Exception:
+                        pass
+                
                 species_model_info = {
                     'enabled': bool(ai_config.get('species_model_path')),
+                    'model_loaded': species_model_loaded,
                     'model_path': ai_config.get('species_model_path', 'Not configured'),
                     'backend': ai_config.get('species_backend', 'ultralytics'),
                     'input_size': ai_config.get('species_input_size', [224, 224]),
@@ -672,6 +685,18 @@ class SkyGuardWebPortal:
             if self.detector:
                 # Check if the detector has a loaded model
                 return self.detector.model is not None and self.detector.model != "dummy"
+            return False
+        except:
+            return False
+    
+    def _is_species_model_loaded(self) -> bool:
+        """Check if species classification model is loaded in the web portal's detector."""
+        try:
+            if self.detector:
+                return (
+                    self.detector.species_model is not None 
+                    and self.detector.species_model != "dummy"
+                )
             return False
         except:
             return False
