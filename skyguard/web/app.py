@@ -63,6 +63,10 @@ class SkyGuardWebPortal:
         self.camera = None
         self.alert_system = None
         
+        # Track last reload attempt to prevent excessive reloads
+        self._last_reload_attempt = 0
+        self._reload_cooldown = 60  # Only attempt reload once per minute
+        
         # Setup routes
         self._setup_routes()
         
@@ -443,6 +447,7 @@ class SkyGuardWebPortal:
                         species_model_loaded = (
                             self.detector.species_model is not None 
                             and self.detector.species_model != "dummy"
+                            and hasattr(self.detector.species_model, 'predict')
                         )
                     except Exception:
                         pass
@@ -684,21 +689,148 @@ class SkyGuardWebPortal:
             # Directly check if the detector's model is loaded
             if self.detector:
                 # Check if the detector has a loaded model
-                return self.detector.model is not None and self.detector.model != "dummy"
+                # Also verify the model is actually functional (has predict method)
+                is_loaded = (
+                    self.detector.model is not None 
+                    and self.detector.model != "dummy"
+                    and hasattr(self.detector.model, 'predict')
+                )
+                
+                # If model is not loaded but detector exists, try to reload it (with rate limiting)
+                if not is_loaded:
+                    current_time = time.time()
+                    if current_time - self._last_reload_attempt > self._reload_cooldown:
+                        self._last_reload_attempt = current_time
+                        self.logger.warning("Detection model appears unloaded, attempting to reload...")
+                        if self._reload_detector_models():
+                            is_loaded = (
+                                self.detector.model is not None 
+                                and self.detector.model != "dummy"
+                                and hasattr(self.detector.model, 'predict')
+                            )
+                            if is_loaded:
+                                self.logger.info("Detection model reloaded successfully")
+                            else:
+                                self.logger.error("Failed to reload detection model")
+                        else:
+                            self.logger.warning("Reload attempt failed, will retry after cooldown")
+                    else:
+                        # Still in cooldown, just log a debug message
+                        self.logger.debug(
+                            f"Model unloaded but reload cooldown active "
+                            f"({int(self._reload_cooldown - (current_time - self._last_reload_attempt))}s remaining)"
+                        )
+                
+                return is_loaded
+            else:
+                # Detector doesn't exist, try to reinitialize
+                self.logger.warning("Detector instance is None, attempting to reinitialize...")
+                self._initialize_components()
+                if self.detector:
+                    return (
+                        self.detector.model is not None 
+                        and self.detector.model != "dummy"
+                        and hasattr(self.detector.model, 'predict')
+                    )
             return False
-        except:
+        except Exception as e:
+            self.logger.error(f"Error checking if model is loaded: {e}")
+            # Try to reinitialize on error
+            try:
+                self._initialize_components()
+            except Exception as init_error:
+                self.logger.error(f"Failed to reinitialize detector: {init_error}")
             return False
     
     def _is_species_model_loaded(self) -> bool:
         """Check if species classification model is loaded in the web portal's detector."""
         try:
             if self.detector:
-                return (
+                # Check if species model is loaded and functional
+                is_loaded = (
                     self.detector.species_model is not None 
                     and self.detector.species_model != "dummy"
+                    and hasattr(self.detector.species_model, 'predict')
                 )
+                
+                # If species model is not loaded but detector exists, try to reload it (with rate limiting)
+                if not is_loaded and self.detector.model is not None:
+                    current_time = time.time()
+                    if current_time - self._last_reload_attempt > self._reload_cooldown:
+                        self._last_reload_attempt = current_time
+                        self.logger.warning("Species model appears unloaded, attempting to reload...")
+                        if self._reload_detector_models():
+                            is_loaded = (
+                                self.detector.species_model is not None 
+                                and self.detector.species_model != "dummy"
+                                and hasattr(self.detector.species_model, 'predict')
+                            )
+                            if is_loaded:
+                                self.logger.info("Species model reloaded successfully")
+                            else:
+                                self.logger.error("Failed to reload species model")
+                        else:
+                            self.logger.warning("Reload attempt failed, will retry after cooldown")
+                    else:
+                        # Still in cooldown, just log a debug message
+                        self.logger.debug(
+                            f"Species model unloaded but reload cooldown active "
+                            f"({int(self._reload_cooldown - (current_time - self._last_reload_attempt))}s remaining)"
+                        )
+                
+                return is_loaded
+            else:
+                # Detector doesn't exist, try to reinitialize
+                self.logger.warning("Detector instance is None, attempting to reinitialize...")
+                self._initialize_components()
+                if self.detector:
+                    return (
+                        self.detector.species_model is not None 
+                        and self.detector.species_model != "dummy"
+                        and hasattr(self.detector.species_model, 'predict')
+                    )
             return False
-        except:
+        except Exception as e:
+            self.logger.error(f"Error checking if species model is loaded: {e}")
+            # Try to reinitialize on error
+            try:
+                self._initialize_components()
+            except Exception as init_error:
+                self.logger.error(f"Failed to reinitialize detector: {init_error}")
+            return False
+    
+    def _reload_detector_models(self) -> bool:
+        """Attempt to reload detector models without recreating the detector instance.
+        
+        Returns:
+            True if reload was successful, False otherwise
+        """
+        try:
+            if not self.detector:
+                return False
+            
+            # Reload the main detection model
+            ai_config = self.config.get('ai', {})
+            model_path_str = ai_config.get('model_path', 'models/yolo11n-seg.pt')
+            model_path = self.detector._resolve_model_path(model_path_str)
+            
+            if model_path.exists():
+                from ultralytics import YOLO
+                self.detector.model = YOLO(str(model_path))
+                self.logger.info(f"Reloaded detection model: {model_path}")
+            else:
+                self.logger.error(f"Cannot reload detection model: {model_path} not found")
+                return False
+            
+            # Reload species model if configured
+            if ai_config.get('species_model_path'):
+                self.detector._init_species_backend()
+            
+            return True
+        except Exception as e:
+            self.logger.error(f"Failed to reload detector models: {e}")
+            import traceback
+            self.logger.error(traceback.format_exc())
             return False
     
     def _get_recent_detections(self, limit: int = 50, offset: int = 0) -> List[Dict[str, Any]]:

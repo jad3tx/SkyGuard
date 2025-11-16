@@ -541,7 +541,27 @@ class BirdSegmentationDetector:
                     species_name = None
                     species_conf = None
                     species_candidates = []
-                    if confidence >= 0.20 and (self._species_predict_fn is not None or self.species_model is not None):
+                    
+                    # Check if species classification should run
+                    species_model_available = (self._species_predict_fn is not None or self.species_model is not None)
+                    confidence_high_enough = confidence >= 0.20
+                    
+                    # Log diagnostic info if species model is available but not running
+                    if species_model_available and not confidence_high_enough:
+                        if self.detection_log_level in ['standard', 'detailed']:
+                            self.logger.debug(
+                                f"⏭️  [SPECIES] Skipped (low confidence) | "
+                                f"detection_conf={confidence:.3f} | "
+                                f"required>=0.20"
+                            )
+                    elif not species_model_available:
+                        if self.detection_log_level in ['standard', 'detailed']:
+                            self.logger.debug(
+                                f"⏭️  [SPECIES] Skipped (model not loaded) | "
+                                f"detection_conf={confidence:.3f}"
+                            )
+                    
+                    if confidence_high_enough and species_model_available:
                         # Log that species classification is running
                         if self.detection_log_level in ['standard', 'detailed']:
                             self.logger.info(
@@ -554,6 +574,11 @@ class BirdSegmentationDetector:
                                 frame, polygon_points, x1, y1, x2, y2
                             )
                             if crop is not None:
+                                if self.detection_log_level in ['standard', 'detailed']:
+                                    self.logger.debug(
+                                        f"🔬 [SPECIES] Crop extracted | "
+                                        f"size={crop.shape if hasattr(crop, 'shape') else 'unknown'}"
+                                    )
                                 species_name, species_conf, species_candidates = self._classify_species(crop)
                                 # Log species classification results
                                 if self.detection_log_level in ['standard', 'detailed']:
@@ -579,6 +604,12 @@ class BirdSegmentationDetector:
                                         self.logger.info(
                                             f"📊 [SPECIES] Top candidates | {candidates_str}"
                                         )
+                            else:
+                                if self.detection_log_level in ['standard', 'detailed']:
+                                    self.logger.warning(
+                                        f"⚠️  [SPECIES] Crop extraction failed | "
+                                        f"detection_conf={confidence:.3f}"
+                                    )
                         except Exception as ce:
                             self.logger.warning(
                                 f"⚠️  [SPECIES] Classification error | {ce}"
