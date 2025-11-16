@@ -306,6 +306,17 @@
                             <div class="form-text">Current value: <span id="nms-value">0.4</span></div>
                         </div>
                     </div>
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <label for="detection-log-level" class="form-label">Detection Log Level</label>
+                            <select class="form-select" id="detection-log-level">
+                                <option value="minimal">Minimal - No detection logging</option>
+                                <option value="standard">Standard - Log detections and species (default)</option>
+                                <option value="detailed">Detailed - Include all candidate species</option>
+                            </select>
+                            <div class="form-text">Controls the level of detail in detection logs</div>
+                        </div>
+                    </div>
                 </div>
                 
                 <!-- Notifications Configuration -->
@@ -388,17 +399,17 @@
 
 <!-- AI Section -->
 <div id="ai-section" class="section" style="display: none;">
-    <div class="card">
-        <div class="card-header">
-            <h5 class="mb-0">
-                <i class="fas fa-brain"></i> AI Model Management
-            </h5>
-        </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-6">
-                    <h6>Model Status</h6>
-                    <div id="ai-info">
+    <div class="row">
+        <!-- Detection Model -->
+        <div class="col-md-6">
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-brain"></i> Detection Model
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="detection-model-info">
                         <div class="text-center">
                             <div class="spinner-border" role="status">
                                 <span class="visually-hidden">Loading...</span>
@@ -406,17 +417,87 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-md-6">
-                    <h6>Model Testing</h6>
-                    <div class="d-grid gap-2">
-                        <button class="btn btn-skyguard" onclick="testAI()">
-                            <i class="fas fa-brain"></i> Test AI Model
-                        </button>
-                        <button class="btn btn-outline-primary" onclick="loadModel()">
-                            <i class="fas fa-upload"></i> Load Model
-                        </button>
+            </div>
+        </div>
+        
+        <!-- Species Classification Model -->
+        <div class="col-md-6">
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-feather-alt"></i> Species Classification Model
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="species-model-info">
+                        <div class="text-center">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Detection Statistics -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-line"></i> Detection Statistics
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="detection-stats">
+                        <div class="text-center">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Species Statistics -->
+        <div class="col-md-6">
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list"></i> Species Statistics
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="species-stats">
+                        <div class="text-center">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Model Actions -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="fas fa-cogs"></i> Model Actions
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="d-grid gap-2 d-md-flex">
+                <button class="btn btn-skyguard" onclick="testAI()">
+                    <i class="fas fa-brain"></i> Test AI Model
+                </button>
+                <button class="btn btn-outline-primary" onclick="refreshAIStats()">
+                    <i class="fas fa-sync"></i> Refresh Stats
+                </button>
             </div>
         </div>
     </div>
@@ -461,13 +542,21 @@
 <!-- Logs Section -->
 <div id="logs-section" class="section" style="display: none;">
     <div class="card">
-        <div class="card-header">
+        <div class="card-header d-flex justify-content-between align-items-center">
             <h5 class="mb-0">
                 <i class="fas fa-file-alt"></i> System Logs
             </h5>
+            <div>
+                <button class="btn btn-sm btn-outline-secondary" id="logs-pause-btn" onclick="toggleLogsPause()">
+                    <i class="fas fa-pause"></i> Pause
+                </button>
+                <button class="btn btn-sm btn-outline-secondary" onclick="clearLogsDisplay()">
+                    <i class="fas fa-trash"></i> Clear
+                </button>
+            </div>
         </div>
         <div class="card-body">
-            <div id="logs-content">
+            <div id="logs-content" style="max-height: 600px; overflow-y: auto; font-family: 'Courier New', monospace; font-size: 0.9em; background-color: #1e1e1e; color: #d4d4d4; padding: 10px; border-radius: 4px;">
                 <div class="text-center">
                     <div class="spinner-border" role="status">
                         <span class="visually-hidden">Loading...</span>
@@ -717,6 +806,7 @@
             document.getElementById('camera-live-view').checked = config.camera.live_view || false;
             document.getElementById('confidence-threshold').value = config.ai.confidence_threshold;
             document.getElementById('nms-threshold').value = config.ai.nms_threshold;
+            document.getElementById('detection-log-level').value = config.ai.detection_log_level || 'standard';
             document.getElementById('audio-enabled').checked = config.notifications.audio.enabled;
             document.getElementById('sms-enabled').checked = config.notifications.sms.enabled;
             document.getElementById('email-enabled').checked = config.notifications.email.enabled;
@@ -761,7 +851,8 @@
                 },
                 ai: {
                     confidence_threshold: parseFloat(document.getElementById('confidence-threshold').value),
-                    nms_threshold: parseFloat(document.getElementById('nms-threshold').value)
+                    nms_threshold: parseFloat(document.getElementById('nms-threshold').value),
+                    detection_log_level: document.getElementById('detection-log-level').value
                 },
                 notifications: {
                     audio: {
@@ -852,8 +943,157 @@
     }
     
     async function loadAIStatus() {
-        // Implementation for AI status
-        document.getElementById('ai-info').innerHTML = '<div class="text-muted">AI status loading...</div>';
+        await loadAIStats();
+    }
+    
+    async function loadAIStats() {
+        try {
+            const response = await fetch('/api/ai/stats');
+            const data = await response.json();
+            
+            if (data.error) {
+                console.error('Failed to load AI stats:', data.error);
+                return;
+            }
+            
+            // Display detection model info
+            const detectionModelDiv = document.getElementById('detection-model-info');
+            if (detectionModelDiv) {
+                const model = data.model || {};
+                const statusBadge = model.model_loaded 
+                    ? '<span class="badge bg-success">Loaded</span>' 
+                    : '<span class="badge bg-danger">Not Loaded</span>';
+                
+                detectionModelDiv.innerHTML = `
+                    <table class="table table-sm">
+                        <tr>
+                            <td><strong>Status:</strong></td>
+                            <td>${statusBadge}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Model Path:</strong></td>
+                            <td><code>${model.model_path || 'N/A'}</code></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Model Type:</strong></td>
+                            <td>${model.model_type || 'N/A'}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Input Size:</strong></td>
+                            <td>${model.input_size || 'N/A'}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Confidence Threshold:</strong></td>
+                            <td>${(model.confidence_threshold || 0).toFixed(2)}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>NMS Threshold:</strong></td>
+                            <td>${(model.nms_threshold || 0).toFixed(2)}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Log Level:</strong></td>
+                            <td><span class="badge bg-info">${model.detection_log_level || 'standard'}</span></td>
+                        </tr>
+                    </table>
+                `;
+            }
+            
+            // Display species model info
+            const speciesModelDiv = document.getElementById('species-model-info');
+            if (speciesModelDiv) {
+                const speciesModel = data.species_model || {};
+                const enabledBadge = speciesModel.enabled 
+                    ? '<span class="badge bg-success">Enabled</span>' 
+                    : '<span class="badge bg-secondary">Disabled</span>';
+                
+                speciesModelDiv.innerHTML = `
+                    <table class="table table-sm">
+                        <tr>
+                            <td><strong>Status:</strong></td>
+                            <td>${enabledBadge}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Model Path:</strong></td>
+                            <td><code>${speciesModel.model_path || 'N/A'}</code></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Backend:</strong></td>
+                            <td>${speciesModel.backend || 'N/A'}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Input Size:</strong></td>
+                            <td>${Array.isArray(speciesModel.input_size) ? speciesModel.input_size.join('x') : 'N/A'}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Confidence Threshold:</strong></td>
+                            <td>${(speciesModel.confidence_threshold || 0).toFixed(2)}</td>
+                        </tr>
+                    </table>
+                `;
+            }
+            
+            // Display detection statistics
+            const detectionStatsDiv = document.getElementById('detection-stats');
+            if (detectionStatsDiv) {
+                const detectorStats = data.detector_stats || {};
+                const detectionStats = data.detection_stats || {};
+                const confidenceStats = data.confidence_stats || {};
+                
+                let statsHtml = '<table class="table table-sm">';
+                
+                if (detectorStats.total_detections !== undefined) {
+                    statsHtml += `<tr><td><strong>Session Detections:</strong></td><td>${detectorStats.total_detections || 0}</td></tr>`;
+                }
+                
+                if (detectionStats.total_detections !== undefined) {
+                    statsHtml += `<tr><td><strong>Last 7 Days:</strong></td><td>${detectionStats.total_detections || 0}</td></tr>`;
+                }
+                
+                if (detectorStats.last_detection_time) {
+                    const lastDetTime = new Date(detectorStats.last_detection_time * 1000);
+                    statsHtml += `<tr><td><strong>Last Detection:</strong></td><td>${formatTimestamp(detectorStats.last_detection_time)}</td></tr>`;
+                }
+                
+                if (confidenceStats.count > 0) {
+                    statsHtml += `<tr><td><strong>Avg Confidence:</strong></td><td>${(confidenceStats.avg * 100).toFixed(1)}%</td></tr>`;
+                    statsHtml += `<tr><td><strong>Min Confidence:</strong></td><td>${(confidenceStats.min * 100).toFixed(1)}%</td></tr>`;
+                    statsHtml += `<tr><td><strong>Max Confidence:</strong></td><td>${(confidenceStats.max * 100).toFixed(1)}%</td></tr>`;
+                    statsHtml += `<tr><td><strong>Recent Samples:</strong></td><td>${confidenceStats.count}</td></tr>`;
+                }
+                
+                statsHtml += '</table>';
+                detectionStatsDiv.innerHTML = statsHtml;
+            }
+            
+            // Display species statistics
+            const speciesStatsDiv = document.getElementById('species-stats');
+            if (speciesStatsDiv) {
+                const speciesStats = data.species_stats || {};
+                const breakdown = speciesStats.species_breakdown || {};
+                
+                let statsHtml = '<table class="table table-sm">';
+                statsHtml += `<tr><td><strong>Total Classifications:</strong></td><td>${speciesStats.total_classifications || 0}</td></tr>`;
+                statsHtml += `<tr><td><strong>Successful IDs:</strong></td><td>${speciesStats.successful_identifications || 0}</td></tr>`;
+                
+                if (Object.keys(breakdown).length > 0) {
+                    statsHtml += '<tr><td colspan="2"><strong>Species Breakdown:</strong></td></tr>';
+                    const sortedSpecies = Object.entries(breakdown).sort((a, b) => b[1].count - a[1].count);
+                    sortedSpecies.slice(0, 5).forEach(([species, stats]) => {
+                        statsHtml += `<tr><td style="padding-left: 20px;">${species}</td><td>${stats.count} (avg: ${(stats.avg_confidence * 100).toFixed(1)}%)</td></tr>`;
+                    });
+                }
+                
+                statsHtml += '</table>';
+                speciesStatsDiv.innerHTML = statsHtml;
+            }
+            
+        } catch (error) {
+            console.error('Failed to load AI stats:', error);
+        }
+    }
+    
+    function refreshAIStats() {
+        loadAIStats();
     }
     
     async function loadAlertsStatus() {
@@ -861,27 +1101,182 @@
         document.getElementById('alerts-info').innerHTML = '<div class="text-muted">Alerts status loading...</div>';
     }
     
-    async function loadLogs() {
+    // Logs tailing state
+    let logsLastTimestamp = null;
+    let logsPaused = false;
+    let logsInterval = null;
+    let logsContainer = null;
+    
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    function formatLogMessage(message) {
+        // First escape HTML to prevent XSS
+        let escaped = escapeHtml(message);
+        let formatted = escaped;
+        
+        // Detection logs
+        if (escaped.includes('[DETECT]')) {
+            formatted = formatted.replace(
+                /🐦 \[DETECT\] (.*)/g,
+                '<span style="color: #4ec9b0;">🐦 [DETECT]</span> <span style="color: #ce9178;">$1</span>'
+            );
+        }
+        
+        // Segmentation logs
+        if (escaped.includes('[SEG]')) {
+            formatted = formatted.replace(
+                /🔍 \[SEG\] (.*)/g,
+                '<span style="color: #569cd6;">🔍 [SEG]</span> <span style="color: #ce9178;">$1</span>'
+            );
+        }
+        
+        // Species classification logs
+        if (escaped.includes('[SPECIES]')) {
+            if (escaped.includes('✅')) {
+                formatted = formatted.replace(
+                    /✅ \[SPECIES\] (.*)/g,
+                    '<span style="color: #4ec9b0;">✅ [SPECIES]</span> <span style="color: #ce9178;">$1</span>'
+                );
+            } else if (escaped.includes('❌')) {
+                formatted = formatted.replace(
+                    /❌ \[SPECIES\] (.*)/g,
+                    '<span style="color: #f48771;">❌ [SPECIES]</span> <span style="color: #ce9178;">$1</span>'
+                );
+            } else if (escaped.includes('🔬')) {
+                formatted = formatted.replace(
+                    /🔬 \[SPECIES\] (.*)/g,
+                    '<span style="color: #dcdcaa;">🔬 [SPECIES]</span> <span style="color: #ce9178;">$1</span>'
+                );
+            } else if (escaped.includes('📊')) {
+                formatted = formatted.replace(
+                    /📊 \[SPECIES\] (.*)/g,
+                    '<span style="color: #9cdcfe;">📊 [SPECIES]</span> <span style="color: #ce9178;">$1</span>'
+                );
+            }
+        }
+        
+        // Highlight key-value pairs (after escaping)
+        formatted = formatted.replace(
+            /(\w+)=([0-9.]+|\[[^\]]+\])/g,
+            '<span style="color: #9cdcfe;">$1</span>=<span style="color: #ce9178;">$2</span>'
+        );
+        
+        return formatted;
+    }
+    
+    function getLogLevelColor(level) {
+        const colors = {
+            'DEBUG': '#808080',
+            'INFO': '#4ec9b0',
+            'WARNING': '#dcdcaa',
+            'ERROR': '#f48771',
+            'CRITICAL': '#f48771'
+        };
+        return colors[level] || '#d4d4d4';
+    }
+    
+    async function loadLogs(append = false) {
+        if (logsPaused) return;
+        
         try {
-            const response = await fetch('/api/logs');
-            const logs = await response.json();
+            const url = logsLastTimestamp && append
+                ? `/api/logs?limit=500&since=${logsLastTimestamp}`
+                : '/api/logs?limit=500';
             
+            const response = await fetch(url);
+            const data = await response.json();
+            
+            if (data.error) {
+                console.error('Failed to load logs:', data.error);
+                return;
+            }
+            
+            const logs = data.logs || [];
             const container = document.getElementById('logs-content');
-            if (logs.length === 0) {
+            logsContainer = container;
+            
+            if (logs.length === 0 && !append) {
                 container.innerHTML = '<div class="text-center text-muted">No logs available</div>';
                 return;
             }
             
-            let html = '<div class="table-responsive"><table class="table table-sm"><thead><tr><th>Time</th><th>Level</th><th>Message</th></tr></thead><tbody>';
+            // If appending, add to existing content, otherwise replace
+            let html = append ? container.innerHTML : '';
+            
             logs.forEach(log => {
-                html += `<tr><td>${formatTimestamp(log.timestamp)}</td><td>${log.level}</td><td>${log.message}</td></tr>`;
+                const timeStr = log.timestamp_str || formatTimestamp(log.timestamp);
+                const levelColor = getLogLevelColor(log.level);
+                const formattedMessage = formatLogMessage(log.message || log.raw);
+                
+                html += `<div style="margin-bottom: 2px; padding: 2px 0; border-bottom: 1px solid #2d2d2d;">
+                    <span style="color: #808080; margin-right: 10px;">${timeStr}</span>
+                    <span style="color: ${levelColor}; margin-right: 10px; font-weight: bold; min-width: 60px; display: inline-block;">${log.level}</span>
+                    <span style="color: #808080; margin-right: 10px;">${log.module}</span>
+                    <span>${formattedMessage}</span>
+                </div>`;
             });
-            html += '</tbody></table></div>';
             
             container.innerHTML = html;
             
+            // Update last timestamp
+            if (data.last_timestamp) {
+                logsLastTimestamp = data.last_timestamp;
+            }
+            
+            // Auto-scroll to bottom
+            container.scrollTop = container.scrollHeight;
+            
         } catch (error) {
             console.error('Failed to load logs:', error);
+        }
+    }
+    
+    function toggleLogsPause() {
+        logsPaused = !logsPaused;
+        const btn = document.getElementById('logs-pause-btn');
+        if (logsPaused) {
+            btn.innerHTML = '<i class="fas fa-play"></i> Resume';
+            btn.classList.remove('btn-outline-secondary');
+            btn.classList.add('btn-outline-success');
+        } else {
+            btn.innerHTML = '<i class="fas fa-pause"></i> Pause';
+            btn.classList.remove('btn-outline-success');
+            btn.classList.add('btn-outline-secondary');
+            // Immediately load logs when resuming
+            loadLogs(true);
+        }
+    }
+    
+    function clearLogsDisplay() {
+        const container = document.getElementById('logs-content');
+        container.innerHTML = '';
+        logsLastTimestamp = null;
+        loadLogs(false);
+    }
+    
+    function startLogsTailing() {
+        // Clear any existing interval
+        if (logsInterval) {
+            clearInterval(logsInterval);
+        }
+        
+        // Load initial logs
+        loadLogs(false);
+        
+        // Set up auto-refresh every 2 seconds
+        logsInterval = setInterval(() => {
+            loadLogs(true);
+        }, 2000);
+    }
+    
+    function stopLogsTailing() {
+        if (logsInterval) {
+            clearInterval(logsInterval);
+            logsInterval = null;
         }
     }
     
@@ -1027,7 +1422,8 @@
                 },
                 ai: {
                     confidence_threshold: getValue('confidence-threshold', 0.3),
-                    nms_threshold: getValue('nms-threshold', 0.4)
+                    nms_threshold: getValue('nms-threshold', 0.4),
+                    detection_log_level: getValue('detection-log-level', 'standard')
                 },
                 notifications: {
                     audio: {
@@ -1105,7 +1501,7 @@
             'detection-interval', 'max-history', 'camera-source', 'camera-width', 
             'camera-height', 'camera-fps', 'camera-rotation', 'camera-flip-horizontal',
             'camera-flip-vertical', 'camera-brightness', 'camera-contrast', 
-            'camera-live-view', 'confidence-threshold', 'nms-threshold',
+            'camera-live-view', 'confidence-threshold', 'nms-threshold', 'detection-log-level',
             'audio-enabled', 'sms-enabled', 'email-enabled'
         ];
         

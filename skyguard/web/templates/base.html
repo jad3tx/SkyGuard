@@ -227,7 +227,7 @@
                             </button>
                         </div>
                         <div class="btn-group">
-                            <button type="button" class="btn btn-sm btn-skyguard" onclick="restartSystem()">
+                            <button type="button" class="btn btn-sm btn-skyguard" onclick="restartSystem(event)" id="restart-system-btn">
                                 <i class="fas fa-power-off"></i> Restart System
                             </button>
                         </div>
@@ -292,6 +292,13 @@
         
         // Show section
         function showSection(section) {
+            // Stop logs tailing if leaving logs section
+            if (currentSection === 'logs' && section !== 'logs') {
+                if (typeof stopLogsTailing === 'function') {
+                    stopLogsTailing();
+                }
+            }
+            
             // Hide all sections
             const sections = document.querySelectorAll('.section');
             sections.forEach(s => s.style.display = 'none');
@@ -339,7 +346,12 @@
                     await loadAlertsStatus();
                     break;
                 case 'logs':
-                    await loadLogs();
+                    // Start tailing logs when logs section is shown
+                    if (typeof startLogsTailing === 'function') {
+                        startLogsTailing();
+                    } else {
+                        await loadLogs();
+                    }
                     break;
                 case 'stats':
                     await loadStats();
@@ -372,19 +384,44 @@
         }
         
         // Restart system
-        async function restartSystem() {
-            if (confirm('Are you sure you want to restart the SkyGuard system?')) {
+        async function restartSystem(event) {
+            if (confirm('Are you sure you want to restart the SkyGuard system?\n\nThis will:\n- Stop the main detection system\n- Restart it with current configuration\n- Restart web portal components\n\nThe system may be unavailable for a few seconds.')) {
+                // Get button element directly
+                const button = document.getElementById('restart-system-btn') || (event && event.target);
+                const originalText = button ? button.innerHTML : '';
+                
                 try {
+                    // Show loading indicator immediately
+                    if (button) {
+                        button.disabled = true;
+                        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Restarting...';
+                        // Force a reflow to ensure the change is visible
+                        button.offsetHeight;
+                    }
+                    
                     const response = await fetch('/api/system/restart', {method: 'POST'});
                     const result = await response.json();
                     
-                    if (response.ok) {
-                        alert('System restart initiated successfully!');
+                    if (button) {
+                        button.disabled = false;
+                        button.innerHTML = originalText;
+                    }
+                    
+                    if (response.ok && result.success) {
+                        alert('✅ System restart initiated successfully!\n\nThe main SkyGuard system is restarting. Please wait a few seconds and refresh the page to verify it\'s running.');
+                        // Refresh status after a delay
+                        setTimeout(() => {
+                            loadSystemStatus();
+                        }, 3000);
                     } else {
-                        alert('Failed to restart system: ' + result.error);
+                        alert('❌ Failed to restart system:\n' + (result.message || result.error || 'Unknown error') + '\n\nCheck the logs section for more details.');
                     }
                 } catch (error) {
-                    alert('Failed to restart system: ' + error.message);
+                    if (button) {
+                        button.disabled = false;
+                        button.innerHTML = originalText || '<i class="fas fa-power-off"></i> Restart System';
+                    }
+                    alert('❌ Failed to restart system:\n' + error.message + '\n\nCheck the logs section for more details.');
                 }
             }
         }

@@ -10,6 +10,7 @@ import sys
 import logging
 import signal
 import time
+from datetime import datetime
 from pathlib import Path
 
 # Add the project root to the Python path
@@ -53,6 +54,10 @@ class SkyGuardSystem:
     def initialize(self):
         """Initialize all system components."""
         try:
+            self.logger.info("=" * 60)
+            self.logger.info("🚀 SKYGUARD SYSTEM STARTING")
+            self.logger.info(f"Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+            self.logger.info("=" * 60)
             self.logger.info("Initializing SkyGuard system...")
             
             # Initialize camera manager
@@ -71,7 +76,8 @@ class SkyGuardSystem:
             self.event_logger = EventLogger(self.config['storage'])
             self.event_logger.initialize()
             
-            self.logger.info("SkyGuard system initialized successfully")
+            self.logger.info("✅ SkyGuard system initialized successfully")
+            self.logger.info("=" * 60)
             return True
             
         except Exception as e:

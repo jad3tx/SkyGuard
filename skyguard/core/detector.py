@@ -58,6 +58,8 @@ class BirdSegmentationDetector:
         self.species_confidence_threshold = self.config.get('species_confidence_threshold', 0.3)
         # External repo backend (optional)
         self.species_backend = self.config.get('species_backend', 'ultralytics')
+        # Detection logging detail level: 'minimal', 'standard', 'detailed'
+        self.detection_log_level = self.config.get('detection_log_level', 'standard')
         self.species_repo_path = self.config.get('species_repo_path')
         self.species_module = self.config.get('species_module')
         self.species_function = self.config.get('species_function')
@@ -346,6 +348,10 @@ class BirdSegmentationDetector:
                 self.logger.warning("Model not loaded")
                 return []
             
+            # Log segmentation model execution
+            if self.detection_log_level in ['standard', 'detailed']:
+                self.logger.debug("🔍 [SEG] Running segmentation model")
+            
             # Run YOLO detection/segmentation
             results = self.model(
                 frame,
@@ -406,6 +412,16 @@ class BirdSegmentationDetector:
                     if not is_bird:
                         continue
                     
+                    # Log all bird detections (any confidence level)
+                    if self.detection_log_level in ['standard', 'detailed']:
+                        self.logger.info(
+                            f"🐦 [DETECT] Bird found | "
+                            f"conf={confidence:.3f} | "
+                            f"bbox=[{int(x1)},{int(y1)},{int(x2)},{int(y2)}] | "
+                            f"area={int(max(0, (x2 - x1)) * max(0, (y2 - y1)))} | "
+                            f"class={class_name or 'bird'}"
+                        )
+                    
                     polygon = polygons_list[idx]
                     polygon_points = None
                     if polygon is not None and len(polygon) > 0:
@@ -421,13 +437,45 @@ class BirdSegmentationDetector:
                     # Only run species classification for high-confidence detections (>= 0.20)
                     species_name = None
                     species_conf = None
+                    species_candidates = []
                     if confidence >= 0.20 and (self._species_predict_fn is not None or self.species_model is not None):
+                        # Log that species classification is running
+                        if self.detection_log_level in ['standard', 'detailed']:
+                            self.logger.info(
+                                f"🔬 [SPECIES] Running species classifier | "
+                                f"detection_conf={confidence:.3f} | "
+                                f"threshold={self.species_confidence_threshold:.3f}"
+                            )
                         try:
                             crop = self._extract_crop(
                                 frame, polygon_points, x1, y1, x2, y2
                             )
                             if crop is not None:
-                                species_name, species_conf = self._classify_species(crop)
+                                species_name, species_conf, species_candidates = self._classify_species(crop)
+                                # Log species classification results
+                                if self.detection_log_level in ['standard', 'detailed']:
+                                    if species_name:
+                                        self.logger.info(
+                                            f"✅ [SPECIES] Identified | "
+                                            f"species={species_name} | "
+                                            f"confidence={species_conf:.3f} | "
+                                            f"detection_conf={confidence:.3f}"
+                                        )
+                                    else:
+                                        self.logger.info(
+                                            f"❌ [SPECIES] No species above threshold | "
+                                            f"detection_conf={confidence:.3f} | "
+                                            f"threshold={self.species_confidence_threshold:.3f}"
+                                        )
+                                    # Log all candidate species if detailed logging
+                                    if self.detection_log_level == 'detailed' and species_candidates:
+                                        candidates_str = ", ".join(
+                                            f"{name}={conf:.3f}" 
+                                            for name, conf in species_candidates[:5]  # Top 5
+                                        )
+                                        self.logger.debug(
+                                            f"📊 [SPECIES] Top candidates | {candidates_str}"
+                                        )
                         except Exception as ce:
                             self.logger.debug(
                                 f"Species classify error: {ce}"
@@ -498,37 +546,66 @@ class BirdSegmentationDetector:
 
     def _classify_species(
         self, crop_rgb_resized: np.ndarray
-    ) -> Tuple[Optional[str], Optional[float]]:
+    ) -> Tuple[Optional[str], Optional[float], List[Tuple[str, float]]]:
         """Run species classifier (Ultralytics or external backend).
 
-        Returns (label, confidence) or (None, None) if not available.
+        Returns:
+            Tuple of (top_label, top_confidence, all_candidates)
+            - top_label: Best species name if above threshold, else None
+            - top_confidence: Confidence of top species if above threshold, else None
+            - all_candidates: List of (species_name, confidence) tuples for all species (any confidence)
         """
         # External backend callable takes precedence if provided
         if self._species_predict_fn is not None:
-            return self._species_predict_fn(crop_rgb_resized)
+            label, conf = self._species_predict_fn(crop_rgb_resized)
+            candidates = [(label, conf)] if label else []
+            # Filter by threshold for return value
+            if conf and conf < self.species_confidence_threshold:
+                return None, None, candidates
+            return label, conf, candidates
+        
         if self.species_model is None:
-            return None, None
+            return None, None, []
+        
         results = self.species_model(crop_rgb_resized)
         if not results:
-            return None, None
+            return None, None, []
+        
         res = results[0]
         names = getattr(res, 'names', None)
         probs = getattr(res, 'probs', None)
         if probs is None or names is None:
-            return None, None
+            return None, None, []
+        
         arr = probs.data.detach().cpu().numpy()
+        
+        # Get all species predictions (any confidence) for logging
+        all_candidates = []
+        if names and isinstance(names, dict):
+            for idx, conf_val in enumerate(arr):
+                if idx in names:
+                    species_name = names[idx]
+                    if species_name:
+                        formatted_name = self._format_species_name(species_name)
+                        all_candidates.append((formatted_name, float(conf_val)))
+        
+        # Sort by confidence (descending)
+        all_candidates.sort(key=lambda x: x[1], reverse=True)
+        
+        # Get top prediction
         top_i = int(np.argmax(arr))
         conf = float(arr[top_i])
         
         # Filter by confidence threshold - only return if above threshold
         if conf < self.species_confidence_threshold:
-            return None, None
+            return None, None, all_candidates
         
         label = names.get(top_i) if isinstance(names, dict) else None
         if label is not None:
             # Format the label to convert numeric IDs to readable names
             label = self._format_species_name(label)
-        return label, conf
+        
+        return label, conf, all_candidates
     
     def draw_detections(
         self, frame: np.ndarray, detections: List[Dict[str, Any]]
@@ -649,6 +726,7 @@ class BirdSegmentationDetector:
             'input_size', [640, 640]
         )
         self.classes = self.config.get('classes', ['bird'])
+        self.detection_log_level = self.config.get('detection_log_level', 'standard')
         
         self.logger.info("Detector configuration updated")
 

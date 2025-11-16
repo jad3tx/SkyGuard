@@ -2,6 +2,7 @@ ai:
   classes:
   - bird
   confidence_threshold: 0.6
+  detection_log_level: detailed
   input_size: 1080
   model_path: models/yolo11n-seg.pt
   model_type: yolo
@@ -72,7 +73,7 @@ storage:
   max_image_size_mb: 5
 system:
   debug_mode: false
-  detection_interval: 2.0
+  detection_interval: 2
   max_detection_history: 1000
   save_detection_frames: false
 training:

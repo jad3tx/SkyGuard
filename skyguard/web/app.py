@@ -48,6 +48,10 @@ class SkyGuardWebPortal:
         # Load configuration first
         self.config = self.config_manager.get_config()
         
+        # Setup logger
+        import logging
+        self.logger = logging.getLogger(__name__)
+        
         # Initialize event logger with config
         self.event_logger = EventLogger(self.config.get('storage', {}))
         # Ensure database/paths exist for read APIs
@@ -96,6 +100,7 @@ class SkyGuardWebPortal:
                         'loaded': self._is_model_loaded(),
                         'model_path': self.config.get('ai', {}).get('model_path', 'models/yolo11n-seg.pt'),
                         'confidence_threshold': self.config.get('ai', {}).get('confidence_threshold', 0.5),
+                        'detection_log_level': self.config.get('ai', {}).get('detection_log_level', 'standard'),
                         'classes': self.config.get('ai', {}).get('classes', []),
                     },
                     'detections': {
@@ -199,8 +204,8 @@ class SkyGuardWebPortal:
                     self.config_manager.update_config(new_config)
                     self.config = new_config
                     
-                    # Only restart components if camera settings changed
-                    if 'camera' in new_config:
+                    # Restart components if camera or AI settings changed
+                    if 'camera' in new_config or 'ai' in new_config:
                         try:
                             self._restart_components()
                         except Exception as e:
@@ -342,6 +347,114 @@ class SkyGuardWebPortal:
             except Exception as e:
                 return jsonify({'error': str(e)}), 500
         
+        @self.app.route('/api/ai/stats')
+        def api_ai_stats():
+            """Get AI model statistics and metrics."""
+            try:
+                ai_config = self.config.get('ai', {})
+                
+                # Get detector stats if available
+                detector_stats = {}
+                if self.detector:
+                    try:
+                        detector_stats = self.detector.get_detection_stats()
+                    except Exception:
+                        pass
+                
+                # Get detection statistics from event logger
+                detection_stats = {}
+                try:
+                    # Get stats for last 7 days
+                    detection_stats = self.event_logger.get_detection_stats(days=7)
+                except Exception:
+                    pass
+                
+                # Get recent detections for confidence stats
+                recent_detections = []
+                confidence_stats = {
+                    'avg': 0.0,
+                    'min': 1.0,
+                    'max': 0.0,
+                    'count': 0
+                }
+                species_stats = {
+                    'total_classifications': 0,
+                    'successful_identifications': 0,
+                    'species_breakdown': {}
+                }
+                
+                try:
+                    recent_detections = self.event_logger.get_detections(limit=100)
+                    if recent_detections:
+                        confidences = [d.get('confidence', 0.0) for d in recent_detections if d.get('confidence')]
+                        if confidences:
+                            confidence_stats = {
+                                'avg': sum(confidences) / len(confidences),
+                                'min': min(confidences),
+                                'max': max(confidences),
+                                'count': len(confidences)
+                            }
+                        
+                        # Species statistics
+                        species_detections = [d for d in recent_detections if d.get('species')]
+                        species_stats['total_classifications'] = len([d for d in recent_detections if d.get('species_confidence')])
+                        species_stats['successful_identifications'] = len(species_detections)
+                        
+                        # Species breakdown
+                        for det in species_detections:
+                            species = det.get('species', 'Unknown')
+                            if species not in species_stats['species_breakdown']:
+                                species_stats['species_breakdown'][species] = {
+                                    'count': 0,
+                                    'avg_confidence': 0.0,
+                                    'confidences': []
+                                }
+                            species_stats['species_breakdown'][species]['count'] += 1
+                            if det.get('species_confidence'):
+                                species_stats['species_breakdown'][species]['confidences'].append(
+                                    det.get('species_confidence')
+                                )
+                        
+                        # Calculate averages
+                        for species in species_stats['species_breakdown']:
+                            confs = species_stats['species_breakdown'][species]['confidences']
+                            if confs:
+                                species_stats['species_breakdown'][species]['avg_confidence'] = sum(confs) / len(confs)
+                except Exception:
+                    pass
+                
+                # Model information
+                model_info = {
+                    'model_path': ai_config.get('model_path', 'Not configured'),
+                    'model_type': ai_config.get('model_type', 'yolo'),
+                    'input_size': ai_config.get('input_size', 1080),
+                    'confidence_threshold': ai_config.get('confidence_threshold', 0.6),
+                    'nms_threshold': ai_config.get('nms_threshold', 0.5),
+                    'detection_log_level': ai_config.get('detection_log_level', 'standard'),
+                    'model_loaded': self._is_model_loaded(),
+                }
+                
+                # Species model information
+                species_model_info = {
+                    'enabled': bool(ai_config.get('species_model_path')),
+                    'model_path': ai_config.get('species_model_path', 'Not configured'),
+                    'backend': ai_config.get('species_backend', 'ultralytics'),
+                    'input_size': ai_config.get('species_input_size', [224, 224]),
+                    'confidence_threshold': ai_config.get('species_confidence_threshold', 0.3),
+                }
+                
+                return jsonify({
+                    'model': model_info,
+                    'species_model': species_model_info,
+                    'detector_stats': detector_stats,
+                    'detection_stats': detection_stats,
+                    'confidence_stats': confidence_stats,
+                    'species_stats': species_stats,
+                    'recent_detections_count': len(recent_detections)
+                })
+            except Exception as e:
+                return jsonify({'error': str(e)}), 500
+        
         @self.app.route('/api/alerts/test')
         def api_test_alerts():
             """Test alert system."""
@@ -372,11 +485,13 @@ class SkyGuardWebPortal:
         def api_get_logs():
             """Get system logs."""
             try:
-                limit = request.args.get('limit', 100, type=int)
-                logs = self._get_system_logs(limit)
+                limit = request.args.get('limit', 500, type=int)
+                since = request.args.get('since', None, type=float)  # Unix timestamp
+                logs = self._get_system_logs(limit, since)
                 return jsonify({
                     'logs': logs,
-                    'total_lines': len(logs)
+                    'total_lines': len(logs),
+                    'last_timestamp': logs[-1]['timestamp'] if logs else None
                 })
             except Exception as e:
                 return jsonify({'error': str(e)}), 500
@@ -414,19 +529,23 @@ class SkyGuardWebPortal:
         def api_system_restart():
             """Restart the system."""
             try:
-                # Log the restart request
-                self.event_logger.log_system_event('system_restart', 'System restart requested via web portal', 'INFO', {
-                    'timestamp': time.time()
-                })
+                # Attempt to restart the system
+                self._restart_system()
                 
                 # Return success response
                 return jsonify({
                     'success': True,
-                    'message': 'System restart initiated',
+                    'message': 'System restart initiated successfully',
                     'timestamp': time.time()
                 })
             except Exception as e:
-                return jsonify({'error': str(e)}), 500
+                self.logger.error(f"Restart failed: {e}")
+                return jsonify({
+                    'success': False,
+                    'error': str(e),
+                    'message': 'System restart failed. Check logs for details.',
+                    'timestamp': time.time()
+                }), 500
     
     def _initialize_components(self):
         """Initialize SkyGuard components."""
@@ -607,6 +726,8 @@ class SkyGuardWebPortal:
                     return False
                 if 'nms_threshold' in ai and not (0 <= ai['nms_threshold'] <= 1):
                     return False
+                if 'detection_log_level' in ai and ai['detection_log_level'] not in ['minimal', 'standard', 'detailed']:
+                    return False
             
             # Validate system settings if provided
             if 'system' in config:
@@ -673,26 +794,236 @@ class SkyGuardWebPortal:
     def _restart_system(self):
         """Restart SkyGuard system."""
         try:
-            # This would restart the main SkyGuard process
-            # For now, just restart components
+            import subprocess
+            import platform
+            import sys
+            from pathlib import Path
+            
+            # Get project root
+            project_root = Path(__file__).parent.parent.parent
+            
+            # Log the restart request - use logger which writes to file
+            self.logger.info("=" * 60)
+            self.logger.info("🔄 SYSTEM RESTART INITIATED via web portal")
+            self.logger.info(f"Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+            self.logger.info("=" * 60)
+            
+            # Also log to event logger
+            try:
+                self.event_logger.log_system_event(
+                    'system_restart', 
+                    'System restart requested via web portal', 
+                    'INFO', 
+                    {'timestamp': time.time()}
+                )
+            except Exception:
+                pass  # Don't fail if event logger fails
+            
+            # Find and stop the main SkyGuard process
+            if platform.system() == 'Windows':
+                # Windows: Find processes running skyguard.main
+                try:
+                    result = subprocess.run(
+                        ['tasklist', '/FI', 'IMAGENAME eq python.exe', '/FO', 'CSV'],
+                        capture_output=True,
+                        text=True,
+                        timeout=5
+                    )
+                    
+                    # Also check for pythonw.exe
+                    result2 = subprocess.run(
+                        ['tasklist', '/FI', 'IMAGENAME eq pythonw.exe', '/FO', 'CSV'],
+                        capture_output=True,
+                        text=True,
+                        timeout=5
+                    )
+                    
+                    # Try to find the process by checking command line
+                    # Note: This is a simplified approach - in production you might want
+                    # to use psutil or wmic for more reliable process detection
+                    import psutil
+                    for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
+                        try:
+                            cmdline = proc.info.get('cmdline', [])
+                            if cmdline and any('skyguard.main' in str(arg) for arg in cmdline):
+                                # Found the process - terminate it gracefully
+                                pid = proc.info['pid']
+                                self.logger.info(f"🛑 Stopping SkyGuard main process (PID: {pid})")
+                                proc.terminate()
+                                self.logger.info(f"   Sent termination signal to PID {pid}")
+                                # Wait a bit for graceful shutdown
+                                time.sleep(2)
+                                # If still running, force kill
+                                if proc.is_running():
+                                    proc.kill()
+                                    self.logger.info(f"   Force killed process PID {pid}")
+                                else:
+                                    self.logger.info(f"   Process PID {pid} stopped gracefully")
+                        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+                            continue
+                except ImportError:
+                    self.logger.warning("psutil not available, cannot find SkyGuard process")
+                except Exception as e:
+                    self.logger.warning(f"Could not find/stop SkyGuard process: {e}")
+            else:
+                # Linux/Mac: Use pkill
+                try:
+                    subprocess.run(['pkill', '-f', 'skyguard.main'], timeout=5, check=False)
+                    time.sleep(2)
+                except Exception as e:
+                    self.logger.warning(f"Could not stop SkyGuard process: {e}")
+            
+            # Restart the main system
+            # Note: This will start it in the background
+            python_exe = sys.executable
+            main_script = project_root / "skyguard" / "main.py"
+            
+            if platform.system() == 'Windows':
+                # Windows: Start in background
+                # Use DETACHED_PROCESS to run in background without console window
+                DETACHED_PROCESS = 0x00000008
+                subprocess.Popen(
+                    [python_exe, str(main_script)],
+                    cwd=str(project_root),
+                    creationflags=DETACHED_PROCESS,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL
+                )
+            else:
+                # Linux/Mac: Start in background using nohup
+                subprocess.Popen(
+                    [python_exe, str(main_script)],
+                    cwd=str(project_root),
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    start_new_session=True
+                )
+            
+            self.logger.info("🚀 Starting SkyGuard main system...")
+            self.logger.info(f"   Python: {python_exe}")
+            self.logger.info(f"   Script: {main_script}")
+            self.logger.info(f"   Working directory: {project_root}")
+            
+            # Also restart web portal components
+            self.logger.info("🔄 Restarting web portal components...")
             self._restart_components()
+            
+            self.logger.info("=" * 60)
+            self.logger.info("✅ SYSTEM RESTART COMPLETE")
+            self.logger.info(f"Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+            self.logger.info("=" * 60)
+            
         except Exception as e:
-            print(f"Warning: Failed to restart system: {e}")
+            self.logger.error(f"Failed to restart system: {e}")
+            import traceback
+            self.logger.error(traceback.format_exc())
+            raise
     
-    def _get_system_logs(self, limit: int = 100) -> List[Dict[str, Any]]:
-        """Get system logs."""
+    def _get_system_logs(self, limit: int = 500, since: Optional[float] = None) -> List[Dict[str, Any]]:
+        """Get system logs from the log file.
+        
+        Args:
+            limit: Maximum number of log lines to return
+            since: Optional Unix timestamp - only return logs after this time
+            
+        Returns:
+            List of log entry dictionaries
+        """
         try:
-            # This would read from log files
-            # For now, return placeholder
-            return [
-                {
-                    'timestamp': datetime.now().isoformat(),
-                    'level': 'INFO',
-                    'message': 'System started',
-                    'module': 'skyguard.main'
-                }
-            ]
-        except:
+            import re
+            from pathlib import Path
+            
+            # Get log file path from config
+            log_file = self.config.get('logging', {}).get('file', 'logs/skyguard.log')
+            log_path = Path(log_file)
+            
+            # Resolve relative paths
+            if not log_path.is_absolute():
+                # Try relative to project root
+                project_root = Path(__file__).parent.parent.parent
+                log_path = project_root / log_file
+            
+            if not log_path.exists():
+                return []
+            
+            # Read log file (read last N lines efficiently)
+            logs = []
+            try:
+                # Read file in reverse to get last N lines
+                with open(log_path, 'r', encoding='utf-8', errors='ignore') as f:
+                    # Read all lines if file is small, otherwise read last portion
+                    lines = f.readlines()
+                    
+                    # Get last N lines
+                    if len(lines) > limit:
+                        lines = lines[-limit:]
+                    
+                    # Parse each line
+                    # Format: YYYY-MM-DD HH:MM:SS - module - LEVEL - message
+                    log_pattern = re.compile(
+                        r'^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) - ([^-]+) - (\w+) - (.+)$'
+                    )
+                    
+                    for line in lines:
+                        line = line.strip()
+                        if not line:
+                            continue
+                        
+                        match = log_pattern.match(line)
+                        if match:
+                            timestamp_str, module, level, message = match.groups()
+                            
+                            # Parse timestamp
+                            try:
+                                dt = datetime.strptime(timestamp_str, '%Y-%m-%d %H:%M:%S')
+                                timestamp = dt.timestamp()
+                                
+                                # Filter by 'since' if provided
+                                if since and timestamp <= since:
+                                    continue
+                                
+                                logs.append({
+                                    'timestamp': timestamp,
+                                    'timestamp_str': timestamp_str,
+                                    'level': level,
+                                    'module': module.strip(),
+                                    'message': message,
+                                    'raw': line
+                                })
+                            except ValueError:
+                                # If timestamp parsing fails, include as-is
+                                logs.append({
+                                    'timestamp': time.time(),
+                                    'timestamp_str': '',
+                                    'level': 'INFO',
+                                    'module': 'unknown',
+                                    'message': line,
+                                    'raw': line
+                                })
+                        else:
+                            # If pattern doesn't match, include as raw log
+                            logs.append({
+                                'timestamp': time.time(),
+                                'timestamp_str': '',
+                                'level': 'INFO',
+                                'module': 'unknown',
+                                'message': line,
+                                'raw': line
+                            })
+                
+                # Sort by timestamp (oldest first)
+                logs.sort(key=lambda x: x['timestamp'])
+                
+            except Exception as e:
+                self.logger.error(f"Error reading log file: {e}")
+                return []
+            
+            return logs
+            
+        except Exception as e:
+            import traceback
+            print(f"Error in _get_system_logs: {e}")
+            traceback.print_exc()
             return []
     
     def _get_system_stats(self) -> Dict[str, Any]:
