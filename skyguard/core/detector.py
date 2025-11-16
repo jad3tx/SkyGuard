@@ -121,7 +121,8 @@ class BirdSegmentationDetector:
                 if not sp_path.exists():
                     # Try one more time with explicit project root resolution
                     base = Path(__file__).resolve()
-                    project_root = base.parents[3]
+                    # Project root is two levels up: SkyGuard/skyguard/core -> SkyGuard/
+                    project_root = base.parents[2]
                     explicit_path = project_root / str(self.species_model_path).replace('\\', '/')
                     
                     if explicit_path.exists():
@@ -380,14 +381,15 @@ class BirdSegmentationDetector:
         
         # Try relative to project root
         base = Path(__file__).resolve()
-        # Project root is three levels up: SkyGuard/skyguard/core -> SkyGuard/
-        project_root = base.parents[3]
+        # Project root is two levels up: SkyGuard/skyguard/core -> SkyGuard/
+        # From detector.py: parents[0]=core/, parents[1]=skyguard/, parents[2]=SkyGuard/
+        project_root = base.parents[2]
         
         candidates = [
             project_root / normalized_path,
             project_root / path_str,  # Try original path too
-            base.parents[2] / normalized_path,  # skyguard/
-            base.parents[2] / path_str,  # skyguard/ with original path
+            base.parents[1] / normalized_path,  # skyguard/ (one level up from core/)
+            base.parents[1] / path_str,  # skyguard/ with original path
         ]
         
         for c in candidates:
