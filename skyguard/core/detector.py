@@ -112,18 +112,48 @@ class BirdSegmentationDetector:
             if self.species_backend == 'ultralytics':
                 if not self.species_model_path:
                     return
+                
+                self.logger.debug(f"Attempting to load species model from: {self.species_model_path}")
                 sp_path = self._resolve_model_path(self.species_model_path)
+                self.logger.debug(f"Resolved path: {sp_path} (exists: {sp_path.exists()})")
+                
+                # Check if resolved path exists (try both resolved and original)
                 if not sp_path.exists():
-                    self.logger.error(
-                        f"Species model not found: {sp_path} "
-                        f"(resolved from: {self.species_model_path})"
-                    )
-                    self.logger.error(
-                        f"Please ensure the model file exists at: {sp_path} "
-                        f"or update species_model_path in config/skyguard.yaml"
-                    )
-                    return
-                self.species_model = YOLO(str(sp_path))
+                    # Try one more time with explicit project root resolution
+                    base = Path(__file__).resolve()
+                    project_root = base.parents[3]
+                    explicit_path = project_root / str(self.species_model_path).replace('\\', '/')
+                    
+                    if explicit_path.exists():
+                        sp_path = explicit_path.resolve()
+                        self.logger.info(f"Found species model using explicit project root path: {sp_path}")
+                    else:
+                        # Format paths with forward slashes for readability
+                        sp_path_str = str(sp_path).replace('\\', '/')
+                        explicit_path_str = str(explicit_path).replace('\\', '/')
+                        project_root_str = str(project_root).replace('\\', '/')
+                        
+                        self.logger.error(
+                            f"Species model not found: {sp_path_str} "
+                            f"(resolved from: {self.species_model_path})"
+                        )
+                        self.logger.error(
+                            f"Also tried: {explicit_path_str}"
+                        )
+                        self.logger.error(
+                            f"Project root: {project_root_str}"
+                        )
+                        self.logger.error(
+                            f"Current working directory: {Path.cwd()}"
+                        )
+                        self.logger.error(
+                            f"Please ensure the model file exists at: {explicit_path_str} "
+                            f"or update species_model_path in config/skyguard.yaml"
+                        )
+                        return
+                # Use forward slashes for path string (works on both Windows and Linux)
+                sp_path_str = str(sp_path).replace('\\', '/')
+                self.species_model = YOLO(sp_path_str)
                 # Note: _classify_species uses self.species_model directly
                 # Get model info for logging
                 try:
@@ -131,13 +161,13 @@ class BirdSegmentationDetector:
                     if model_info:
                         layers, params, gradients, gflops = model_info
                         self.logger.info(
-                            f"Species model loaded (ultralytics): {sp_path} | "
+                            f"Species model loaded (ultralytics): {sp_path_str} | "
                             f"Layers: {layers}, Params: {params:,}, GFLOPs: {gflops:.1f}"
                         )
                     else:
-                        self.logger.info(f"Species model loaded (ultralytics): {sp_path}")
+                        self.logger.info(f"Species model loaded (ultralytics): {sp_path_str}")
                 except Exception:
-                    self.logger.info(f"Species model loaded (ultralytics): {sp_path}")
+                    self.logger.info(f"Species model loaded (ultralytics): {sp_path_str}")
                 # Try to load class name mapping from dataset
                 self._load_species_class_name_map()
             elif self.species_backend == 'external':
