@@ -43,11 +43,15 @@ def setup_logging(config: Dict[str, Any]) -> None:
     # Clear existing handlers
     root_logger.handlers.clear()
     
-    # Console handler
-    console_handler = logging.StreamHandler(sys.stdout)
-    console_handler.setLevel(numeric_level)
-    console_handler.setFormatter(formatter)
-    root_logger.addHandler(console_handler)
+    # Console handler (only if console_output is enabled, default True)
+    console_output = config.get('console_output', True)
+    if console_output:
+        console_handler = logging.StreamHandler(sys.stdout)
+        console_handler.setLevel(numeric_level)
+        console_handler.setFormatter(formatter)
+        # Ensure immediate flushing for real-time output (important for Raspberry Pi)
+        console_handler.stream = sys.stdout
+        root_logger.addHandler(console_handler)
     
     # File handler with rotation
     file_handler = logging.handlers.RotatingFileHandler(
@@ -64,6 +68,23 @@ def setup_logging(config: Dict[str, Any]) -> None:
     logging.getLogger('torch').setLevel(logging.WARNING)
     logging.getLogger('PIL').setLevel(logging.WARNING)
     
+    # Ensure detector logger uses appropriate level for inference details
+    # The detector module logger should respect the root logger level
+    detector_logger = logging.getLogger('skyguard.core.detector')
+    detector_logger.setLevel(numeric_level)
+    
+    # Ensure stdout/stderr are unbuffered for real-time output (important for Raspberry Pi)
+    # Python 3.7+ has reconfigure, older versions need different approach
+    try:
+        if hasattr(sys.stdout, 'reconfigure'):
+            sys.stdout.reconfigure(line_buffering=True)
+        if hasattr(sys.stderr, 'reconfigure'):
+            sys.stderr.reconfigure(line_buffering=True)
+    except (AttributeError, ValueError):
+        # Fallback: set PYTHONUNBUFFERED environment variable effect
+        # or use flush() calls in critical sections
+        pass
+    
     # Log startup message
     logger = logging.getLogger(__name__)
     logger.info("SkyGuard logging system initialized")
@@ -71,6 +92,7 @@ def setup_logging(config: Dict[str, Any]) -> None:
     logger.info(f"Log file: {log_file}")
     logger.info(f"Max file size: {max_size_mb}MB")
     logger.info(f"Backup count: {backup_count}")
+    logger.info(f"Console output: {console_output}")
 
 
 def get_logger(name: str) -> logging.Logger:

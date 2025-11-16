@@ -430,15 +430,27 @@ class BirdSegmentationDetector:
                 return []
             
             # Log segmentation model execution
+            inference_start = time.time()
             if self.detection_log_level in ['standard', 'detailed']:
-                self.logger.debug("🔍 [SEG] Running segmentation model")
+                self.logger.info("🔍 [SEG] Running segmentation model")
             
             # Run YOLO detection/segmentation
+            # Use verbose=False to suppress Ultralytics stdout, we'll log via Python logging
             results = self.model(
                 frame,
                 conf=self.confidence_threshold,
                 iou=self.nms_threshold,
+                verbose=False,  # Suppress Ultralytics stdout, use our logging instead
             )
+            
+            inference_time = (time.time() - inference_start) * 1000  # Convert to ms
+            if self.detection_log_level in ['standard', 'detailed']:
+                self.logger.info(
+                    f"⏱️  [SEG] Inference completed | "
+                    f"time={inference_time:.1f}ms"
+                )
+                # Ensure output is flushed immediately (important for Raspberry Pi)
+                sys.stdout.flush()
             
             detections = []
             for result in results:
@@ -452,7 +464,15 @@ class BirdSegmentationDetector:
                 )
                 
                 if boxes is None or num_instances == 0:
+                    if self.detection_log_level in ['standard', 'detailed']:
+                        self.logger.info("🔍 [SEG] No detections found in frame")
                     continue
+                
+                # Log detection count
+                if self.detection_log_level in ['standard', 'detailed']:
+                    self.logger.info(
+                        f"📊 [SEG] Found {num_instances} detection(s) in frame"
+                    )
                 
                 # Prepare mask polygons if available
                 polygons_list = []
@@ -502,6 +522,8 @@ class BirdSegmentationDetector:
                             f"area={int(max(0, (x2 - x1)) * max(0, (y2 - y1)))} | "
                             f"class={class_name or 'bird'}"
                         )
+                        # Ensure output is flushed immediately (important for Raspberry Pi)
+                        sys.stdout.flush()
                     
                     polygon = polygons_list[idx]
                     polygon_points = None
@@ -554,12 +576,12 @@ class BirdSegmentationDetector:
                                             f"{name}={conf:.3f}" 
                                             for name, conf in species_candidates[:5]  # Top 5
                                         )
-                                        self.logger.debug(
+                                        self.logger.info(
                                             f"📊 [SPECIES] Top candidates | {candidates_str}"
                                         )
                         except Exception as ce:
-                            self.logger.debug(
-                                f"Species classify error: {ce}"
+                            self.logger.warning(
+                                f"⚠️  [SPECIES] Classification error | {ce}"
                             )
                     detection = {
                         'bbox': [int(x1), int(y1), int(x2), int(y2)],
@@ -648,7 +670,17 @@ class BirdSegmentationDetector:
         if self.species_model is None:
             return None, None, []
         
-        results = self.species_model(crop_rgb_resized)
+        # Run species classification with verbose=False to suppress Ultralytics stdout
+        species_start = time.time()
+        results = self.species_model(crop_rgb_resized, verbose=False)
+        species_time = (time.time() - species_start) * 1000  # Convert to ms
+        
+        # Log species inference timing if detailed logging is enabled
+        if self.detection_log_level == 'detailed':
+            self.logger.info(
+                f"⏱️  [SPECIES] Classification inference | "
+                f"time={species_time:.1f}ms"
+            )
         if not results:
             return None, None, []
         

@@ -13,6 +13,7 @@ import time
 import json
 import argparse
 import numpy as np
+import logging
 from pathlib import Path
 from typing import List, Dict, Any
 
@@ -22,6 +23,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 from skyguard.core.config_manager import ConfigManager  # noqa: E402
 from skyguard.core.detector import RaptorDetector  # noqa: E402
+from skyguard.utils.logger import setup_logging  # noqa: E402
 
 
 SUPPORTED_EXTS = {".mp4", ".avi", ".mov", ".mkv"}
@@ -376,8 +378,14 @@ def main():
         print(f"❌ Input directory not found: {input_dir}")
         return 1
 
-    # Load config and detector
+    # Setup logging based on config
     cfg = ConfigManager(args.config).get_config()
+    log_config = cfg.get("logging", {})
+    # Ensure console output is enabled for inference details
+    log_config["console_output"] = True
+    setup_logging(log_config)
+    
+    # Load config and detector
     ai_cfg = dict(cfg.get("ai", {}))
     # Force an explicit model path relative to project root
     ai_cfg["model_path"] = str(PROJECT_ROOT / "models" / "yolo11n-seg.pt")
