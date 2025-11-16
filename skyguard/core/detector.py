@@ -114,7 +114,14 @@ class BirdSegmentationDetector:
                     return
                 sp_path = self._resolve_model_path(self.species_model_path)
                 if not sp_path.exists():
-                    self.logger.error(f"Species model not found: {sp_path}")
+                    self.logger.error(
+                        f"Species model not found: {sp_path} "
+                        f"(resolved from: {self.species_model_path})"
+                    )
+                    self.logger.error(
+                        f"Please ensure the model file exists at: {sp_path} "
+                        f"or update species_model_path in config/skyguard.yaml"
+                    )
                     return
                 self.species_model = YOLO(str(sp_path))
                 # Note: _classify_species uses self.species_model directly
@@ -322,25 +329,55 @@ class BirdSegmentationDetector:
         - As given (absolute or relative to CWD)
         - Relative to the project root (SkyGuard/)
         - Relative to the package root (skyguard/)
+        
+        Args:
+            path_str: Model path string (may contain forward or backslashes)
+            
+        Returns:
+            Resolved Path object
         """
-        p = Path(path_str)
-        if p.exists():
+        # Normalize path separators (handle both Windows and Linux)
+        normalized_path = str(path_str).replace('\\', '/')
+        p = Path(normalized_path)
+        
+        # Try as absolute path first
+        if p.is_absolute() and p.exists():
             return p
+        
+        # Try as relative to current working directory
+        if p.exists():
+            return p.resolve()
+        
+        # Try relative to project root
         base = Path(__file__).resolve()
         # Project root is three levels up: SkyGuard/skyguard/core -> SkyGuard/
         project_root = base.parents[3]
+        
         candidates = [
-            project_root / path_str,
-            base.parents[2] / path_str,  # skyguard/
+            project_root / normalized_path,
+            project_root / path_str,  # Try original path too
+            base.parents[2] / normalized_path,  # skyguard/
+            base.parents[2] / path_str,  # skyguard/ with original path
         ]
+        
         for c in candidates:
             if c.exists():
-                return c
+                return c.resolve()
+        
         # Log attempted locations for troubleshooting
+        all_attempts = [p] + candidates
         try:
-            self.logger.debug(
-                "Model path resolution failed. Tried: %s",
-                ", ".join(str(x) for x in [p] + candidates),
+            self.logger.error(
+                f"Model path resolution failed for: {path_str}"
+            )
+            self.logger.error(
+                f"Attempted paths:\n  " + "\n  ".join(str(x) for x in all_attempts)
+            )
+            self.logger.error(
+                f"Project root: {project_root}"
+            )
+            self.logger.error(
+                f"Current working directory: {Path.cwd()}"
             )
         except Exception:
             pass
