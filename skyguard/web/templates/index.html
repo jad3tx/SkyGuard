@@ -686,14 +686,19 @@
                                         <p class="card-text">
                                             <strong>Class:</strong> ${detection.class || 'bird'}<br>
                                             <strong>Confidence:</strong> ${formatConfidence(detection.confidence)}<br>
+                                            ${detection.species ? `<strong>Species:</strong> ${detection.species} (${formatConfidence(detection.species_confidence || 0)})<br>` : ''}
                                             <strong>Time:</strong> ${formatTimestamp(detection.timestamp)}
                                         </p>
                                     </div>
                                     <div class="col-md-4">
                                         <img src="/api/detections/${detection.id}/image" 
-                                             class="detection-image" 
+                                             class="detection-image clickable-image" 
                                              alt="Detection image"
+                                             data-detection-id="${detection.id}"
+                                             data-has-segmented="${detection.segmented_image_path ? 'true' : 'false'}"
+                                             style="cursor: ${detection.segmented_image_path ? 'pointer' : 'default'}; max-width: 100%; height: auto;"
                                              onerror="this.style.display='none'">
+                                        ${detection.segmented_image_path ? '<small class="text-muted"><i class="fas fa-tag"></i> Click to view species annotation</small>' : ''}
                                     </div>
                                 </div>
                             </div>
@@ -763,14 +768,19 @@
                                     <p class="card-text">
                                         <strong>Class:</strong> ${detection.class || 'bird'}<br>
                                         <strong>Confidence:</strong> ${formatConfidence(detection.confidence)}<br>
+                                        ${detection.species ? `<strong>Species:</strong> ${detection.species} (${formatConfidence(detection.species_confidence || 0)})<br>` : ''}
                                         <strong>Time:</strong> ${formatTimestamp(detection.timestamp)}
                                     </p>
                                 </div>
                                 <div class="col-md-4">
                                     <img src="/api/detections/${detection.id}/image" 
-                                         class="detection-image" 
+                                         class="detection-image clickable-image" 
                                          alt="Detection image"
+                                         data-detection-id="${detection.id}"
+                                         data-has-segmented="${detection.segmented_image_path ? 'true' : 'false'}"
+                                         style="cursor: ${detection.segmented_image_path ? 'pointer' : 'default'}; max-width: 100%; height: auto;"
                                          onerror="this.style.display='none'">
+                                    ${detection.segmented_image_path ? '<small class="text-muted"><i class="fas fa-tag"></i> Click to view species annotation</small>' : ''}
                                 </div>
                             </div>
                         </div>
@@ -1520,5 +1530,71 @@
             }
         });
     });
+    
+    // Image modal functionality
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('clickable-image')) {
+            const detectionId = e.target.getAttribute('data-detection-id');
+            const hasSegmented = e.target.getAttribute('data-has-segmented') === 'true';
+            
+            if (hasSegmented && detectionId) {
+                showImageModal(detectionId);
+            }
+        }
+    });
+    
+    function showImageModal(detectionId) {
+        // Get the modal element
+        const modal = document.getElementById('detection-image-modal');
+        if (!modal) {
+            console.error('Modal element not found');
+            return;
+        }
+        
+        // Set image source
+        const modalImg = document.getElementById('modal-segmented-image');
+        if (modalImg) {
+            modalImg.src = `/api/detections/${detectionId}/segmented`;
+        }
+        
+        // Show modal using Bootstrap
+        const bsModal = new bootstrap.Modal(modal);
+        bsModal.show();
+    }
 </script>
+
+<!-- Detection Image Modal -->
+<div class="modal fade" id="detection-image-modal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Species Annotated Detection</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="modal-segmented-image" src="" alt="Segmented detection" class="img-fluid">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .clickable-image {
+        transition: opacity 0.2s;
+    }
+    .clickable-image:hover {
+        opacity: 0.8;
+    }
+    .detection-image {
+        border-radius: 4px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    #modal-segmented-image {
+        max-height: 80vh;
+        border-radius: 4px;
+    }
+</style>
 {% endblock %}

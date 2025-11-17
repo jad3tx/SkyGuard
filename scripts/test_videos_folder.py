@@ -152,6 +152,7 @@ def process_video(
     save_json: bool = False,
     save_crops: bool = False,
     save_segmented_images: bool = False,
+    save_snapshots: bool = False,
 ) -> dict:
     cap = cv2.VideoCapture(str(video_path))
     if not cap.isOpened():
@@ -172,6 +173,7 @@ def process_video(
     det_root = output_dir / "detections" / video_path.stem
     crops_root = output_dir / "crops" / video_path.stem
     segmented_root = output_dir / "segmented_images" / video_path.stem
+    snapshots_root = output_dir / "snapshots" / video_path.stem
     detections_log = []
     if save_json:
         det_root.mkdir(parents=True, exist_ok=True)
@@ -179,6 +181,8 @@ def process_video(
         crops_root.mkdir(parents=True, exist_ok=True)
     if save_segmented_images:
         segmented_root.mkdir(parents=True, exist_ok=True)
+    if save_snapshots:
+        snapshots_root.mkdir(parents=True, exist_ok=True)
 
     stats = {
         "video": str(video_path),
@@ -200,20 +204,20 @@ def process_video(
 
             dets = detector.detect(frame)
             
-            # Filter to only high-confidence detections (>= 0.20) for species classification
+            # Filter to only high-confidence detections (>= 0.50) for species classification
             # Only these will be sent to species classification
             high_conf_dets_for_species = [
                 d for d in (dets or [])
-                if float(d.get("confidence", 0.0)) >= 0.20
+                if float(d.get("confidence", 0.0)) >= 0.50
             ]
             
-            # Filter to only detections with species confidence >= 0.10
-            # Only save segmented images if species is identified with >= 0.10 confidence
+            # Filter to only detections with species confidence >= 0.60
+            # Only save segmented images if species is identified with >= 0.60 confidence
             dets_with_species = [
                 d for d in high_conf_dets_for_species
                 if d.get("species") is not None 
                 and d.get("species_confidence") is not None
-                and float(d.get("species_confidence", 0.0)) >= 0.10
+                and float(d.get("species_confidence", 0.0)) >= 0.60
             ]
             
             # Track all detections for stats (using 0.80 threshold for stats)
@@ -253,8 +257,8 @@ def process_video(
                             cv2.imwrite(str(crops_root / crop_name), crop)
             
             # Save segmented images ONLY for detections with:
-            # - Bird confidence >= 0.20 (already filtered above)
-            # - Species confidence >= 0.10
+            # - Bird confidence >= 0.50 (already filtered above)
+            # - Species confidence >= 0.60
             # - Species name present
             if save_segmented_images and dets_with_species:
                 segmented_frame = draw_segmented_frame(frame.copy(), dets_with_species)
@@ -277,6 +281,11 @@ def process_video(
                     segmented_name = f"{frame_idx:06d}_{species_safe}_{species_conf:.2f}_multi_segmented.jpg"
                 
                 cv2.imwrite(str(segmented_root / segmented_name), segmented_frame)
+
+            # Save full frame snapshots when detections are found
+            if save_snapshots and dets:
+                snapshot_name = f"{frame_idx:06d}_snapshot.jpg"
+                cv2.imwrite(str(snapshots_root / snapshot_name), frame)
 
             if writer is not None:
                 annotated = annotate_frame(frame.copy(), dets)
@@ -340,6 +349,11 @@ def main():
         "--save-segmented-images",
         action="store_true",
         help="Save labeled segmented images for frames with detections to output/segmented_images/",
+    )
+    parser.add_argument(
+        "--save-snapshots",
+        action="store_true",
+        help="Save full frame snapshots for frames with detections to output/snapshots/",
     )
     # Optional species classification backend options
     parser.add_argument(
@@ -433,6 +447,7 @@ def main():
             save_json=args.save_json,
             save_crops=args.save_crops,
             save_segmented_images=args.save_segmented_images,
+            save_snapshots=args.save_snapshots,
         )
         all_stats.append(stats)
         print(

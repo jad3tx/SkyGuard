@@ -114,9 +114,26 @@ class EventLogger:
                     center_y INTEGER NOT NULL,
                     area INTEGER NOT NULL,
                     image_path TEXT,
+                    species_name TEXT,
+                    species_confidence REAL,
+                    segmented_image_path TEXT,
                     metadata TEXT
                 )
             ''')
+            
+            # Add new columns if they don't exist (for existing databases)
+            try:
+                cursor.execute('ALTER TABLE detections ADD COLUMN species_name TEXT')
+            except sqlite3.OperationalError:
+                pass  # Column already exists
+            try:
+                cursor.execute('ALTER TABLE detections ADD COLUMN species_confidence REAL')
+            except sqlite3.OperationalError:
+                pass  # Column already exists
+            try:
+                cursor.execute('ALTER TABLE detections ADD COLUMN segmented_image_path TEXT')
+            except sqlite3.OperationalError:
+                pass  # Column already exists
             
             # Create system_events table
             cursor.execute('''
@@ -160,8 +177,15 @@ class EventLogger:
             
             # Save frame if provided
             image_path = None
+            segmented_image_path = None
             if frame is not None:
                 image_path = self._save_detection_image(frame, detection)
+                
+                # Save segmented image if species is detected
+                species = detection.get('species')
+                species_conf = detection.get('species_confidence')
+                if species and species_conf is not None and float(species_conf) >= 0.6:
+                    segmented_image_path = self._save_segmented_image(frame, detection)
             
             # Insert detection record - prefer detection-provided timestamp
             cursor = self.connection.cursor()
@@ -171,11 +195,21 @@ class EventLogger:
             except (TypeError, ValueError):
                 provided_ts = None
             current_time = provided_ts if provided_ts is not None else time.time()
+            
+            species_name = detection.get('species')
+            species_confidence = detection.get('species_confidence')
+            if species_confidence is not None:
+                try:
+                    species_confidence = float(species_confidence)
+                except (TypeError, ValueError):
+                    species_confidence = None
+            
             cursor.execute('''
                 INSERT INTO detections (
                     timestamp, class_name, confidence, bbox_x1, bbox_y1, bbox_x2, bbox_y2,
-                    center_x, center_y, area, image_path, metadata
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    center_x, center_y, area, image_path, species_name, species_confidence,
+                    segmented_image_path, metadata
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (
                 current_time,  # Store detector's timestamp when available
                 detection['class_name'],
@@ -188,6 +222,9 @@ class EventLogger:
                 detection['center'][1],
                 detection['area'],
                 image_path,
+                species_name,
+                species_confidence,
+                segmented_image_path,
                 json.dumps(detection.get('metadata', {}))
             ))
             
@@ -285,6 +322,129 @@ class EventLogger:
             self.logger.error(f"Failed to annotate frame: {e}")
             return frame
     
+    def _save_segmented_image(self, frame: np.ndarray, detection: Dict[str, Any]) -> str:
+        """Save segmented detection image with species annotations.
+        
+        Args:
+            frame: Frame to save
+            detection: Detection information
+            
+        Returns:
+            Path to saved segmented image
+        """
+        try:
+            # Prefer detection's timestamp for filename for consistency with DB/UI
+            try:
+                provided_ts = float(detection.get('timestamp')) if detection.get('timestamp') is not None else None
+            except (TypeError, ValueError):
+                provided_ts = None
+            dt = datetime.fromtimestamp(provided_ts) if provided_ts is not None else datetime.now()
+            
+            species = detection.get('species', 'unknown')
+            species_conf = float(detection.get('species_confidence', 0.0))
+            species_safe = species.replace(" ", "_").replace("/", "_").replace("(", "").replace(")", "").replace(",", "")
+            filename = f"detection_{dt.strftime('%Y%m%d_%H%M%S_%f')[:-3]}_{species_safe}_{species_conf:.2f}_segmented.jpg"
+            filepath = (self.images_path / filename).resolve()
+            
+            # Draw segmented frame with species annotations
+            segmented_frame = self._draw_segmented_frame(frame, detection)
+            self.logger.info(f"Saving segmented detection image: {filename}")
+            
+            # Save frame
+            cv2.imwrite(str(filepath), segmented_frame)
+            
+            return str(filepath)
+            
+        except Exception as e:
+            self.logger.error(f"Failed to save segmented detection image: {e}")
+            return ""
+    
+    def _draw_segmented_frame(self, frame: np.ndarray, detection: Dict[str, Any]) -> np.ndarray:
+        """Draw segmentation mask, bounding box, and species label on frame.
+        
+        Args:
+            frame: Input frame
+            detection: Detection information
+            
+        Returns:
+            Annotated frame with segmentation mask and species label
+        """
+        try:
+            annotated_frame = frame.copy()
+            bbox = detection.get("bbox")
+            confidence = float(detection.get("confidence", 0.0))
+            class_name = detection.get("class_name", "bird")
+            polygon = detection.get("polygon")
+            species = detection.get("species")
+            species_confidence = detection.get("species_confidence")
+            
+            # Draw segmentation mask if available
+            if polygon is not None and len(polygon) > 0:
+                overlay = annotated_frame.copy()
+                pts = np.array(polygon, dtype=np.int32)
+                # Use green color for segmentation mask
+                cv2.fillPoly(overlay, [pts], color=(0, 255, 0))
+                # Alpha blend mask for transparency
+                alpha = 0.3
+                annotated_frame = cv2.addWeighted(
+                    overlay,
+                    alpha,
+                    annotated_frame,
+                    1 - alpha,
+                    0,
+                )
+            
+            # Draw bounding box
+            if bbox and len(bbox) == 4:
+                h, w = frame.shape[:2]
+                x1 = max(0, min(int(bbox[0]), w-1))
+                y1 = max(0, min(int(bbox[1]), h-1))
+                x2 = max(0, min(int(bbox[2]), w-1))
+                y2 = max(0, min(int(bbox[3]), h-1))
+                cv2.rectangle(annotated_frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                
+                # Build label text with species
+                if species and species_confidence is not None:
+                    label = f"{class_name}: {confidence:.2f} | {species}: {species_confidence:.2f}"
+                else:
+                    label = f"{class_name}: {confidence:.2f}"
+                
+                # Calculate label size for background
+                font = cv2.FONT_HERSHEY_SIMPLEX
+                font_scale = 0.6
+                thickness = 2
+                (label_width, label_height), baseline = cv2.getTextSize(
+                    label, font, font_scale, thickness
+                )
+                
+                # Draw label background
+                label_y = max(label_height + 5, y1)
+                cv2.rectangle(
+                    annotated_frame,
+                    (x1, label_y - label_height - 5),
+                    (x1 + label_width, label_y + baseline),
+                    (0, 255, 0),
+                    -1,
+                )
+                
+                # Draw label text
+                cv2.putText(
+                    annotated_frame,
+                    label,
+                    (x1, label_y),
+                    font,
+                    font_scale,
+                    (0, 0, 0),
+                    thickness,
+                    cv2.LINE_AA,
+                )
+            
+            return annotated_frame
+            
+        except Exception as e:
+            self.logger.error(f"Failed to draw segmented frame: {e}")
+            return frame
+    
     def log_system_event(self, event_type: str, message: str, level: str = "INFO", metadata: Optional[Dict] = None) -> bool:
         """Log a system event.
         
@@ -367,6 +527,7 @@ class EventLogger:
             # Convert to dictionaries
             detections = []
             for row in rows:
+                # Handle both old and new schema (with/without species columns)
                 detection = {
                     'id': row[0],
                     'timestamp': row[1],
@@ -375,8 +536,11 @@ class EventLogger:
                     'bbox': [row[4], row[5], row[6], row[7]],
                     'center': [row[8], row[9]],
                     'area': row[10],
-                    'image_path': row[11],
-                    'metadata': json.loads(row[12]) if row[12] else {}
+                    'image_path': row[11] if len(row) > 11 else None,
+                    'species_name': row[12] if len(row) > 12 else None,
+                    'species_confidence': row[13] if len(row) > 13 else None,
+                    'segmented_image_path': row[14] if len(row) > 14 else None,
+                    'metadata': json.loads(row[15]) if len(row) > 15 and row[15] else {}
                 }
                 detections.append(detection)
             
@@ -508,6 +672,7 @@ class EventLogger:
             if row is None:
                 return None
 
+            # Handle both old and new schema (with/without species columns)
             return {
                 'id': row[0],
                 'timestamp': row[1],
@@ -516,8 +681,11 @@ class EventLogger:
                 'bbox': [row[4], row[5], row[6], row[7]],
                 'center': [row[8], row[9]],
                 'area': row[10],
-                'image_path': row[11],
-                'metadata': json.loads(row[12]) if row[12] else {},
+                'image_path': row[11] if len(row) > 11 else None,
+                'species_name': row[12] if len(row) > 12 else None,
+                'species_confidence': row[13] if len(row) > 13 else None,
+                'segmented_image_path': row[14] if len(row) > 14 else None,
+                'metadata': json.loads(row[15]) if len(row) > 15 and row[15] else {},
             }
         except Exception as e:
             self.logger.error(f"Failed to get detection by id {detection_id}: {e}")

@@ -1,44 +1,23 @@
 [
   {
-    "video": "videos_in\\albatross-bird-flying-in-antarctica-landscape-seabird-in-flight-flying-past-antarct-SBV-352919482-HD.mp4",
-    "frames": 259,
-    "detections": 174,
-    "max_confidence": 0.9542903304100037,
-    "duration_s": 16.859
+    "video": "videos_in\\hawk-soars-gracefully-through-a-clear-blue-sky-wings-spread-wide-in-natural-freedom-SBV-353140226-HD.mp4",
+    "frames": 559,
+    "detections": 210,
+    "max_confidence": 0.9371165037155151,
+    "duration_s": 22.197
   },
   {
-    "video": "videos_in\\frigate-birds-flying-around-santa-cruz-galapagos-islands-nature-SBV-347560427-HD.mp4",
-    "frames": 421,
-    "detections": 365,
-    "max_confidence": 0.9599566459655762,
-    "duration_s": 28.439
+    "video": "videos_in\\northern-harrier-carefully-gliding-over-the-field-as-it-hunts-for-prey-in-the-utah--SBV-352164668-HD.mp4",
+    "frames": 513,
+    "detections": 435,
+    "max_confidence": 0.9541980624198914,
+    "duration_s": 21.216
   },
   {
-    "video": "videos_in\\lonely-bird-flying-in-the-blue-sky-against-the-sun-SBV-338835604-HD.mp4",
-    "frames": 278,
-    "detections": 0,
-    "max_confidence": 0.0,
-    "duration_s": 9.758
-  },
-  {
-    "video": "videos_in\\slow-motion-puffin-flying-with-sky-atlantic-puffin-in-flight-flying-fast-and-flappi-SBV-352924077-HD.mp4",
-    "frames": 156,
-    "detections": 81,
-    "max_confidence": 0.9445681571960449,
-    "duration_s": 9.544
-  },
-  {
-    "video": "videos_in\\slow-motion-shot-of-aerial-shot-of-bird-flying-across-the-empty-savannah-on-a-hot-a-SBV-352853463-HD.mp4",
-    "frames": 242,
-    "detections": 26,
-    "max_confidence": 0.8369244337081909,
-    "duration_s": 14.819
-  },
-  {
-    "video": "videos_in\\slow-motion-soaring-bald-eagle-closeup-SBV-300135462-HD.mp4",
-    "frames": 477,
-    "detections": 320,
-    "max_confidence": 0.9554159045219421,
-    "duration_s": 34.147
+    "video": "videos_in\\northern-harrier-flying-over-the-grassy-fields-hunting-for-prey-in-utah-SBV-352164659-HD.mp4",
+    "frames": 458,
+    "detections": 341,
+    "max_confidence": 0.9403318166732788,
+    "duration_s": 18.356
   }
 ]

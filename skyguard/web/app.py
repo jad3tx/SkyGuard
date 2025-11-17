@@ -157,6 +157,9 @@ class SkyGuardWebPortal:
                         'class': detection.get('class_name', 'bird'),
                         'bbox': detection.get('bbox', [0, 0, 0, 0]),
                         'image_path': detection.get('image_path', ''),
+                        'species': detection.get('species_name'),
+                        'species_confidence': detection.get('species_confidence'),
+                        'segmented_image_path': detection.get('segmented_image_path'),
                         'metadata': detection.get('metadata', {}),
                     })
                 return jsonify({'error': 'Detection not found'}), 404
@@ -171,6 +174,31 @@ class SkyGuardWebPortal:
                 image_path = (record or {}).get('image_path')
                 if image_path:
                     # Resolve relative paths to absolute within project root
+                    abs_path = image_path
+                    if not os.path.isabs(abs_path):
+                        abs_path = os.path.abspath(os.path.join(project_root, image_path))
+                    if os.path.exists(abs_path):
+                        return send_file(abs_path, mimetype='image/jpeg')
+                return jsonify({'error': 'Image not found'}), 404
+            except Exception as e:
+                return jsonify({'error': str(e)}), 500
+        
+        @self.app.route('/api/detections/<int:detection_id>/segmented')
+        def api_detection_segmented_image(detection_id: int):
+            """Get segmented detection image with species annotations."""
+            try:
+                record = self.event_logger.get_detection_by_id(detection_id)
+                segmented_image_path = (record or {}).get('segmented_image_path')
+                if segmented_image_path:
+                    # Resolve relative paths to absolute within project root
+                    abs_path = segmented_image_path
+                    if not os.path.isabs(abs_path):
+                        abs_path = os.path.abspath(os.path.join(project_root, segmented_image_path))
+                    if os.path.exists(abs_path):
+                        return send_file(abs_path, mimetype='image/jpeg')
+                # Fallback to regular image if segmented not available
+                image_path = (record or {}).get('image_path')
+                if image_path:
                     abs_path = image_path
                     if not os.path.isabs(abs_path):
                         abs_path = os.path.abspath(os.path.join(project_root, image_path))
@@ -846,7 +874,10 @@ class SkyGuardWebPortal:
                     'confidence': detection.get('confidence', 0.0),
                     'class': detection.get('class_name', 'bird'),
                     'bbox': detection.get('bbox', [0, 0, 0, 0]),
-                    'image_path': detection.get('image_path', '')
+                    'image_path': detection.get('image_path', ''),
+                    'species': detection.get('species_name'),
+                    'species_confidence': detection.get('species_confidence'),
+                    'segmented_image_path': detection.get('segmented_image_path')
                 }
                 formatted_detections.append(formatted_detection)
             return formatted_detections
