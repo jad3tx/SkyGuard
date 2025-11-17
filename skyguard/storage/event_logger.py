@@ -299,7 +299,13 @@ class EventLogger:
             cv2.rectangle(annotated, (x1, y1), (x2, y2), (0, 0, 255), 5)
             
             # Draw label with larger font
-            label = f"{class_name}: {confidence:.2f}"
+            # Include species information if available
+            species = detection.get('species')
+            species_confidence = detection.get('species_confidence')
+            if species and species_confidence is not None:
+                label = f"{class_name}: {confidence:.2f} | {species}: {species_confidence:.2f}"
+            else:
+                label = f"{class_name}: {confidence:.2f}"
             font_scale = 0.8
             thickness = 2
             label_size = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, font_scale, thickness)[0]
