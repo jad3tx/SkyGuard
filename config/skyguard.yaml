@@ -20,7 +20,7 @@ camera:
   flip_vertical: false
   focus_mode: infinity
   focus_value: 0
-  fps: 25
+  fps: 60
   height: 1080
   live_view: false
   rotation: '0'
