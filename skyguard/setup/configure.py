@@ -308,11 +308,37 @@ class SkyGuardConfigurator:
     def _detect_platform(self) -> str:
         """Detect the current platform."""
         try:
+            # Use platform detection utility if available
+            try:
+                from skyguard.utils.platform import get_platform_detector
+                detector = get_platform_detector()
+                info = detector.get_platform_info()
+                platform_type = info.get('type', 'unknown')
+                
+                # Map to legacy platform names for compatibility
+                if platform_type == 'jetson':
+                    return 'jetson'
+                elif platform_type == 'raspberry_pi':
+                    return 'raspberry_pi'
+                elif platform_type == 'x86_64':
+                    return 'desktop'
+                else:
+                    return platform_type
+            except ImportError:
+                # Fallback to original detection method
+                pass
+            
+            # Original detection method (fallback)
             if os.path.exists('/proc/device-tree/model'):
                 with open('/proc/device-tree/model', 'r') as f:
                     model = f.read().strip()
                     if 'Raspberry Pi' in model:
                         return 'raspberry_pi'
+                    elif 'jetson' in model.lower() or 'tegra' in model.lower():
+                        return 'jetson'
+            
+            if os.path.exists('/etc/nv_tegra_release'):
+                return 'jetson'
             
             if os.path.exists('/etc/os-release'):
                 with open('/etc/os-release', 'r') as f:

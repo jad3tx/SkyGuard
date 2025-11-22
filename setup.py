@@ -61,6 +61,13 @@ setup(
             "picamera2>=0.3.0",
             "adafruit-circuitpython-neopixel>=6.3.0",
         ],
+        "jetson": [
+            # Note: PyTorch and torchvision should be installed from NVIDIA's repository
+            # See requirements-jetson.txt for details
+            "ultralytics>=8.0.0",
+            "opencv-python>=4.8.0",
+            "numpy>=1.24.0",
+        ],
         "notifications": [
             "twilio>=8.5.0",
             "pushbullet.py>=0.11.0",

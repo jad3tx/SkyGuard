@@ -1,6 +1,6 @@
 #!/bin/bash
 # SkyGuard Installation Script
-# Simple installation script for Raspberry Pi
+# Supports Raspberry Pi, NVIDIA Jetson, and other Linux platforms
 
 set -e
 
@@ -19,6 +19,38 @@ echo ""
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 cd "$PROJECT_ROOT"
+
+# Platform detection function
+detect_platform() {
+    local platform="unknown"
+    local requirements_file="requirements.txt"
+    
+    # Check for Jetson
+    if [ -f "/etc/nv_tegra_release" ] || [ -n "$JETSON_VERSION" ]; then
+        platform="jetson"
+        requirements_file="requirements-jetson.txt"
+        echo -e "${GREEN}✅ NVIDIA Jetson detected${NC}"
+    elif [ -f "/proc/device-tree/model" ]; then
+        model=$(cat /proc/device-tree/model 2>/dev/null || echo "")
+        if echo "$model" | grep -qi "jetson\|tegra"; then
+            platform="jetson"
+            requirements_file="requirements-jetson.txt"
+            echo -e "${GREEN}✅ NVIDIA Jetson detected: $model${NC}"
+        elif echo "$model" | grep -qi "raspberry pi"; then
+            platform="raspberry_pi"
+            requirements_file="requirements-pi.txt"
+            echo -e "${GREEN}✅ Raspberry Pi detected: $model${NC}"
+        fi
+    elif [ -f "/etc/os-release" ]; then
+        if grep -qi "raspbian\|raspberry" /etc/os-release 2>/dev/null; then
+            platform="raspberry_pi"
+            requirements_file="requirements-pi.txt"
+            echo -e "${GREEN}✅ Raspberry Pi detected${NC}"
+        fi
+    fi
+    
+    echo "$requirements_file"
+}
 
 echo -e "${BLUE}📦 Step 1: Updating system packages...${NC}"
 sudo apt update
@@ -71,15 +103,34 @@ source venv/bin/activate
 # Upgrade pip first
 pip install --upgrade pip
 
+# Detect platform and select appropriate requirements file
+REQUIREMENTS_FILE=$(detect_platform)
+
+# Special handling for Jetson
+if [ "$REQUIREMENTS_FILE" = "requirements-jetson.txt" ]; then
+    echo -e "${BLUE}📦 Step 4a: Checking PyTorch installation for Jetson...${NC}"
+    echo -e "${YELLOW}⚠️  IMPORTANT: PyTorch for Jetson must be installed separately!${NC}"
+    echo -e "${YELLOW}   Please install PyTorch from NVIDIA's repository first:${NC}"
+    echo -e "${YELLOW}   See: https://forums.developer.nvidia.com/t/pytorch-for-jetson/${NC}"
+    echo ""
+    echo -e "${YELLOW}   Quick install (example for JetPack 5.x):${NC}"
+    echo -e "${YELLOW}   wget https://nvidia.box.com/shared/static/.../torch-2.x.x-cp3x-cp3x-linux_aarch64.whl${NC}"
+    echo -e "${YELLOW}   pip install torch-2.x.x-cp3x-cp3x-linux_aarch64.whl${NC}"
+    echo ""
+    read -p "Press Enter to continue after installing PyTorch, or Ctrl+C to cancel..."
+fi
+
 # Install dependencies
-if [ -f "requirements-pi.txt" ]; then
-    echo -e "${BLUE}Installing from requirements-pi.txt...${NC}"
-    echo -e "${YELLOW}Note: You may be prompted to install:${NC}"
-    echo -e "${YELLOW}  - Raspberry Pi hardware dependencies (RPi.GPIO) - Answer 'yes' to enable GPIO features${NC}"
-    echo -e "${YELLOW}  - Notification dependencies (Twilio, Pushbullet) - Answer 'yes' to enable notifications${NC}"
-    pip install -r requirements-pi.txt
+if [ -f "$REQUIREMENTS_FILE" ]; then
+    echo -e "${BLUE}Installing from $REQUIREMENTS_FILE...${NC}"
+    if [ "$REQUIREMENTS_FILE" = "requirements-pi.txt" ]; then
+        echo -e "${YELLOW}Note: You may be prompted to install:${NC}"
+        echo -e "${YELLOW}  - Raspberry Pi hardware dependencies (RPi.GPIO) - Answer 'yes' to enable GPIO features${NC}"
+        echo -e "${YELLOW}  - Notification dependencies (Twilio, Pushbullet) - Answer 'yes' to enable notifications${NC}"
+    fi
+    pip install -r "$REQUIREMENTS_FILE"
 else
-    echo -e "${YELLOW}⚠️  requirements-pi.txt not found, using requirements.txt...${NC}"
+    echo -e "${YELLOW}⚠️  $REQUIREMENTS_FILE not found, using requirements.txt...${NC}"
     pip install -r requirements.txt
 fi
 

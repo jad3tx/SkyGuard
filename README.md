@@ -43,21 +43,31 @@ SkyGuard provides a low-cost, AI-driven alert system that:
 ## 📋 System Requirements
 
 ### Hardware
-- **Camera**: USB webcam
-- **Controller**: Raspberry Pi 5
-- **Storage**: 32GB+ microSD card
-- **Power**: 5V/3A power supply (5V/5A recommended)
-
+- **Camera**: USB webcam or CSI camera
+- **Controller**: 
+  - **Raspberry Pi 5** (recommended for cost-effective deployment)
+  - **NVIDIA Jetson Orin Nano** (recommended for better performance, no overheating)
+- **Storage**: 32GB+ microSD card (Pi) or eMMC/SD card (Jetson)
+- **Power**: 
+  - Pi: 5V/3A power supply (5V/5A recommended)
+  - Jetson: Official power supply (varies by model)
 
 ### Software
-- **OS**: Raspberry Pi 64bit OS (recommended) or Ubuntu 20.04+
+- **OS**: 
+  - Raspberry Pi: Raspberry Pi 64-bit OS (recommended) or Ubuntu 20.04+
+  - Jetson: JetPack 5.x (recommended) or JetPack 4.x
 - **Python**: 3.8 or higher
-- **RAM**: 4GB minimum (8GB recommended)
+- **RAM**: 
+  - Pi: 4GB minimum (8GB recommended)
+  - Jetson: 8GB (Orin Nano) or more
 - **Storage**: 10GB free space
 
 ## 🛠️ Installation
 
-**SkyGuard is optimized for Raspberry Pi 5.**
+**SkyGuard supports both Raspberry Pi 5 and NVIDIA Jetson devices.**
+
+- **Raspberry Pi 5**: Cost-effective, good for most use cases. See installation steps below.
+- **NVIDIA Jetson Orin Nano**: Better performance, GPU acceleration, no overheating issues. See [Jetson Installation Guide](docs/JETSON_INSTALLATION.md) for details.
 
 ### Step 1: Prepare the Raspberry Pi OS
 
@@ -218,6 +228,22 @@ SkyGuard provides a low-cost, AI-driven alert system that:
 ```bash
 ./scripts/stop_skyguard.sh --web-only
 ```
+
+## 🚀 Jetson Installation
+
+For **NVIDIA Jetson Orin Nano** and other Jetson devices, see the comprehensive [Jetson Installation Guide](docs/JETSON_INSTALLATION.md).
+
+**Quick Start for Jetson:**
+1. Install PyTorch from NVIDIA's repository (see guide)
+2. Run `./scripts/install.sh` (automatically detects Jetson)
+3. Configure and run as normal
+
+**Benefits of Jetson:**
+- ✅ GPU acceleration with CUDA
+- ✅ Faster inference (20-50ms vs 100-200ms on Pi)
+- ✅ Higher frame rates (30+ FPS vs 10-15 FPS)
+- ✅ No overheating issues
+- ✅ Better for continuous operation
 
 ## 🔧 Troubleshooting
 

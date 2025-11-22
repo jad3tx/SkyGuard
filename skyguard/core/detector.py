@@ -24,6 +24,25 @@ except ImportError:
     torch = None
     YOLO = None
 
+# Import platform detection
+try:
+    from skyguard.utils.platform import get_recommended_device, is_jetson
+except ImportError:
+    # Fallback if platform detection not available
+    def get_recommended_device() -> str:
+        """Fallback device recommendation."""
+        try:
+            import torch
+            if torch and torch.cuda.is_available():
+                return 'cuda:0'
+        except Exception:
+            pass
+        return 'cpu'
+    
+    def is_jetson() -> bool:
+        """Fallback Jetson detection."""
+        return False
+
 
 class BirdSegmentationDetector:
     """AI-powered bird segmentation detection system."""
@@ -66,6 +85,8 @@ class BirdSegmentationDetector:
         self._species_predict_fn = None  # callable(image_rgb_np) -> (label, conf)
         # Class name mapping for numeric IDs to bird names
         self._species_class_name_map = None
+        # Device for inference (auto-detect based on platform)
+        self.device = config.get('device', None)  # None means auto-detect
         
     def load_model(self) -> bool:
         """Load the AI model for detection.
@@ -93,8 +114,38 @@ class BirdSegmentationDetector:
                 )
                 return False
             
+            # Determine device for inference
+            if self.device is None:
+                # Auto-detect device based on platform
+                self.device = get_recommended_device()
+            
+            # Log device information
+            if is_jetson():
+                self.logger.info("🚀 Jetson platform detected - using GPU acceleration")
+            elif self.device.startswith('cuda'):
+                self.logger.info(f"🚀 CUDA device detected: {self.device}")
+            else:
+                self.logger.info(f"💻 Using CPU for inference")
+            
             self.model = YOLO(str(model_path))
-            self.logger.info(f"YOLO model loaded: {model_path}")
+            
+            # Move model to device if CUDA is available
+            if PYTORCH_AVAILABLE and torch is not None:
+                if self.device.startswith('cuda') and torch.cuda.is_available():
+                    # YOLO will automatically use CUDA if available
+                    # But we can explicitly set it
+                    try:
+                        # Verify CUDA is working
+                        device_name = torch.cuda.get_device_name(0) if torch.cuda.device_count() > 0 else "CUDA"
+                        self.logger.info(f"✅ GPU available: {device_name}")
+                    except Exception as e:
+                        self.logger.warning(f"⚠️  CUDA device specified but not available: {e}")
+                        self.device = 'cpu'
+                elif self.device.startswith('cuda') and not torch.cuda.is_available():
+                    self.logger.warning("⚠️  CUDA requested but not available, falling back to CPU")
+                    self.device = 'cpu'
+            
+            self.logger.info(f"YOLO model loaded: {model_path} (device: {self.device})")
             # Load optional species classifier (ultralytics or external)
             self._init_species_backend()
             
@@ -155,6 +206,7 @@ class BirdSegmentationDetector:
                 # Use forward slashes for path string (works on both Windows and Linux)
                 sp_path_str = str(sp_path).replace('\\', '/')
                 self.species_model = YOLO(sp_path_str)
+                # Species model will use the same device as main model
                 # Note: _classify_species uses self.species_model directly
                 # Get model info for logging
                 try:
@@ -436,10 +488,12 @@ class BirdSegmentationDetector:
             
             # Run YOLO detection/segmentation
             # Use verbose=False to suppress Ultralytics stdout, we'll log via Python logging
+            # Specify device for inference (YOLO will use it automatically if CUDA is available)
             results = self.model(
                 frame,
                 conf=self.confidence_threshold,
                 iou=self.nms_threshold,
+                device=self.device,  # Use detected/configured device
                 verbose=False,  # Suppress Ultralytics stdout, use our logging instead
             )
             
@@ -703,7 +757,11 @@ class BirdSegmentationDetector:
         
         # Run species classification with verbose=False to suppress Ultralytics stdout
         species_start = time.time()
-        results = self.species_model(crop_rgb_resized, verbose=False)
+        results = self.species_model(
+            crop_rgb_resized,
+            device=self.device,  # Use same device as main model
+            verbose=False
+        )
         species_time = (time.time() - species_start) * 1000  # Convert to ms
         
         # Log species inference timing if detailed logging is enabled

@@ -1,0 +1,46 @@
+# SkyGuard - NVIDIA Jetson Optimized Dependencies
+# Optimized for NVIDIA Jetson Orin Nano and other Jetson devices
+# Note: PyTorch should be installed from NVIDIA's repository first
+# See: https://forums.developer.nvidia.com/t/pytorch-for-jetson/72048
+
+# Core Computer Vision
+opencv-python>=4.8.0
+numpy>=1.24.0
+pillow>=10.0.0
+
+# AI/ML - PyTorch with CUDA support (install from NVIDIA first)
+# These should be installed via NVIDIA's pip wheel:
+# wget https://nvidia.box.com/shared/static/.../torch-2.x.x-cp3x-cp3x-linux_aarch64.whl
+# pip install torch-2.x.x-cp3x-cp3x-linux_aarch64.whl
+# For latest instructions, see: https://forums.developer.nvidia.com/t/pytorch-for-jetson/
+# torch>=2.0.0  # Install from NVIDIA repository
+# torchvision>=0.15.0  # Install from NVIDIA repository
+ultralytics>=8.0.0  # YOLO implementation (will use CUDA if PyTorch has CUDA)
+
+# Hardware Integration (Jetson doesn't need RPi.GPIO)
+# pyserial>=3.5  # Optional: for serial communication
+imutils>=0.5.4  # Image processing utilities
+
+# Notification Services
+requests>=2.31.0
+twilio>=8.5.0  # For SMS notifications
+pushbullet.py>=0.11.0  # For push notifications
+
+# Data Storage and Logging
+pandas>=2.0.0
+
+# Configuration and Utilities
+pyyaml>=6.0
+python-dotenv>=1.0.0
+psutil>=5.9.0
+
+# Web Interface
+flask>=2.3.0
+flask-cors>=4.0.0
+
+# Dataset Management
+datasets>=3.1.0  # For downloading and managing training datasets
+
+# Development and Testing
+pytest>=7.4.0
+
