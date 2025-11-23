@@ -77,8 +77,10 @@ filter_jetson_requirements() {
     local req_file="$1"
     local filtered_file="${req_file}.filtered"
     
-    # Create filtered requirements file excluding torch/torchvision
-    grep -v -E "^(torch|torchvision|torchaudio)" "$req_file" > "$filtered_file" 2>/dev/null || cp "$req_file" "$filtered_file"
+    # Create filtered requirements file excluding torch/torchvision/torchaudio
+    # Remove lines that start with torch, torchvision, or torchaudio (with optional whitespace/comments)
+    # This handles: "torch>=2.0", " torch>=2.0", "# torch>=2.0", etc.
+    grep -v -E "^[[:space:]#]*(torch|torchvision|torchaudio)[[:space:]]*[>=<#]" "$req_file" > "$filtered_file" 2>/dev/null || cp "$req_file" "$filtered_file"
     echo "$filtered_file"
 }
 
@@ -374,11 +376,17 @@ if command -v uv &> /dev/null; then
             FILTERED_REQ=$(filter_jetson_requirements "$REQ_FILE")
             echo -e "${CYAN}   Filtered out torch/torchvision/torchaudio (using system CUDA versions)${NC}"
             
-            # Also uninstall any existing torch packages from venv if they exist
-            echo -e "${CYAN}   Removing any venv-installed torch packages...${NC}"
+            # Uninstall any existing torch packages from venv BEFORE installation
+            echo -e "${CYAN}   Removing any existing venv-installed torch packages...${NC}"
             uv pip uninstall -y torch torchvision torchaudio 2>/dev/null || true
             
+            # Install filtered requirements
             uv pip install -r "$FILTERED_REQ"
+            
+            # Uninstall torch packages AGAIN after installation (in case dependencies pulled them in)
+            echo -e "${CYAN}   Ensuring no torch packages were installed in venv...${NC}"
+            uv pip uninstall -y torch torchvision torchaudio 2>/dev/null || true
+            
             rm -f "$FILTERED_REQ"
         else
             uv pip install -r "$REQ_FILE"
@@ -389,11 +397,17 @@ if command -v uv &> /dev/null; then
             FILTERED_REQ=$(filter_jetson_requirements "requirements.txt")
             echo -e "${CYAN}   Filtered out torch/torchvision/torchaudio (using system CUDA versions)${NC}"
             
-            # Also uninstall any existing torch packages from venv if they exist
-            echo -e "${CYAN}   Removing any venv-installed torch packages...${NC}"
+            # Uninstall any existing torch packages from venv BEFORE installation
+            echo -e "${CYAN}   Removing any existing venv-installed torch packages...${NC}"
             uv pip uninstall -y torch torchvision torchaudio 2>/dev/null || true
             
+            # Install filtered requirements
             uv pip install -r "$FILTERED_REQ"
+            
+            # Uninstall torch packages AGAIN after installation (in case dependencies pulled them in)
+            echo -e "${CYAN}   Ensuring no torch packages were installed in venv...${NC}"
+            uv pip uninstall -y torch torchvision torchaudio 2>/dev/null || true
+            
             rm -f "$FILTERED_REQ"
         else
             uv pip install -r requirements.txt
@@ -453,11 +467,17 @@ else
             FILTERED_REQ=$(filter_jetson_requirements "$REQ_FILE")
             echo -e "${CYAN}   Filtered out torch/torchvision/torchaudio (using system CUDA versions)${NC}"
             
-            # Also uninstall any existing torch packages from venv if they exist
-            echo -e "${CYAN}   Removing any venv-installed torch packages...${NC}"
+            # Uninstall any existing torch packages from venv BEFORE installation
+            echo -e "${CYAN}   Removing any existing venv-installed torch packages...${NC}"
             pip uninstall -y torch torchvision torchaudio 2>/dev/null || true
             
+            # Install filtered requirements
             pip install -r "$FILTERED_REQ"
+            
+            # Uninstall torch packages AGAIN after installation (in case dependencies pulled them in)
+            echo -e "${CYAN}   Ensuring no torch packages were installed in venv...${NC}"
+            pip uninstall -y torch torchvision torchaudio 2>/dev/null || true
+            
             rm -f "$FILTERED_REQ"
         else
             pip install -r "$REQ_FILE"
@@ -468,11 +488,17 @@ else
             FILTERED_REQ=$(filter_jetson_requirements "requirements.txt")
             echo -e "${CYAN}   Filtered out torch/torchvision/torchaudio (using system CUDA versions)${NC}"
             
-            # Also uninstall any existing torch packages from venv if they exist
-            echo -e "${CYAN}   Removing any venv-installed torch packages...${NC}"
+            # Uninstall any existing torch packages from venv BEFORE installation
+            echo -e "${CYAN}   Removing any existing venv-installed torch packages...${NC}"
             pip uninstall -y torch torchvision torchaudio 2>/dev/null || true
             
+            # Install filtered requirements
             pip install -r "$FILTERED_REQ"
+            
+            # Uninstall torch packages AGAIN after installation (in case dependencies pulled them in)
+            echo -e "${CYAN}   Ensuring no torch packages were installed in venv...${NC}"
+            pip uninstall -y torch torchvision torchaudio 2>/dev/null || true
+            
             rm -f "$FILTERED_REQ"
         else
             pip install -r requirements.txt
@@ -490,20 +516,28 @@ if [ "$DETECTED_PLATFORM" = "jetson" ]; then
     echo -e "\n${BLUE}🔍 Verifying PyTorch CUDA installation...${NC}"
     source venv/bin/activate
     
-    # Check if torch is coming from system or venv
-    TORCH_SOURCE=$(python3 -c "import torch; import sys; print('system' if any('site-packages' in p and 'venv' not in p for p in sys.path) and 'venv' not in sys.executable else 'venv')" 2>/dev/null || echo "unknown")
+    # Check if torch is installed in venv (should NOT be)
+    TORCH_IN_VENV=$(python3 -c "import sys, os; venv_pkgs = [p for p in sys.path if 'venv' in p and 'site-packages' in p]; exec('try:\n    import torch\n    torch_path = torch.__file__\n    result = \"venv\" if any(vp in torch_path for vp in venv_pkgs) else \"system\"\n    print(result)\nexcept:\n    print(\"unknown\")')" 2>/dev/null || echo "unknown")
     
+    # Check CUDA availability
     PYTORCH_CHECK=$(python3 -c "import torch; print('CUDA' if torch.cuda.is_available() else 'CPU')" 2>/dev/null || echo "NOT_FOUND")
+    
     if [ "$PYTORCH_CHECK" = "CUDA" ]; then
         CUDA_DEVICE=$(python3 -c "import torch; print(torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'N/A')" 2>/dev/null)
+        TORCH_VERSION=$(python3 -c "import torch; print(torch.__version__)" 2>/dev/null || echo "unknown")
         echo -e "${GREEN}   ✅ PyTorch CUDA is working!${NC}"
+        echo -e "${CYAN}   Version: $TORCH_VERSION${NC}"
         echo -e "${CYAN}   Device: $CUDA_DEVICE${NC}"
-        echo -e "${CYAN}   Source: $TORCH_SOURCE${NC}"
+        echo -e "${CYAN}   Source: $TORCH_IN_VENV${NC}"
         
         # Verify it's using system PyTorch, not venv version
-        if [ "$TORCH_SOURCE" != "system" ] && [ "$USE_SYSTEM_SITE_PACKAGES" = "true" ]; then
-            echo -e "${YELLOW}   ⚠️  Warning: PyTorch appears to be from venv, not system${NC}"
-            echo -e "${YELLOW}   This may cause CUDA issues. Consider running: ./scripts/fix_jetson_venv.sh${NC}"
+        if [ "$TORCH_IN_VENV" = "venv" ]; then
+            echo -e "${RED}   ❌ ERROR: PyTorch is installed in venv instead of using system version!${NC}"
+            echo -e "${YELLOW}   This will cause CUDA issues. Removing venv-installed torch...${NC}"
+            pip uninstall -y torch torchvision torchaudio 2>/dev/null || true
+            echo -e "${YELLOW}   Please verify system PyTorch is accessible and run the script again${NC}"
+        elif [ "$TORCH_IN_VENV" = "system" ]; then
+            echo -e "${GREEN}   ✅ Confirmed: Using system PyTorch (correct)${NC}"
         fi
     else
         echo -e "${YELLOW}   ⚠️  PyTorch CUDA not available${NC}"
@@ -512,6 +546,7 @@ if [ "$DETECTED_PLATFORM" = "jetson" ]; then
             echo -e "${YELLOW}   Run: ./scripts/fix_jetson_venv.sh to fix it${NC}"
         else
             echo -e "${YELLOW}   Check that PyTorch was installed system-wide with CUDA support${NC}"
+            echo -e "${YELLOW}   Source detected: $TORCH_IN_VENV${NC}"
         fi
     fi
 fi
