@@ -35,21 +35,16 @@ NVIDIA Jetson devices provide significant advantages over Raspberry Pi for AI wo
 
 2. Install PyTorch from NVIDIA's repository:
    ```bash
-   # For JetPack 6.1, check the latest PyTorch wheel at:
-   # https://pypi.jetson-ai-lab.io/jp6/cu126/
-   # or
-   # https://developer.download.nvidia.com/compute/redist/jp/
+   # For JetPack 6.1, use the CUDA-enabled PyTorch wheel:
+   wget https://developer.download.nvidia.com/compute/redist/jp/v61/pytorch/torch-2.5.0a0+872d972e41.nv24.08.17622132-cp310-cp310-linux_aarch64.whl
+   pip3 install torch-2.5.0a0+872d972e41.nv24.08.17622132-cp310-cp310-linux_aarch64.whl
    
-   # Example for JetPack 6.1 (check for latest version):
-   wget https://nvidia.box.com/shared/static/[LATEST_VERSION]/torch-2.x.x-cp310-cp310-linux_aarch64.whl
-   pip3 install torch-2.x.x-cp310-cp310-linux_aarch64.whl
-   
-   # Install torchvision
+   # Install torchvision (compatible with the PyTorch version above)
    pip3 install torchvision
 
-   # You may encounter numpy versioning issues - install a version of numpy 
-   # to your venv or user/local that is LESS than version 2
-   python3 -m pip install --user --force-reinstall "numpy==1.26.1"
+   # Note: numpy 1.26.0 will be installed in the venv (see requirements-jetson.txt)
+   # If you encounter numpy versioning issues, ensure numpy < 2.0:
+   python3 -m pip install --user --force-reinstall "numpy==1.26.0"
    ```
    
    **Note**: For JetPack 6.1, Python 3.10+ is typically used. Check the exact Python version:
@@ -67,7 +62,7 @@ NVIDIA Jetson devices provide significant advantages over Raspberry Pi for AI wo
 
    You should see:
    ```
-   PyTorch: 2.1.0
+   PyTorch: 2.5.0a0+872d972e41.nv24.08.17622132
    CUDA available: True
    CUDA device: NVIDIA Tegra
    ```

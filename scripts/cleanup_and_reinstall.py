@@ -47,11 +47,10 @@ def run_command(cmd: List[str], check: bool = True, shell: bool = False) -> subp
 
 
 def check_user() -> None:
-    """Check if running as the pi user (or warn if not)."""
+    """Check current user (informational only - no requirement)."""
     user = os.environ.get('USER', os.environ.get('USERNAME', ''))
-    if user != 'pi':
-        print_colored(f"Warning: Not running as 'pi' user (current: {user})", YELLOW)
-        print_colored("Some operations may require sudo privileges", YELLOW)
+    print_colored(f"Running as user: {user}", BLUE)
+    print_colored("Note: Some operations may require sudo privileges", YELLOW)
 
 
 def stop_services() -> None:

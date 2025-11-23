@@ -4,8 +4,19 @@
 
 set -e
 
-# Configuration
-SKYGUARD_DIR="/home/pi/SkyGuard"
+# Configuration - Auto-detect SkyGuard directory
+# Try to find SkyGuard in common locations
+if [ -d "$(pwd)/SkyGuard" ]; then
+    SKYGUARD_DIR="$(pwd)/SkyGuard"
+elif [ -d "$HOME/SkyGuard" ]; then
+    SKYGUARD_DIR="$HOME/SkyGuard"
+elif [ -d "/home/$(whoami)/SkyGuard" ]; then
+    SKYGUARD_DIR="/home/$(whoami)/SkyGuard"
+else
+    # Default to current directory if script is in SkyGuard repo
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    SKYGUARD_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+fi
 LOG_FILE="$SKYGUARD_DIR/logs/stop.log"
 
 # Colors for output
@@ -13,6 +24,7 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
+CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
 # Logging function
@@ -41,13 +53,10 @@ usage() {
     echo "  $0 --force            # Force stop all processes"
 }
 
-# Check if running as pi user
+# Check user (informational only - no requirement)
 check_user() {
-    if [ "$USER" != "pi" ]; then
-        echo -e "${RED}❌ This script should be run as the 'pi' user${NC}"
-        echo "Please run: su - pi"
-        exit 1
-    fi
+    CURRENT_USER=$(whoami)
+    echo -e "${CYAN}Running as user: $CURRENT_USER${NC}"
 }
 
 # Stop main detection system

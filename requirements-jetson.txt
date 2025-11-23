@@ -5,16 +5,17 @@
 
 # Core Computer Vision
 opencv-python>=4.8.0
-numpy>=1.24.0
+numpy==1.26.0
 pillow>=10.0.0
 
 # AI/ML - PyTorch with CUDA support (install from NVIDIA first)
-# These should be installed via NVIDIA's pip wheel:
-# wget https://nvidia.box.com/shared/static/.../torch-2.x.x-cp3x-cp3x-linux_aarch64.whl
-# pip install torch-2.x.x-cp3x-cp3x-linux_aarch64.whl
-# For latest instructions, see: https://forums.developer.nvidia.com/t/pytorch-for-jetson/
-# torch>=2.0.0  # Install from NVIDIA repository
-# torchvision>=0.15.0  # Install from NVIDIA repository
+# For JetPack 6.1, install the CUDA-enabled PyTorch wheel:
+# wget https://developer.download.nvidia.com/compute/redist/jp/v61/pytorch/torch-2.5.0a0+872d972e41.nv24.08.17622132-cp310-cp310-linux_aarch64.whl
+# pip3 install torch-2.5.0a0+872d972e41.nv24.08.17622132-cp310-cp310-linux_aarch64.whl
+# pip3 install torchvision
+# For other JetPack versions, see: https://forums.developer.nvidia.com/t/pytorch-for-jetson/
+# torch>=2.0.0  # Install from NVIDIA repository (DO NOT install via pip - use wheel above)
+# torchvision>=0.15.0  # Install from NVIDIA repository (install after torch)
 ultralytics>=8.0.0  # YOLO implementation (will use CUDA if PyTorch has CUDA)
 
 # Hardware Integration (Jetson doesn't need RPi.GPIO)
