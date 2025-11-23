@@ -13,8 +13,8 @@ NVIDIA Jetson devices provide significant advantages over Raspberry Pi for AI wo
 ## Prerequisites
 
 1. **NVIDIA Jetson device** (Jetson Orin Nano recommended)
-2. **JetPack 5.x** installed (or JetPack 4.x with appropriate PyTorch version)
-3. **Python 3.8+** (usually pre-installed with JetPack)
+2. **JetPack 6.1** installed (or JetPack 5.x/4.x with appropriate PyTorch version)
+3. **Python 3.10+** (usually pre-installed with JetPack 6.1)
 4. **Camera** (USB webcam or CSI camera)
 5. **Internet connection** for downloading dependencies
 
@@ -24,27 +24,40 @@ NVIDIA Jetson devices provide significant advantages over Raspberry Pi for AI wo
 
 **IMPORTANT**: PyTorch must be installed from NVIDIA's repository, not from PyPI.
 
-#### For JetPack 5.x (Python 3.8+)
+#### For JetPack 6.1 (Python 3.10+)
 
 1. Check your JetPack version:
    ```bash
    cat /etc/nv_tegra_release
-   ```  Note: google the release version or run 'sudo apt show nvidia-jetpack' to see your jetpack version
+   # Or run:
+   sudo apt show nvidia-jetpack
+   ```
 
 2. Install PyTorch from NVIDIA's repository:
    ```bash
-   # For JetPack 5.1.2 (example - check for latest version) 
-   wget https://nvidia.box.com/shared/static/[LATEST_VERSION]/torch-2.1.0-cp38-cp38-linux_aarch64.whl
-   pip3 install torch-2.1.0-cp38-cp38-linux_aarch64.whl
+   # For JetPack 6.1, check the latest PyTorch wheel at:
+   # https://pypi.jetson-ai-lab.io/jp6/cu126/
+   # or
+   # https://developer.download.nvidia.com/compute/redist/jp/
+   
+   # Example for JetPack 6.1 (check for latest version):
+   wget https://nvidia.box.com/shared/static/[LATEST_VERSION]/torch-2.x.x-cp310-cp310-linux_aarch64.whl
+   pip3 install torch-2.x.x-cp310-cp310-linux_aarch64.whl
    
    # Install torchvision
    pip3 install torchvision
 
-   # you may encounter numpy versioning issues ... install a version of numpy to your venv or user/local that is LESS than version 2
+   # You may encounter numpy versioning issues - install a version of numpy 
+   # to your venv or user/local that is LESS than version 2
    python3 -m pip install --user --force-reinstall "numpy==1.26.1"
    ```
-    Check the latest version at - https://pypi.jetson-ai-lab.io/jp6/cu126 or
-   you can start with https://developer.download.nvidia.com/compute/redist/jp/ and click through your jetpack version
+   
+   **Note**: For JetPack 6.1, Python 3.10+ is typically used. Check the exact Python version:
+   ```bash
+   python3 --version
+   ```
+   
+   Then download the matching PyTorch wheel (cp310 for Python 3.10, cp311 for Python 3.11, etc.)
  
 
 4. Verify PyTorch installation with CUDA:
@@ -386,5 +399,10 @@ If you encounter issues specific to Jetson:
 
 ---
 
-**Note**: This installation guide assumes JetPack 5.x. For JetPack 4.x, use the appropriate PyTorch version from NVIDIA's repository. Always check the [NVIDIA Developer Forums](https://forums.developer.nvidia.com/t/pytorch-for-jetson/) for the latest PyTorch installation instructions.
+**Note**: This installation guide is optimized for JetPack 6.1. For other JetPack versions:
+- **JetPack 6.x**: Use Python 3.10+ wheels from https://pypi.jetson-ai-lab.io/jp6/
+- **JetPack 5.x**: Use Python 3.8+ wheels from https://pypi.jetson-ai-lab.io/jp5/
+- **JetPack 4.x**: Use the appropriate PyTorch version from NVIDIA's repository
+
+Always check the [NVIDIA Developer Forums](https://forums.developer.nvidia.com/t/pytorch-for-jetson/) for the latest PyTorch installation instructions.
 

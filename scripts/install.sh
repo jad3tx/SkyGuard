@@ -89,48 +89,12 @@ else
     sudo apt install -y libatlas-base-dev || echo -e "${YELLOW}⚠️  BLAS/LAPACK library not installed (may affect NumPy performance)${NC}"
 fi
 
-# Detect platform and select appropriate requirements file
-REQUIREMENTS_FILE=$(detect_platform)
-
-# Check for system PyTorch on Jetson
-USE_SYSTEM_SITE_PACKAGES=false
-if [ "$REQUIREMENTS_FILE" = "requirements-jetson.txt" ]; then
-    echo -e "${BLUE}📦 Step 3a: Checking PyTorch installation for Jetson...${NC}"
-    
-    # Check if PyTorch is installed system-wide
-    if python3 -c "import torch; print('CUDA' if torch.cuda.is_available() else 'CPU')" 2>/dev/null | grep -q "CUDA"; then
-        echo -e "${GREEN}✅ Found CUDA-enabled PyTorch in system${NC}"
-        USE_SYSTEM_SITE_PACKAGES=true
-    elif python3 -c "import torch" 2>/dev/null; then
-        echo -e "${YELLOW}⚠️  Found PyTorch but CUDA not available - will use system packages anyway${NC}"
-        USE_SYSTEM_SITE_PACKAGES=true
-    else
-        echo -e "${YELLOW}⚠️  No system PyTorch found${NC}"
-        echo -e "${YELLOW}   IMPORTANT: PyTorch for Jetson should be installed from NVIDIA's repository!${NC}"
-        echo -e "${YELLOW}   See: https://forums.developer.nvidia.com/t/pytorch-for-jetson/${NC}"
-        echo ""
-        echo -e "${YELLOW}   Quick install (example for JetPack 5.x):${NC}"
-        echo -e "${YELLOW}   wget https://nvidia.box.com/shared/static/.../torch-2.x.x-cp3x-cp3x-linux_aarch64.whl${NC}"
-        echo -e "${YELLOW}   pip install torch-2.x.x-cp3x-cp3x-linux_aarch64.whl${NC}"
-        echo ""
-        read -p "Press Enter to continue (will create venv without system packages), or Ctrl+C to cancel..."
-    fi
-fi
-
 echo -e "${BLUE}📦 Step 3: Creating Python virtual environment...${NC}"
 if [ ! -d "venv" ]; then
-    if [ "$USE_SYSTEM_SITE_PACKAGES" = "true" ]; then
-        echo -e "${CYAN}   Creating venv with system site packages (to use CUDA PyTorch)${NC}"
-        python3 -m venv --system-site-packages venv
-    else
-        python3 -m venv venv
-    fi
+    python3 -m venv venv
     echo -e "${GREEN}✅ Virtual environment created${NC}"
 else
     echo -e "${YELLOW}⚠️  Virtual environment already exists${NC}"
-    if [ "$USE_SYSTEM_SITE_PACKAGES" = "true" ]; then
-        echo -e "${YELLOW}   Note: If venv was created without --system-site-packages, you may need to recreate it${NC}"
-    fi
 fi
 
 echo -e "${BLUE}📦 Step 4: Activating virtual environment and installing Python packages...${NC}"
@@ -138,6 +102,23 @@ source venv/bin/activate
 
 # Upgrade pip first
 pip install --upgrade pip
+
+# Detect platform and select appropriate requirements file
+REQUIREMENTS_FILE=$(detect_platform)
+
+# Special handling for Jetson
+if [ "$REQUIREMENTS_FILE" = "requirements-jetson.txt" ]; then
+    echo -e "${BLUE}📦 Step 4a: Checking PyTorch installation for Jetson...${NC}"
+    echo -e "${YELLOW}⚠️  IMPORTANT: PyTorch for Jetson must be installed separately!${NC}"
+    echo -e "${YELLOW}   Please install PyTorch from NVIDIA's repository first:${NC}"
+    echo -e "${YELLOW}   See: https://forums.developer.nvidia.com/t/pytorch-for-jetson/${NC}"
+    echo ""
+    echo -e "${YELLOW}   Quick install (example for JetPack 5.x):${NC}"
+    echo -e "${YELLOW}   wget https://nvidia.box.com/shared/static/.../torch-2.x.x-cp3x-cp3x-linux_aarch64.whl${NC}"
+    echo -e "${YELLOW}   pip install torch-2.x.x-cp3x-cp3x-linux_aarch64.whl${NC}"
+    echo ""
+    read -p "Press Enter to continue after installing PyTorch, or Ctrl+C to cancel..."
+fi
 
 # Install dependencies
 if [ -f "$REQUIREMENTS_FILE" ]; then
@@ -147,27 +128,10 @@ if [ -f "$REQUIREMENTS_FILE" ]; then
         echo -e "${YELLOW}  - Raspberry Pi hardware dependencies (RPi.GPIO) - Answer 'yes' to enable GPIO features${NC}"
         echo -e "${YELLOW}  - Notification dependencies (Twilio, Pushbullet) - Answer 'yes' to enable notifications${NC}"
     fi
-    
-    # For Jetson with system PyTorch, filter out torch packages
-    if [ "$USE_SYSTEM_SITE_PACKAGES" = "true" ] && [ "$REQUIREMENTS_FILE" = "requirements-jetson.txt" ]; then
-        echo -e "${CYAN}   Filtering out torch/torchvision (using system CUDA versions)${NC}"
-        FILTERED_REQ=$(mktemp)
-        grep -v -E "^(torch|torchvision|torchaudio)" "$REQUIREMENTS_FILE" > "$FILTERED_REQ" 2>/dev/null || cp "$REQUIREMENTS_FILE" "$FILTERED_REQ"
-        pip install -r "$FILTERED_REQ"
-        rm -f "$FILTERED_REQ"
-    else
-        pip install -r "$REQUIREMENTS_FILE"
-    fi
+    pip install -r "$REQUIREMENTS_FILE"
 else
     echo -e "${YELLOW}⚠️  $REQUIREMENTS_FILE not found, using requirements.txt...${NC}"
-    if [ "$USE_SYSTEM_SITE_PACKAGES" = "true" ] && [ "$REQUIREMENTS_FILE" = "requirements-jetson.txt" ]; then
-        FILTERED_REQ=$(mktemp)
-        grep -v -E "^(torch|torchvision|torchaudio)" requirements.txt > "$FILTERED_REQ" 2>/dev/null || cp requirements.txt "$FILTERED_REQ"
-        pip install -r "$FILTERED_REQ"
-        rm -f "$FILTERED_REQ"
-    else
-        pip install -r requirements.txt
-    fi
+    pip install -r requirements.txt
 fi
 
 echo -e "${BLUE}📦 Step 5: Making scripts executable...${NC}"
@@ -193,4 +157,3 @@ echo ""
 echo "3. Access the web portal:"
 echo "   Open http://<PI_IP_ADDRESS>:8080 in your browser"
 echo ""
-
