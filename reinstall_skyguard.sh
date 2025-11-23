@@ -1,6 +1,7 @@
 #!/bin/bash
-# SkyGuard Reinstallation Script for Raspberry Pi
+# SkyGuard Reinstallation Script
 # Complete uninstall and fresh install from GitHub
+# Supports Raspberry Pi and NVIDIA Jetson devices
 
 set -e
 
@@ -16,8 +17,65 @@ NC='\033[0m' # No Color
 SKYGUARD_PATH=""
 GITHUB_REPO="https://github.com/jad3tx/SkyGuard.git"
 BRANCH="main"
-SKIP_BACKUP=false
+SKIP_BACKUP=true
 FORCE=false
+
+# Platform detection
+detect_platform() {
+    local platform="unknown"
+    local username=""
+    
+    # Check for Jetson
+    if [ -f "/etc/nv_tegra_release" ]; then
+        platform="jetson"
+        username="jad3"
+        echo -e "${GREEN}✅ NVIDIA Jetson detected${NC}" >&2
+    elif [ -f "/proc/device-tree/model" ]; then
+        model=$(cat /proc/device-tree/model 2>/dev/null || echo "")
+        if echo "$model" | grep -qi "jetson\|tegra"; then
+            platform="jetson"
+            username="jad3"
+            echo -e "${GREEN}✅ NVIDIA Jetson detected: $model${NC}" >&2
+        elif echo "$model" | grep -qi "raspberry pi"; then
+            platform="raspberry_pi"
+            username="pi"
+            echo -e "${GREEN}✅ Raspberry Pi detected: $model${NC}" >&2
+        fi
+    elif [ -f "/etc/os-release" ]; then
+        if grep -qi "raspbian\|raspberry" /etc/os-release 2>/dev/null; then
+            platform="raspberry_pi"
+            username="pi"
+            echo -e "${GREEN}✅ Raspberry Pi detected${NC}" >&2
+        fi
+    fi
+    
+    # Fallback: use current user if platform not detected
+    if [ -z "$username" ]; then
+        username=$(whoami)
+        echo -e "${YELLOW}⚠️  Platform not detected, using current user: $username${NC}" >&2
+    fi
+    
+    # Store platform globally for requirements file selection
+    DETECTED_PLATFORM="$platform"
+    
+    echo "$username"
+}
+
+# Get requirements file based on platform
+get_requirements_file() {
+    if [ "$DETECTED_PLATFORM" = "jetson" ]; then
+        echo "requirements-jetson.txt"
+    elif [ "$DETECTED_PLATFORM" = "raspberry_pi" ]; then
+        echo "requirements-pi.txt"
+    else
+        echo "requirements.txt"
+    fi
+}
+
+# Detect platform and get username
+echo -e "${BLUE}🔍 Detecting platform...${NC}"
+DETECTED_USERNAME=$(detect_platform)
+echo -e "${CYAN}   Using username: $DETECTED_USERNAME${NC}"
 
 # Print usage
 usage() {
@@ -27,10 +85,12 @@ usage() {
     echo "Usage: $0 [options]"
     echo ""
     echo "Options:"
-    echo "  --path PATH       SkyGuard installation path (default: /home/pi/SkyGuard)"
+    DEFAULT_PATH="/home/$DETECTED_USERNAME/SkyGuard"
+    echo "  --path PATH       SkyGuard installation path (default: $DEFAULT_PATH)"
     echo "  --repo URL        GitHub repository URL (default: https://github.com/jad3tx/SkyGuard.git)"
     echo "  --branch BRANCH   Branch to clone (default: main)"
-    echo "  --skip-backup     Skip creating backup before removal"
+    echo "  --backup          Create backup before removal (default: no backup)"
+    echo "  --skip-backup     Skip creating backup before removal (default behavior)"
     echo "  --force           Force removal without confirmation"
     echo "  --help            Show this help message"
     echo ""
@@ -56,6 +116,10 @@ while [[ $# -gt 0 ]]; do
             shift 2
             ;;
         --backup)
+            SKIP_BACKUP=false
+            shift
+            ;;
+        --skip-backup)
             SKIP_BACKUP=true
             shift
             ;;
@@ -77,7 +141,7 @@ done
 
 # Determine SkyGuard path
 if [ -z "$SKYGUARD_PATH" ]; then
-    SKYGUARD_PATH="/home/pi/SkyGuard"
+    SKYGUARD_PATH="/home/$DETECTED_USERNAME/SkyGuard"
 fi
 
 SKYGUARD_PATH=$(realpath "$SKYGUARD_PATH" 2>/dev/null || echo "$SKYGUARD_PATH")
@@ -128,7 +192,7 @@ if systemctl list-units --type=service --all | grep -q "skyguard-web.service"; t
 fi
 
 # Step 3: Backup configuration (optional)
-if [ "$SKIP_BACKUP" = true ] && [ -d "$SKYGUARD_PATH" ]; then
+if [ "$SKIP_BACKUP" = false ] && [ -d "$SKYGUARD_PATH" ]; then
     echo -e "\n${BLUE}💾 Step 3: Creating backup of configuration...${NC}"
     BACKUP_PATH="${SKYGUARD_PATH}.backup.$(date +%Y%m%d_%H%M%S)"
     
@@ -211,7 +275,18 @@ if command -v uv &> /dev/null; then
     uv venv
     
     echo -e "${CYAN}   Installing dependencies...${NC}"
-    uv pip install -r requirements.txt
+    # Select requirements file based on detected platform
+    REQ_FILE=$(get_requirements_file)
+    if [ -f "$REQ_FILE" ]; then
+        echo -e "${CYAN}   Using requirements file: $REQ_FILE${NC}"
+        uv pip install -r "$REQ_FILE"
+    elif [ -f "requirements.txt" ]; then
+        echo -e "${CYAN}   Using fallback requirements file: requirements.txt${NC}"
+        uv pip install -r requirements.txt
+    else
+        echo -e "${RED}   ❌ No requirements file found${NC}"
+        exit 1
+    fi
     
     echo -e "${GREEN}   ✅ Installation complete with uv${NC}"
 else
@@ -235,11 +310,17 @@ else
     pip install --upgrade pip
     
     echo -e "${CYAN}   Installing dependencies...${NC}"
-    # Use requirements-pi.txt if available, otherwise requirements.txt
-    if [ -f "requirements-pi.txt" ]; then
-        pip install -r requirements-pi.txt
-    else
+    # Select requirements file based on detected platform
+    REQ_FILE=$(get_requirements_file)
+    if [ -f "$REQ_FILE" ]; then
+        echo -e "${CYAN}   Using requirements file: $REQ_FILE${NC}"
+        pip install -r "$REQ_FILE"
+    elif [ -f "requirements.txt" ]; then
+        echo -e "${CYAN}   Using fallback requirements file: requirements.txt${NC}"
         pip install -r requirements.txt
+    else
+        echo -e "${RED}   ❌ No requirements file found${NC}"
+        exit 1
     fi
     
     echo -e "${GREEN}   ✅ Installation complete with pip${NC}"
