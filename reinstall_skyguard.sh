@@ -88,6 +88,66 @@ filter_jetson_requirements() {
     echo "$filtered_file"
 }
 
+# Aggressively remove torch packages from venv (both via pip and filesystem)
+remove_torch_from_venv() {
+    local venv_path="$1"
+    
+    if [ ! -d "$venv_path" ]; then
+        return 0
+    fi
+    
+    echo -e "${CYAN}   Aggressively removing torch packages from venv...${NC}"
+    
+    # First, try pip uninstall if venv is activated
+    if [ -f "$venv_path/bin/activate" ]; then
+        source "$venv_path/bin/activate"
+        pip uninstall -y torch torchvision torchaudio 2>/dev/null || true
+        deactivate 2>/dev/null || true
+    fi
+    
+    # Then physically remove from site-packages directories
+    for site_packages in "$venv_path"/lib/python*/site-packages; do
+        if [ -d "$site_packages" ]; then
+            # Remove torch directories
+            rm -rf "$site_packages/torch" 2>/dev/null || true
+            rm -rf "$site_packages/torchvision" 2>/dev/null || true
+            rm -rf "$site_packages/torchaudio" 2>/dev/null || true
+            rm -rf "$site_packages/torch-"* 2>/dev/null || true
+            rm -rf "$site_packages/torchvision-"* 2>/dev/null || true
+            rm -rf "$site_packages/torchaudio-"* 2>/dev/null || true
+            
+            # Remove torch egg-info and dist-info
+            rm -rf "$site_packages"/torch*.egg-info 2>/dev/null || true
+            rm -rf "$site_packages"/torch*.dist-info 2>/dev/null || true
+            rm -rf "$site_packages"/torchvision*.egg-info 2>/dev/null || true
+            rm -rf "$site_packages"/torchvision*.dist-info 2>/dev/null || true
+            rm -rf "$site_packages"/torchaudio*.egg-info 2>/dev/null || true
+            rm -rf "$site_packages"/torchaudio*.dist-info 2>/dev/null || true
+        fi
+    done
+    
+    echo -e "${GREEN}   ✅ Torch packages removed from venv${NC}"
+}
+
+# Verify venv configuration for Jetson
+verify_jetson_venv_config() {
+    local venv_path="$1"
+    
+    if [ ! -f "$venv_path/pyvenv.cfg" ]; then
+        echo -e "${RED}   ❌ ERROR: venv/pyvenv.cfg not found${NC}"
+        return 1
+    fi
+    
+    if ! grep -q "include-system-site-packages = true" "$venv_path/pyvenv.cfg" 2>/dev/null; then
+        echo -e "${RED}   ❌ ERROR: venv does NOT have system-site-packages enabled${NC}"
+        echo -e "${YELLOW}   This is required for Jetson to access system CUDA PyTorch${NC}"
+        return 1
+    fi
+    
+    echo -e "${GREEN}   ✅ venv configured with system-site-packages${NC}"
+    return 0
+}
+
 # Check if PyTorch is installed system-wide
 check_system_pytorch() {
     python3 -c "import torch; print('CUDA' if torch.cuda.is_available() else 'CPU')" 2>/dev/null
@@ -381,15 +441,14 @@ if command -v uv &> /dev/null; then
             echo -e "${CYAN}   Filtered out torch/torchvision/torchaudio (using system CUDA versions)${NC}"
             
             # Uninstall any existing torch packages from venv BEFORE installation
-            echo -e "${CYAN}   Removing any existing venv-installed torch packages...${NC}"
-            uv pip uninstall -y torch torchvision torchaudio 2>/dev/null || true
+            remove_torch_from_venv "$SKYGUARD_PATH/venv"
             
             # Install filtered requirements
             uv pip install -r "$FILTERED_REQ"
             
-            # Uninstall torch packages AGAIN after installation (in case dependencies pulled them in)
-            echo -e "${CYAN}   Ensuring no torch packages were installed in venv...${NC}"
-            uv pip uninstall -y torch torchvision torchaudio 2>/dev/null || true
+            # Aggressively remove torch packages AGAIN after installation (in case dependencies pulled them in)
+            echo -e "${CYAN}   Final cleanup: Ensuring no torch packages remain in venv...${NC}"
+            remove_torch_from_venv "$SKYGUARD_PATH/venv"
             
             rm -f "$FILTERED_REQ"
         else
@@ -402,15 +461,14 @@ if command -v uv &> /dev/null; then
             echo -e "${CYAN}   Filtered out torch/torchvision/torchaudio (using system CUDA versions)${NC}"
             
             # Uninstall any existing torch packages from venv BEFORE installation
-            echo -e "${CYAN}   Removing any existing venv-installed torch packages...${NC}"
-            uv pip uninstall -y torch torchvision torchaudio 2>/dev/null || true
+            remove_torch_from_venv "$SKYGUARD_PATH/venv"
             
             # Install filtered requirements
             uv pip install -r "$FILTERED_REQ"
             
-            # Uninstall torch packages AGAIN after installation (in case dependencies pulled them in)
-            echo -e "${CYAN}   Ensuring no torch packages were installed in venv...${NC}"
-            uv pip uninstall -y torch torchvision torchaudio 2>/dev/null || true
+            # Aggressively remove torch packages AGAIN after installation (in case dependencies pulled them in)
+            echo -e "${CYAN}   Final cleanup: Ensuring no torch packages remain in venv...${NC}"
+            remove_torch_from_venv "$SKYGUARD_PATH/venv"
             
             rm -f "$FILTERED_REQ"
         else
@@ -472,15 +530,14 @@ else
             echo -e "${CYAN}   Filtered out torch/torchvision/torchaudio (using system CUDA versions)${NC}"
             
             # Uninstall any existing torch packages from venv BEFORE installation
-            echo -e "${CYAN}   Removing any existing venv-installed torch packages...${NC}"
-            pip uninstall -y torch torchvision torchaudio 2>/dev/null || true
+            remove_torch_from_venv "$SKYGUARD_PATH/venv"
             
             # Install filtered requirements
             pip install -r "$FILTERED_REQ"
             
-            # Uninstall torch packages AGAIN after installation (in case dependencies pulled them in)
-            echo -e "${CYAN}   Ensuring no torch packages were installed in venv...${NC}"
-            pip uninstall -y torch torchvision torchaudio 2>/dev/null || true
+            # Aggressively remove torch packages AGAIN after installation (in case dependencies pulled them in)
+            echo -e "${CYAN}   Final cleanup: Ensuring no torch packages remain in venv...${NC}"
+            remove_torch_from_venv "$SKYGUARD_PATH/venv"
             
             rm -f "$FILTERED_REQ"
         else
@@ -493,15 +550,14 @@ else
             echo -e "${CYAN}   Filtered out torch/torchvision/torchaudio (using system CUDA versions)${NC}"
             
             # Uninstall any existing torch packages from venv BEFORE installation
-            echo -e "${CYAN}   Removing any existing venv-installed torch packages...${NC}"
-            pip uninstall -y torch torchvision torchaudio 2>/dev/null || true
+            remove_torch_from_venv "$SKYGUARD_PATH/venv"
             
             # Install filtered requirements
             pip install -r "$FILTERED_REQ"
             
-            # Uninstall torch packages AGAIN after installation (in case dependencies pulled them in)
-            echo -e "${CYAN}   Ensuring no torch packages were installed in venv...${NC}"
-            pip uninstall -y torch torchvision torchaudio 2>/dev/null || true
+            # Aggressively remove torch packages AGAIN after installation (in case dependencies pulled them in)
+            echo -e "${CYAN}   Final cleanup: Ensuring no torch packages remain in venv...${NC}"
+            remove_torch_from_venv "$SKYGUARD_PATH/venv"
             
             rm -f "$FILTERED_REQ"
         else
@@ -518,10 +574,37 @@ fi
 # Verify PyTorch CUDA on Jetson
 if [ "$DETECTED_PLATFORM" = "jetson" ]; then
     echo -e "\n${BLUE}🔍 Verifying PyTorch CUDA installation...${NC}"
+    
+    # First, verify venv configuration
+    if ! verify_jetson_venv_config "$SKYGUARD_PATH/venv"; then
+        echo -e "${RED}   ❌ CRITICAL: venv configuration is incorrect${NC}"
+        echo -e "${YELLOW}   Recreating venv with correct configuration...${NC}"
+        rm -rf "$SKYGUARD_PATH/venv"
+        if [ "$USE_SYSTEM_SITE_PACKAGES" = "true" ]; then
+            python3 -m venv --system-site-packages "$SKYGUARD_PATH/venv"
+        else
+            python3 -m venv "$SKYGUARD_PATH/venv"
+        fi
+        echo -e "${YELLOW}   ⚠️  Please re-run the installation step${NC}"
+    fi
+    
     source venv/bin/activate
     
     # Check if torch is installed in venv (should NOT be)
-    TORCH_IN_VENV=$(python3 -c "import sys, os; venv_pkgs = [p for p in sys.path if 'venv' in p and 'site-packages' in p]; exec('try:\n    import torch\n    torch_path = torch.__file__\n    result = \"venv\" if any(vp in torch_path for vp in venv_pkgs) else \"system\"\n    print(result)\nexcept:\n    print(\"unknown\")')" 2>/dev/null || echo "unknown")
+    TORCH_IN_VENV=$(python3 -c "
+import sys
+import os
+try:
+    import torch
+    torch_path = os.path.abspath(torch.__file__)
+    venv_path = os.path.abspath('$SKYGUARD_PATH/venv')
+    if venv_path in torch_path:
+        print('venv')
+    else:
+        print('system')
+except Exception as e:
+    print('unknown')
+" 2>/dev/null || echo "unknown")
     
     # Check CUDA availability
     PYTORCH_CHECK=$(python3 -c "import torch; print('CUDA' if torch.cuda.is_available() else 'CPU')" 2>/dev/null || echo "NOT_FOUND")
@@ -537,20 +620,40 @@ if [ "$DETECTED_PLATFORM" = "jetson" ]; then
         # Verify it's using system PyTorch, not venv version
         if [ "$TORCH_IN_VENV" = "venv" ]; then
             echo -e "${RED}   ❌ ERROR: PyTorch is installed in venv instead of using system version!${NC}"
-            echo -e "${YELLOW}   This will cause CUDA issues. Removing venv-installed torch...${NC}"
-            pip uninstall -y torch torchvision torchaudio 2>/dev/null || true
-            echo -e "${YELLOW}   Please verify system PyTorch is accessible and run the script again${NC}"
+            echo -e "${YELLOW}   This will cause CUDA issues. Aggressively removing venv-installed torch...${NC}"
+            deactivate 2>/dev/null || true
+            remove_torch_from_venv "$SKYGUARD_PATH/venv"
+            source venv/bin/activate
+            echo -e "${YELLOW}   ⚠️  Please verify system PyTorch is accessible and test again${NC}"
         elif [ "$TORCH_IN_VENV" = "system" ]; then
             echo -e "${GREEN}   ✅ Confirmed: Using system PyTorch (correct)${NC}"
         fi
     else
-        echo -e "${YELLOW}   ⚠️  PyTorch CUDA not available${NC}"
-        if [ "$USE_SYSTEM_SITE_PACKAGES" != "true" ]; then
-            echo -e "${YELLOW}   This may be because venv was created without --system-site-packages${NC}"
+        echo -e "${RED}   ❌ PyTorch CUDA not available${NC}"
+        echo -e "${CYAN}   Source detected: $TORCH_IN_VENV${NC}"
+        
+        if [ "$TORCH_IN_VENV" = "venv" ]; then
+            echo -e "${RED}   ❌ CRITICAL: PyTorch is installed in venv (wrong version)${NC}"
+            echo -e "${YELLOW}   Removing venv-installed torch packages...${NC}"
+            deactivate 2>/dev/null || true
+            remove_torch_from_venv "$SKYGUARD_PATH/venv"
+            source venv/bin/activate
+            echo -e "${CYAN}   Testing system PyTorch again...${NC}"
+            PYTORCH_CHECK=$(python3 -c "import torch; print('CUDA' if torch.cuda.is_available() else 'CPU')" 2>/dev/null || echo "NOT_FOUND")
+            if [ "$PYTORCH_CHECK" = "CUDA" ]; then
+                echo -e "${GREEN}   ✅ Fixed! PyTorch CUDA now working from system${NC}"
+            else
+                echo -e "${YELLOW}   ⚠️  Still not working. Check that PyTorch was installed system-wide with CUDA support${NC}"
+                if [ "$USE_SYSTEM_SITE_PACKAGES" != "true" ]; then
+                    echo -e "${YELLOW}   venv was created without --system-site-packages${NC}"
+                    echo -e "${YELLOW}   Run: ./scripts/fix_jetson_venv.sh to fix it${NC}"
+                fi
+            fi
+        elif [ "$USE_SYSTEM_SITE_PACKAGES" != "true" ]; then
+            echo -e "${YELLOW}   venv was created without --system-site-packages${NC}"
             echo -e "${YELLOW}   Run: ./scripts/fix_jetson_venv.sh to fix it${NC}"
         else
             echo -e "${YELLOW}   Check that PyTorch was installed system-wide with CUDA support${NC}"
-            echo -e "${YELLOW}   Source detected: $TORCH_IN_VENV${NC}"
         fi
     fi
 fi

@@ -91,18 +91,18 @@ ps aux | grep skyguard
 sudo systemctl status skyguard.service skyguard-web.service
 
 # Check logs
-tail -f /home/pi/skyguard/logs/skyguard.log
-tail -f /home/pi/skyguard/logs/web.log
+tail -f $SKYGUARD_DIR/logs/skyguard.log
+tail -f $SKYGUARD_DIR/logs/web.log
 ```
 
 ### Web Portal Access
-- **URL**: `http://<PI_IP_ADDRESS>:8080`
+- **URL**: `http://<DEVICE_IP_ADDRESS>:8080`
 - **Local**: `http://localhost:8080`
 
 ### Common Issues
 
 1. **Services won't start:**
-   - Check logs: `tail -f /home/pi/skyguard/logs/skyguard.log`
+   - Check logs: `tail -f logs/skyguard.log` (from SkyGuard directory)
    - Check systemd: `sudo systemctl status skyguard.service`
    - Check dependencies: `pip list | grep -E "(ultralytics|opencv|flask)"`
 
@@ -117,11 +117,13 @@ tail -f /home/pi/skyguard/logs/web.log
 
 ## 📁 File Locations
 
-- **Main Directory**: `/home/pi/skyguard`
-- **Logs**: `/home/pi/skyguard/logs/`
-- **Configuration**: `/home/pi/skyguard/config/skyguard.yaml`
-- **Data**: `/home/pi/skyguard/data/`
-- **Models**: `/home/pi/skyguard/models/`
+- **Main Directory**: `$SKYGUARD_DIR` (auto-detected, typically `/home/pi/SkyGuard` or `/home/jad3/SkyGuard`)
+- **Logs**: `$SKYGUARD_DIR/logs/`
+- **Configuration**: `$SKYGUARD_DIR/config/skyguard.yaml`
+- **Data**: `$SKYGUARD_DIR/data/`
+- **Models**: `$SKYGUARD_DIR/models/`
+
+**Note**: The scripts automatically detect the platform (Jetson uses `jad3`, Raspberry Pi uses `pi`) and set the appropriate paths.
 
 ## 🆘 Getting Help
 

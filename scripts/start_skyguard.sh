@@ -4,12 +4,44 @@
 
 set -e
 
+# Platform detection function
+detect_platform_username() {
+    local username=""
+    
+    # Check for Jetson
+    if [ -f "/etc/nv_tegra_release" ]; then
+        username="jad3"
+    elif [ -f "/proc/device-tree/model" ]; then
+        model=$(cat /proc/device-tree/model 2>/dev/null || echo "")
+        if echo "$model" | grep -qi "jetson\|tegra"; then
+            username="jad3"
+        elif echo "$model" | grep -qi "raspberry pi"; then
+            username="pi"
+        fi
+    elif [ -f "/etc/os-release" ]; then
+        if grep -qi "raspbian\|raspberry" /etc/os-release 2>/dev/null; then
+            username="pi"
+        fi
+    fi
+    
+    # Fallback: use current user if platform not detected
+    if [ -z "$username" ]; then
+        username=$(whoami)
+    fi
+    
+    echo "$username"
+}
+
 # Configuration - Auto-detect SkyGuard directory
-# Try to find SkyGuard in common locations
+# Try to find SkyGuard in common locations with platform-specific paths
+PLATFORM_USER=$(detect_platform_username)
+
 if [ -d "$(pwd)/SkyGuard" ]; then
     SKYGUARD_DIR="$(pwd)/SkyGuard"
 elif [ -d "$HOME/SkyGuard" ]; then
     SKYGUARD_DIR="$HOME/SkyGuard"
+elif [ -d "/home/$PLATFORM_USER/SkyGuard" ]; then
+    SKYGUARD_DIR="/home/$PLATFORM_USER/SkyGuard"
 elif [ -d "/home/$(whoami)/SkyGuard" ]; then
     SKYGUARD_DIR="/home/$(whoami)/SkyGuard"
 else

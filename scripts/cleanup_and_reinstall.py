@@ -279,7 +279,7 @@ def main() -> None:
     print("   python -m skyguard.setup.configure")
     print()
     print("2. Access the web portal:")
-    print("   Open http://<PI_IP_ADDRESS>:8080 in your browser")
+    print("   Open http://<DEVICE_IP_ADDRESS>:8080 in your browser")
     print()
 
 
