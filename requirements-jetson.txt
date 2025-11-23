@@ -1,21 +1,33 @@
 # SkyGuard - NVIDIA Jetson Optimized Dependencies
 # Optimized for NVIDIA Jetson Orin Nano and other Jetson devices
-# Note: PyTorch should be installed from NVIDIA's repository first
-# See: https://forums.developer.nvidia.com/t/pytorch-for-jetson/72048
+#
+# IMPORTANT: PyTorch Installation
+# =================================
+# PyTorch MUST be installed system-wide (NOT in the virtual environment) for CUDA support.
+# The reinstall_skyguard.sh script will automatically install PyTorch if it's not found.
+# Alternatively, install manually before running the installation:
+#
+# For JetPack 6.1:
+#   wget https://developer.download.nvidia.com/compute/redist/jp/v61/pytorch/torch-2.5.0a0+872d972e41.nv24.08.17622132-cp310-cp310-linux_aarch64.whl
+#   pip3 install torch-2.5.0a0+872d972e41.nv24.08.17622132-cp310-cp310-linux_aarch64.whl
+#   pip3 install torchvision
+#
+# For other JetPack versions, see: https://forums.developer.nvidia.com/t/pytorch-for-jetson/
+#
+# The virtual environment will be created with --system-site-packages to access system PyTorch.
+# torch/torchvision/torchaudio are commented out below to prevent installation in the venv.
 
 # Core Computer Vision
 opencv-python>=4.8.0
 numpy==1.26.0
 pillow>=10.0.0
 
-# AI/ML - PyTorch with CUDA support (install from NVIDIA first)
-# For JetPack 6.1, install the CUDA-enabled PyTorch wheel:
-# wget https://developer.download.nvidia.com/compute/redist/jp/v61/pytorch/torch-2.5.0a0+872d972e41.nv24.08.17622132-cp310-cp310-linux_aarch64.whl
-# pip3 install torch-2.5.0a0+872d972e41.nv24.08.17622132-cp310-cp310-linux_aarch64.whl
-# pip3 install torchvision
-# For other JetPack versions, see: https://forums.developer.nvidia.com/t/pytorch-for-jetson/
-# torch>=2.0.0  # Install from NVIDIA repository (DO NOT install via pip - use wheel above)
-# torchvision>=0.15.0  # Install from NVIDIA repository (install after torch)
+# AI/ML - PyTorch with CUDA support
+# NOTE: torch and torchvision are commented out because they MUST be installed system-wide
+# The reinstall script will install them automatically if not found.
+# DO NOT uncomment these lines - they would install non-CUDA versions in the venv!
+# torch>=2.0.0  # Install from NVIDIA repository (system-wide, not in venv)
+# torchvision>=0.15.0  # Install from NVIDIA repository (system-wide, not in venv)
 ultralytics>=8.0.0  # YOLO implementation (will use CUDA if PyTorch has CUDA)
 
 # Hardware Integration (Jetson doesn't need RPi.GPIO)

@@ -150,7 +150,67 @@ verify_jetson_venv_config() {
 
 # Check if PyTorch is installed system-wide
 check_system_pytorch() {
-    python3 -c "import torch; print('CUDA' if torch.cuda.is_available() else 'CPU')" 2>/dev/null
+    python3 -c "import torch; print('CUDA' if torch.cuda.is_available() else 'CPU')" 2>/dev/null || echo "NOT_FOUND"
+}
+
+# Install PyTorch system-wide for Jetson
+install_jetson_pytorch() {
+    echo -e "${BLUE}📦 Installing PyTorch for Jetson (system-wide)...${NC}"
+    
+    # Detect Python version
+    PYTHON_VERSION=$(python3 --version 2>&1 | grep -oP '\d+\.\d+' | head -1)
+    PYTHON_MAJOR=$(echo "$PYTHON_VERSION" | cut -d. -f1)
+    PYTHON_MINOR=$(echo "$PYTHON_VERSION" | cut -d. -f2)
+    PYTHON_TAG="cp${PYTHON_MAJOR}${PYTHON_MINOR}"
+    
+    echo -e "${CYAN}   Detected Python version: $PYTHON_VERSION ($PYTHON_TAG)${NC}"
+    
+    # For JetPack 6.1, use the specific wheel URL
+    TORCH_WHEEL="torch-2.5.0a0+872d972e41.nv24.08.17622132-${PYTHON_TAG}-${PYTHON_TAG}-linux_aarch64.whl"
+    TORCH_URL="https://developer.download.nvidia.com/compute/redist/jp/v61/pytorch/${TORCH_WHEEL}"
+    
+    echo -e "${CYAN}   Downloading PyTorch wheel from NVIDIA...${NC}"
+    echo -e "${CYAN}   URL: $TORCH_URL${NC}"
+    
+    # Download the wheel
+    if wget -q --spider "$TORCH_URL" 2>/dev/null; then
+        wget "$TORCH_URL" -O "/tmp/${TORCH_WHEEL}" || {
+            echo -e "${RED}   ❌ Failed to download PyTorch wheel${NC}"
+            return 1
+        }
+        
+        echo -e "${CYAN}   Installing PyTorch wheel...${NC}"
+        pip3 install "/tmp/${TORCH_WHEEL}" || {
+            echo -e "${RED}   ❌ Failed to install PyTorch wheel${NC}"
+            rm -f "/tmp/${TORCH_WHEEL}"
+            return 1
+        }
+        
+        echo -e "${CYAN}   Installing torchvision...${NC}"
+        pip3 install torchvision || {
+            echo -e "${YELLOW}   ⚠️  Failed to install torchvision (may need to install manually)${NC}"
+        }
+        
+        rm -f "/tmp/${TORCH_WHEEL}"
+        
+        # Verify installation
+        PYTORCH_CHECK=$(check_system_pytorch)
+        if [ "$PYTORCH_CHECK" = "CUDA" ]; then
+            echo -e "${GREEN}   ✅ PyTorch CUDA installed successfully!${NC}"
+            return 0
+        elif [ "$PYTORCH_CHECK" = "CPU" ]; then
+            echo -e "${YELLOW}   ⚠️  PyTorch installed but CUDA not available${NC}"
+            return 0
+        else
+            echo -e "${RED}   ❌ PyTorch installation verification failed${NC}"
+            return 1
+        fi
+    else
+        echo -e "${YELLOW}   ⚠️  Could not download PyTorch wheel (URL may not exist for this Python version)${NC}"
+        echo -e "${CYAN}   Please install PyTorch manually:${NC}"
+        echo -e "${CYAN}   See: https://forums.developer.nvidia.com/t/pytorch-for-jetson/${NC}"
+        return 1
+    fi
 }
 
 # Detect platform and get username
@@ -387,7 +447,7 @@ fi
 echo -e "\n${BLUE}📦 Step 6: Running installation...${NC}"
 cd "$SKYGUARD_PATH"
 
-# Check for system PyTorch on Jetson
+# Check for system PyTorch on Jetson (BEFORE creating venv)
 if [ "$DETECTED_PLATFORM" = "jetson" ]; then
     echo -e "${CYAN}   Checking for system-installed PyTorch...${NC}"
     PYTORCH_STATUS=$(check_system_pytorch)
@@ -398,8 +458,40 @@ if [ "$DETECTED_PLATFORM" = "jetson" ]; then
         echo -e "${YELLOW}   ⚠️  Found PyTorch but CUDA not available - will use system packages anyway${NC}"
         USE_SYSTEM_SITE_PACKAGES=true
     else
-        echo -e "${YELLOW}   ⚠️  No system PyTorch found - will install from requirements${NC}"
-        USE_SYSTEM_SITE_PACKAGES=false
+        echo -e "${YELLOW}   ⚠️  No system PyTorch found${NC}"
+        echo -e "${CYAN}   PyTorch must be installed system-wide for Jetson (not in venv)${NC}"
+        echo ""
+        echo -e "${BLUE}   Would you like to install PyTorch now?${NC}"
+        echo -e "${CYAN}   This will install PyTorch system-wide (required for CUDA support)${NC}"
+        read -p "   Install PyTorch? (Y/n): " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Nn]$ ]]; then
+            if install_jetson_pytorch; then
+                # Re-check after installation
+                PYTORCH_STATUS=$(check_system_pytorch)
+                if [ "$PYTORCH_STATUS" != "NOT_FOUND" ]; then
+                    USE_SYSTEM_SITE_PACKAGES=true
+                    echo -e "${GREEN}   ✅ PyTorch installed - will use system packages${NC}"
+                else
+                    echo -e "${RED}   ❌ PyTorch installation failed${NC}"
+                    echo -e "${YELLOW}   Please install PyTorch manually before continuing${NC}"
+                    exit 1
+                fi
+            else
+                echo -e "${RED}   ❌ PyTorch installation failed${NC}"
+                echo -e "${YELLOW}   Please install PyTorch manually:${NC}"
+                echo -e "${CYAN}   For JetPack 6.1:${NC}"
+                echo -e "${CYAN}   wget https://developer.download.nvidia.com/compute/redist/jp/v61/pytorch/torch-2.5.0a0+872d972e41.nv24.08.17622132-cp310-cp310-linux_aarch64.whl${NC}"
+                echo -e "${CYAN}   pip3 install torch-2.5.0a0+872d972e41.nv24.08.17622132-cp310-cp310-linux_aarch64.whl${NC}"
+                echo -e "${CYAN}   pip3 install torchvision${NC}"
+                exit 1
+            fi
+        else
+            echo -e "${YELLOW}   ⚠️  Skipping PyTorch installation${NC}"
+            echo -e "${YELLOW}   You must install PyTorch system-wide before continuing${NC}"
+            echo -e "${CYAN}   See: https://forums.developer.nvidia.com/t/pytorch-for-jetson/${NC}"
+            exit 1
+        fi
     fi
 else
     USE_SYSTEM_SITE_PACKAGES=false
