@@ -46,6 +46,48 @@ echo -e "${GREEN}✅ Found system PyTorch ($PYTORCH_STATUS)${NC}"
 echo -e "${CYAN}Checking virtual environment configuration...${NC}"
 if grep -q "include-system-site-packages = true" venv/pyvenv.cfg 2>/dev/null; then
     echo -e "${GREEN}✅ Virtual environment already configured with system site packages${NC}"
+    
+    # Even with system-site-packages, check if torch is installed in venv
+    source venv/bin/activate
+    TORCH_CHECK=$(python3 -c "
+import sys
+import os
+try:
+    import torch
+    torch_path = os.path.abspath(torch.__file__)
+    venv_path = os.path.abspath('$(pwd)/venv')
+    if venv_path in torch_path:
+        print('venv')
+    else:
+        print('system')
+except:
+    print('not_found')
+" 2>/dev/null || echo "not_found")
+    deactivate 2>/dev/null || true
+    
+    if [ "$TORCH_CHECK" = "venv" ]; then
+        echo -e "${YELLOW}⚠️  PyTorch is installed in venv (will be removed)${NC}"
+        echo -e "${CYAN}   Removing torch packages from venv...${NC}"
+        source venv/bin/activate
+        pip uninstall -y torch torchvision torchaudio 2>/dev/null || true
+        deactivate 2>/dev/null || true
+        
+        # Physically remove from site-packages
+        for site_packages in venv/lib/python*/site-packages; do
+            if [ -d "$site_packages" ]; then
+                rm -rf "$site_packages/torch" 2>/dev/null || true
+                rm -rf "$site_packages/torchvision" 2>/dev/null || true
+                rm -rf "$site_packages/torchaudio" 2>/dev/null || true
+                rm -rf "$site_packages"/torch*.dist-info 2>/dev/null || true
+                rm -rf "$site_packages"/torch*.egg-info 2>/dev/null || true
+                rm -rf "$site_packages"/torchvision*.dist-info 2>/dev/null || true
+                rm -rf "$site_packages"/torchvision*.egg-info 2>/dev/null || true
+                rm -rf "$site_packages"/torchaudio*.dist-info 2>/dev/null || true
+                rm -rf "$site_packages"/torchaudio*.egg-info 2>/dev/null || true
+            fi
+        done
+        echo -e "${GREEN}✅ Torch packages removed from venv${NC}"
+    fi
 else
     echo -e "${YELLOW}⚠️  Virtual environment does not have system site packages enabled${NC}"
     echo -e "${CYAN}   Recreating virtual environment...${NC}"
@@ -74,9 +116,29 @@ else
     
     echo -e "${CYAN}   Reinstalling dependencies (excluding torch/torchvision)...${NC}"
     FILTERED_REQ=$(mktemp)
-    grep -v -E "^(torch|torchvision|torchaudio)" "$REQ_FILE" > "$FILTERED_REQ" 2>/dev/null || cp "$REQ_FILE" "$FILTERED_REQ"
+    # Use the same comprehensive filter as reinstall script
+    grep -v -E "^[[:space:]#]*(torch|torchvision|torchaudio)(\[[^\]]+\])?[[:space:]]*[>=<~!#]" "$REQ_FILE" > "$FILTERED_REQ" 2>/dev/null || cp "$REQ_FILE" "$FILTERED_REQ"
     pip install -r "$FILTERED_REQ"
     rm -f "$FILTERED_REQ"
+    
+    # Aggressively remove any torch packages that might have been installed
+    echo -e "${CYAN}   Removing any torch packages that were installed...${NC}"
+    pip uninstall -y torch torchvision torchaudio 2>/dev/null || true
+    
+    # Physically remove from site-packages
+    for site_packages in venv/lib/python*/site-packages; do
+        if [ -d "$site_packages" ]; then
+            rm -rf "$site_packages/torch" 2>/dev/null || true
+            rm -rf "$site_packages/torchvision" 2>/dev/null || true
+            rm -rf "$site_packages/torchaudio" 2>/dev/null || true
+            rm -rf "$site_packages"/torch*.dist-info 2>/dev/null || true
+            rm -rf "$site_packages"/torch*.egg-info 2>/dev/null || true
+            rm -rf "$site_packages"/torchvision*.dist-info 2>/dev/null || true
+            rm -rf "$site_packages"/torchvision*.egg-info 2>/dev/null || true
+            rm -rf "$site_packages"/torchaudio*.dist-info 2>/dev/null || true
+            rm -rf "$site_packages"/torchaudio*.egg-info 2>/dev/null || true
+        fi
+    done
     
     echo -e "${GREEN}✅ Dependencies reinstalled${NC}"
 fi
