@@ -279,6 +279,44 @@ fi
 
 echo -e "${GREEN}   ✅ Repository cloned successfully${NC}"
 
+# Step 6: Fix Jetson venv if needed (BEFORE installation)
+if [ "$DETECTED_PLATFORM" = "jetson" ] && [ -d "$SKYGUARD_PATH/venv" ]; then
+    echo -e "\n${BLUE}🔧 Step 6a: Fixing Jetson virtual environment...${NC}"
+    
+    # Check if venv has system site packages enabled
+    if [ -f "$SKYGUARD_PATH/venv/pyvenv.cfg" ]; then
+        if grep -q "include-system-site-packages = true" "$SKYGUARD_PATH/venv/pyvenv.cfg" 2>/dev/null; then
+            echo -e "${GREEN}   ✅ Virtual environment already configured with system site packages${NC}"
+        else
+            echo -e "${YELLOW}   ⚠️  Virtual environment exists but does NOT have system site packages${NC}"
+            echo -e "${CYAN}   This will prevent access to system-installed CUDA PyTorch${NC}"
+            echo -e "${CYAN}   Removing old venv to recreate with system site packages...${NC}"
+            
+            # Remove old venv
+            rm -rf "$SKYGUARD_PATH/venv"
+            echo -e "${GREEN}   ✅ Old venv removed${NC}"
+        fi
+    else
+        echo -e "${YELLOW}   ⚠️  Virtual environment exists but configuration unclear${NC}"
+        echo -e "${CYAN}   Removing venv to ensure clean installation...${NC}"
+        rm -rf "$SKYGUARD_PATH/venv"
+        echo -e "${GREEN}   ✅ Old venv removed${NC}"
+    fi
+    
+    # Also check for and remove any torch packages that might have been installed in venv
+    if [ -d "$SKYGUARD_PATH/venv" ]; then
+        echo -e "${CYAN}   Checking for venv-installed torch packages...${NC}"
+        if [ -f "$SKYGUARD_PATH/venv/bin/activate" ]; then
+            source "$SKYGUARD_PATH/venv/bin/activate"
+            # Check if torch is installed in venv (not system)
+            if python3 -c "import torch; import sys; print('venv' if 'venv' in sys.executable else 'system')" 2>/dev/null | grep -q "venv"; then
+                echo -e "${YELLOW}   ⚠️  Found torch installed in venv - will be removed when venv is recreated${NC}"
+            fi
+            deactivate 2>/dev/null || true
+        fi
+    fi
+fi
+
 # Step 6: Run installation
 echo -e "\n${BLUE}📦 Step 6: Running installation...${NC}"
 cd "$SKYGUARD_PATH"
@@ -307,6 +345,17 @@ if command -v uv &> /dev/null; then
     echo -e "${CYAN}   Creating virtual environment...${NC}"
     
     # For Jetson with system PyTorch, use --system-site-packages
+    # Also remove venv if it exists without system site packages
+    if [ "$USE_SYSTEM_SITE_PACKAGES" = "true" ] && [ -d "venv" ]; then
+        # Double-check: if venv exists but doesn't have system site packages, remove it
+        if [ -f "venv/pyvenv.cfg" ]; then
+            if ! grep -q "include-system-site-packages = true" venv/pyvenv.cfg 2>/dev/null; then
+                echo -e "${YELLOW}   ⚠️  Existing venv does not have system site packages - removing it${NC}"
+                rm -rf venv
+            fi
+        fi
+    fi
+    
     if [ "$USE_SYSTEM_SITE_PACKAGES" = "true" ]; then
         echo -e "${CYAN}   Creating venv with system site packages (to use CUDA PyTorch)${NC}"
         uv venv --system-site-packages
@@ -323,7 +372,12 @@ if command -v uv &> /dev/null; then
         # For Jetson, filter out torch packages if using system packages
         if [ "$USE_SYSTEM_SITE_PACKAGES" = "true" ] && [ "$DETECTED_PLATFORM" = "jetson" ]; then
             FILTERED_REQ=$(filter_jetson_requirements "$REQ_FILE")
-            echo -e "${CYAN}   Filtered out torch/torchvision (using system CUDA versions)${NC}"
+            echo -e "${CYAN}   Filtered out torch/torchvision/torchaudio (using system CUDA versions)${NC}"
+            
+            # Also uninstall any existing torch packages from venv if they exist
+            echo -e "${CYAN}   Removing any venv-installed torch packages...${NC}"
+            uv pip uninstall -y torch torchvision torchaudio 2>/dev/null || true
+            
             uv pip install -r "$FILTERED_REQ"
             rm -f "$FILTERED_REQ"
         else
@@ -333,6 +387,12 @@ if command -v uv &> /dev/null; then
         echo -e "${CYAN}   Using fallback requirements file: requirements.txt${NC}"
         if [ "$USE_SYSTEM_SITE_PACKAGES" = "true" ] && [ "$DETECTED_PLATFORM" = "jetson" ]; then
             FILTERED_REQ=$(filter_jetson_requirements "requirements.txt")
+            echo -e "${CYAN}   Filtered out torch/torchvision/torchaudio (using system CUDA versions)${NC}"
+            
+            # Also uninstall any existing torch packages from venv if they exist
+            echo -e "${CYAN}   Removing any venv-installed torch packages...${NC}"
+            uv pip uninstall -y torch torchvision torchaudio 2>/dev/null || true
+            
             uv pip install -r "$FILTERED_REQ"
             rm -f "$FILTERED_REQ"
         else
@@ -358,6 +418,17 @@ else
     echo -e "${CYAN}   Creating virtual environment...${NC}"
     
     # For Jetson with system PyTorch, use --system-site-packages
+    # Also remove venv if it exists without system site packages
+    if [ "$USE_SYSTEM_SITE_PACKAGES" = "true" ] && [ -d "venv" ]; then
+        # Double-check: if venv exists but doesn't have system site packages, remove it
+        if [ -f "venv/pyvenv.cfg" ]; then
+            if ! grep -q "include-system-site-packages = true" venv/pyvenv.cfg 2>/dev/null; then
+                echo -e "${YELLOW}   ⚠️  Existing venv does not have system site packages - removing it${NC}"
+                rm -rf venv
+            fi
+        fi
+    fi
+    
     if [ "$USE_SYSTEM_SITE_PACKAGES" = "true" ]; then
         echo -e "${CYAN}   Creating venv with system site packages (to use CUDA PyTorch)${NC}"
         python3 -m venv --system-site-packages venv
@@ -380,7 +451,12 @@ else
         # For Jetson, filter out torch packages if using system packages
         if [ "$USE_SYSTEM_SITE_PACKAGES" = "true" ] && [ "$DETECTED_PLATFORM" = "jetson" ]; then
             FILTERED_REQ=$(filter_jetson_requirements "$REQ_FILE")
-            echo -e "${CYAN}   Filtered out torch/torchvision (using system CUDA versions)${NC}"
+            echo -e "${CYAN}   Filtered out torch/torchvision/torchaudio (using system CUDA versions)${NC}"
+            
+            # Also uninstall any existing torch packages from venv if they exist
+            echo -e "${CYAN}   Removing any venv-installed torch packages...${NC}"
+            pip uninstall -y torch torchvision torchaudio 2>/dev/null || true
+            
             pip install -r "$FILTERED_REQ"
             rm -f "$FILTERED_REQ"
         else
@@ -390,6 +466,12 @@ else
         echo -e "${CYAN}   Using fallback requirements file: requirements.txt${NC}"
         if [ "$USE_SYSTEM_SITE_PACKAGES" = "true" ] && [ "$DETECTED_PLATFORM" = "jetson" ]; then
             FILTERED_REQ=$(filter_jetson_requirements "requirements.txt")
+            echo -e "${CYAN}   Filtered out torch/torchvision/torchaudio (using system CUDA versions)${NC}"
+            
+            # Also uninstall any existing torch packages from venv if they exist
+            echo -e "${CYAN}   Removing any venv-installed torch packages...${NC}"
+            pip uninstall -y torch torchvision torchaudio 2>/dev/null || true
+            
             pip install -r "$FILTERED_REQ"
             rm -f "$FILTERED_REQ"
         else
@@ -407,15 +489,30 @@ fi
 if [ "$DETECTED_PLATFORM" = "jetson" ]; then
     echo -e "\n${BLUE}🔍 Verifying PyTorch CUDA installation...${NC}"
     source venv/bin/activate
-    PYTORCH_CHECK=$(python3 -c "import torch; print('CUDA' if torch.cuda.is_available() else 'CPU')" 2>/dev/null)
+    
+    # Check if torch is coming from system or venv
+    TORCH_SOURCE=$(python3 -c "import torch; import sys; print('system' if any('site-packages' in p and 'venv' not in p for p in sys.path) and 'venv' not in sys.executable else 'venv')" 2>/dev/null || echo "unknown")
+    
+    PYTORCH_CHECK=$(python3 -c "import torch; print('CUDA' if torch.cuda.is_available() else 'CPU')" 2>/dev/null || echo "NOT_FOUND")
     if [ "$PYTORCH_CHECK" = "CUDA" ]; then
         CUDA_DEVICE=$(python3 -c "import torch; print(torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'N/A')" 2>/dev/null)
         echo -e "${GREEN}   ✅ PyTorch CUDA is working!${NC}"
         echo -e "${CYAN}   Device: $CUDA_DEVICE${NC}"
+        echo -e "${CYAN}   Source: $TORCH_SOURCE${NC}"
+        
+        # Verify it's using system PyTorch, not venv version
+        if [ "$TORCH_SOURCE" != "system" ] && [ "$USE_SYSTEM_SITE_PACKAGES" = "true" ]; then
+            echo -e "${YELLOW}   ⚠️  Warning: PyTorch appears to be from venv, not system${NC}"
+            echo -e "${YELLOW}   This may cause CUDA issues. Consider running: ./scripts/fix_jetson_venv.sh${NC}"
+        fi
     else
         echo -e "${YELLOW}   ⚠️  PyTorch CUDA not available${NC}"
-        echo -e "${YELLOW}   This may be normal if PyTorch was installed system-wide but venv can't access it${NC}"
-        echo -e "${YELLOW}   If venv was created without --system-site-packages, you may need to recreate it${NC}"
+        if [ "$USE_SYSTEM_SITE_PACKAGES" != "true" ]; then
+            echo -e "${YELLOW}   This may be because venv was created without --system-site-packages${NC}"
+            echo -e "${YELLOW}   Run: ./scripts/fix_jetson_venv.sh to fix it${NC}"
+        else
+            echo -e "${YELLOW}   Check that PyTorch was installed system-wide with CUDA support${NC}"
+        fi
     fi
 fi
 
