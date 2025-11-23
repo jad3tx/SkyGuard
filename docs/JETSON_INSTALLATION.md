@@ -100,11 +100,15 @@ cd SkyGuard
 
 ### Step 4: Create Virtual Environment
 
+**IMPORTANT**: For Jetson, you must create the virtual environment with `--system-site-packages` to access system-installed CUDA PyTorch:
+
 ```bash
-python3 -m venv venv
+python3 -m venv --system-site-packages venv
 source venv/bin/activate
 pip install --upgrade pip
 ```
+
+**Note**: The installation script (`./scripts/install.sh`) will automatically create the venv with this flag if it detects Jetson and system PyTorch.
 
 ### Step 5: Install SkyGuard Dependencies
 
@@ -114,14 +118,28 @@ The installation script will automatically detect Jetson and use the appropriate
 ./scripts/install.sh
 ```
 
+The script will:
+- Detect that you're on a Jetson device
+- Check for system-installed CUDA PyTorch
+- Create a virtual environment with `--system-site-packages` to access system PyTorch
+- Filter out torch/torchvision from requirements (to avoid installing non-CUDA versions)
+- Install all other dependencies
+
 Or manually:
 
 ```bash
-# Install Jetson-specific requirements (PyTorch should already be installed)
+# Create venv with system site packages (IMPORTANT for CUDA PyTorch!)
+python3 -m venv --system-site-packages venv
+source venv/bin/activate
+
+# Install Jetson-specific requirements (PyTorch excluded - uses system version)
 pip install -r requirements-jetson.txt
 ```
 
-**Note**: If you see warnings about PyTorch, that's normal - PyTorch should already be installed from Step 1.
+**Important Notes**:
+- The virtual environment **must** be created with `--system-site-packages` to access system-installed CUDA PyTorch
+- If you see warnings about PyTorch, that's normal - PyTorch should already be installed from Step 1
+- If your venv was created without `--system-site-packages`, see "Fixing Virtual Environment" below
 
 ### Step 6: Configure SkyGuard
 
@@ -228,6 +246,51 @@ For even better performance, you can convert YOLO models to TensorRT:
 ```
 
 ## Troubleshooting
+
+### Virtual Environment Not Using CUDA PyTorch
+
+If your virtual environment was created without `--system-site-packages`, it won't be able to access the system-installed CUDA PyTorch. You'll see errors like:
+- `torch.cuda.is_available()` returns `False`
+- Model runs on CPU instead of GPU
+
+**Fix Option 1: Use the Fix Script (Recommended)**
+```bash
+cd ~/SkyGuard
+./scripts/fix_jetson_venv.sh
+```
+
+**Fix Option 2: Manual Fix**
+```bash
+cd ~/SkyGuard
+
+# Backup current venv
+mv venv venv_backup
+
+# Create new venv with system site packages
+python3 -m venv --system-site-packages venv
+source venv/bin/activate
+
+# Reinstall dependencies (excluding torch)
+pip install --upgrade pip
+grep -v -E "^(torch|torchvision|torchaudio)" requirements-jetson.txt > /tmp/req_filtered.txt
+pip install -r /tmp/req_filtered.txt
+rm /tmp/req_filtered.txt
+
+# Verify CUDA is working
+python3 -c "import torch; print(f'CUDA available: {torch.cuda.is_available()}')"
+```
+
+**Verify Fix:**
+```bash
+source venv/bin/activate
+python3 -c "import torch; print(f'CUDA available: {torch.cuda.is_available()}'); print(f'Device: {torch.cuda.get_device_name(0) if torch.cuda.is_available() else \"N/A\"}')"
+```
+
+You should see:
+```
+CUDA available: True
+Device: NVIDIA Tegra
+```
 
 ### PyTorch CUDA Not Available
 
