@@ -39,6 +39,9 @@ NVIDIA Jetson devices provide significant advantages over Raspberry Pi for AI wo
    
    # Install torchvision
    pip3 install torchvision
+
+   # you may encounter numpy versioning issues ... install a version of numpy to your venv or user/local that is LESS than version 2
+   python3 -m pip install --user --force-reinstall "numpy==1.26.1"
    ```
 
    **Note**: Always check the [NVIDIA Developer Forums](https://forums.developer.nvidia.com/t/pytorch-for-jetson/) for the latest PyTorch wheel URLs.
