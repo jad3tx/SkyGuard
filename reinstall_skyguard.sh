@@ -79,8 +79,12 @@ filter_jetson_requirements() {
     
     # Create filtered requirements file excluding torch/torchvision/torchaudio
     # Remove lines that start with torch, torchvision, or torchaudio (with optional whitespace/comments)
-    # This handles: "torch>=2.0", " torch>=2.0", "# torch>=2.0", etc.
-    grep -v -E "^[[:space:]#]*(torch|torchvision|torchaudio)[[:space:]]*[>=<#]" "$req_file" > "$filtered_file" 2>/dev/null || cp "$req_file" "$filtered_file"
+    # This handles:
+    #   - "torch>=2.0", "torch!=2.0", "torch~=2.0" (all version operators)
+    #   - "torch[cuda]>=2.0", "torch[cpu]!=2.0" (extras syntax)
+    #   - " torch>=2.0", "# torch>=2.0" (with leading whitespace/comments)
+    # Character class [>=<~!#] covers: >=, <=, ==, !=, ~=, and # (comment)
+    grep -v -E "^[[:space:]#]*(torch|torchvision|torchaudio)(\[[^\]]+\])?[[:space:]]*[>=<~!#]" "$req_file" > "$filtered_file" 2>/dev/null || cp "$req_file" "$filtered_file"
     echo "$filtered_file"
 }
 
