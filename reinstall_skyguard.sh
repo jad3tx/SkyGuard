@@ -99,6 +99,14 @@ install_jetson_requirements_safely() {
     # Activate venv
     source "$venv_path/bin/activate"
     
+    # FIRST: Install numpy==1.26.0 explicitly before anything else
+    # This ensures numpy is pinned and won't be upgraded by other packages
+    echo -e "${CYAN}   Installing numpy==1.26.0 first (required for Jetson)...${NC}"
+    pip install --force-reinstall "numpy==1.26.0" || {
+        echo -e "${YELLOW}   ⚠️  Failed to install numpy==1.26.0, trying without force...${NC}"
+        pip install "numpy==1.26.0" || true
+    }
+    
     # Read requirements file and install packages one by one
     # This allows us to catch and handle torch installation attempts
     while IFS= read -r line || [ -n "$line" ]; do
@@ -115,13 +123,45 @@ install_jetson_requirements_safely() {
             continue
         fi
         
+        # Skip numpy - already installed above
+        if [[ "$package" =~ ^numpy ]]; then
+            echo -e "${CYAN}     Skipping $package (already installed as numpy==1.26.0)${NC}"
+            # Ensure it's still the correct version
+            pip install --force-reinstall "numpy==1.26.0" 2>/dev/null || true
+            continue
+        fi
+        
         # Install package
         echo -e "${CYAN}     Installing $package...${NC}"
         
         # For ultralytics, install with --no-deps first, then install its dependencies manually (excluding torch)
         if [[ "$package" =~ ^ultralytics ]]; then
             echo -e "${CYAN}       Installing ultralytics without dependencies (to avoid torch)...${NC}"
-            pip install --no-deps "$package" 2>/dev/null || true
+            pip install --no-deps "$package" 2>/dev/null || {
+                echo -e "${YELLOW}       ⚠️  Failed to install ultralytics without deps, trying normal install...${NC}"
+                pip install "$package" 2>/dev/null || true
+            }
+            
+            # Check if torch was installed and remove it
+            TORCH_INSTALLED=false
+            for site_packages in "$venv_path"/lib/python*/site-packages; do
+                if [ -d "$site_packages" ] && ([ -d "$site_packages/torch" ] || [ -d "$site_packages/torchvision" ] || [ -d "$site_packages/torchaudio" ]); then
+                    TORCH_INSTALLED=true
+                    break
+                fi
+            done
+            
+            if [ "$TORCH_INSTALLED" = true ]; then
+                echo -e "${YELLOW}       ⚠️  ultralytics pulled in torch - removing it...${NC}"
+                pip uninstall -y torch torchvision torchaudio 2>/dev/null || true
+                for site_packages in "$venv_path"/lib/python*/site-packages; do
+                    if [ -d "$site_packages" ]; then
+                        rm -rf "$site_packages/torch"* 2>/dev/null || true
+                        rm -rf "$site_packages"/torch*.dist-info 2>/dev/null || true
+                        rm -rf "$site_packages"/torch*.egg-info 2>/dev/null || true
+                    fi
+                done
+            fi
             
             # Install ultralytics dependencies manually (excluding torch)
             echo -e "${CYAN}       Installing ultralytics dependencies (excluding torch)...${NC}"
@@ -134,16 +174,54 @@ install_jetson_requirements_safely() {
             }
             
             # Check if torch was installed and remove it immediately
-            if python3 -c "import torch; import sys; import os; print('venv' if 'venv' in os.path.abspath(torch.__file__))" 2>/dev/null | grep -q "venv"; then
+            # Check by looking for torch in site-packages directly (more reliable)
+            TORCH_INSTALLED=false
+            for site_packages in "$venv_path"/lib/python*/site-packages; do
+                if [ -d "$site_packages" ] && ([ -d "$site_packages/torch" ] || [ -d "$site_packages/torchvision" ] || [ -d "$site_packages/torchaudio" ]); then
+                    TORCH_INSTALLED=true
+                    break
+                fi
+            done
+            
+            if [ "$TORCH_INSTALLED" = true ]; then
                 echo -e "${YELLOW}       ⚠️  $package pulled in torch - removing it...${NC}"
                 pip uninstall -y torch torchvision torchaudio 2>/dev/null || true
                 # Also remove physically
                 for site_packages in "$venv_path"/lib/python*/site-packages; do
-                    [ -d "$site_packages" ] && rm -rf "$site_packages/torch"* 2>/dev/null || true
+                    if [ -d "$site_packages" ]; then
+                        rm -rf "$site_packages/torch" 2>/dev/null || true
+                        rm -rf "$site_packages/torchvision" 2>/dev/null || true
+                        rm -rf "$site_packages/torchaudio" 2>/dev/null || true
+                        rm -rf "$site_packages"/torch*.dist-info 2>/dev/null || true
+                        rm -rf "$site_packages"/torch*.egg-info 2>/dev/null || true
+                        rm -rf "$site_packages"/torchvision*.dist-info 2>/dev/null || true
+                        rm -rf "$site_packages"/torchvision*.egg-info 2>/dev/null || true
+                        rm -rf "$site_packages"/torchaudio*.dist-info 2>/dev/null || true
+                        rm -rf "$site_packages"/torchaudio*.egg-info 2>/dev/null || true
+                    fi
                 done
             fi
         fi
+        
+        # After each package, verify numpy is still 1.26.0 and reinstall if needed
+        NUMPY_VERSION=$(python3 -c "import numpy; print(numpy.__version__)" 2>/dev/null || echo "not_installed")
+        if [ "$NUMPY_VERSION" != "1.26.0" ] && [ "$NUMPY_VERSION" != "not_installed" ]; then
+            echo -e "${YELLOW}       ⚠️  numpy was upgraded to $NUMPY_VERSION, reinstalling 1.26.0...${NC}"
+            pip install --force-reinstall "numpy==1.26.0" 2>/dev/null || true
+        fi
     done < "$req_file"
+    
+    # Final check: ensure numpy is 1.26.0
+    echo -e "${CYAN}   Verifying numpy version...${NC}"
+    NUMPY_VERSION=$(python3 -c "import numpy; print(numpy.__version__)" 2>/dev/null || echo "not_installed")
+    if [ "$NUMPY_VERSION" = "1.26.0" ]; then
+        echo -e "${GREEN}   ✅ numpy is correctly version 1.26.0${NC}"
+    else
+        echo -e "${YELLOW}   ⚠️  numpy version is $NUMPY_VERSION, forcing reinstall to 1.26.0...${NC}"
+        pip install --force-reinstall "numpy==1.26.0" || {
+            echo -e "${RED}   ❌ Failed to install numpy==1.26.0${NC}"
+        }
+    fi
     
     deactivate 2>/dev/null || true
 }
