@@ -204,9 +204,14 @@ install_jetson_requirements_safely() {
         fi
         
         # After each package, verify numpy is still 1.26.0 and reinstall if needed
+        # Check if numpy is missing OR has wrong version (both cases need reinstall)
         NUMPY_VERSION=$(python3 -c "import numpy; print(numpy.__version__)" 2>/dev/null || echo "not_installed")
-        if [ "$NUMPY_VERSION" != "1.26.0" ] && [ "$NUMPY_VERSION" != "not_installed" ]; then
-            echo -e "${YELLOW}       ⚠️  numpy was upgraded to $NUMPY_VERSION, reinstalling 1.26.0...${NC}"
+        if [ "$NUMPY_VERSION" != "1.26.0" ]; then
+            if [ "$NUMPY_VERSION" = "not_installed" ]; then
+                echo -e "${YELLOW}       ⚠️  numpy is missing, installing 1.26.0...${NC}"
+            else
+                echo -e "${YELLOW}       ⚠️  numpy was upgraded to $NUMPY_VERSION, reinstalling 1.26.0...${NC}"
+            fi
             pip install --force-reinstall "numpy==1.26.0" 2>/dev/null || true
         fi
     done < "$req_file"
