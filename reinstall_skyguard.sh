@@ -84,8 +84,68 @@ filter_jetson_requirements() {
     #   - "torch[cuda]>=2.0", "torch[cpu]!=2.0" (extras syntax)
     #   - " torch>=2.0", "# torch>=2.0" (with leading whitespace/comments)
     # Character class [>=<~!#] covers: >=, <=, ==, !=, ~=, and # (comment)
-    grep -v -E "^[[:space:]#]*(torch|torchvision|torchaudio)(\[[^\]]+\])?[[:space:]]*[>=<~!#]" "$req_file" > "$filtered_file" 2>/dev/null || cp "$req_file" "$filtered_file"
+    # Also match lines that are just "torch" or "torchvision" or "torchaudio" without operators
+    grep -v -E "^[[:space:]#]*(torch|torchvision|torchaudio)(\[[^\]]+\])?[[:space:]]*([>=<~!#]|$)" "$req_file" > "$filtered_file" 2>/dev/null || cp "$req_file" "$filtered_file"
     echo "$filtered_file"
+}
+
+# Install requirements while preventing torch installation
+install_jetson_requirements_safely() {
+    local req_file="$1"
+    local venv_path="$2"
+    
+    echo -e "${CYAN}   Installing requirements while preventing torch installation...${NC}"
+    
+    # Activate venv
+    source "$venv_path/bin/activate"
+    
+    # Read requirements file and install packages one by one
+    # This allows us to catch and handle torch installation attempts
+    while IFS= read -r line || [ -n "$line" ]; do
+        # Skip empty lines and comments
+        [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
+        
+        # Remove inline comments and whitespace
+        package=$(echo "$line" | sed 's/#.*$//' | xargs)
+        [[ -z "$package" ]] && continue
+        
+        # Skip if it's a torch package
+        if [[ "$package" =~ ^(torch|torchvision|torchaudio) ]]; then
+            echo -e "${CYAN}     Skipping $package (using system version)${NC}"
+            continue
+        fi
+        
+        # Install package
+        echo -e "${CYAN}     Installing $package...${NC}"
+        
+        # For ultralytics, install with --no-deps first, then install its dependencies manually (excluding torch)
+        if [[ "$package" =~ ^ultralytics ]]; then
+            echo -e "${CYAN}       Installing ultralytics without dependencies (to avoid torch)...${NC}"
+            pip install --no-deps "$package" 2>/dev/null || true
+            
+            # Install ultralytics dependencies manually (excluding torch)
+            echo -e "${CYAN}       Installing ultralytics dependencies (excluding torch)...${NC}"
+            # Common ultralytics dependencies (excluding torch/torchvision)
+            pip install pillow pyyaml requests tqdm pandas opencv-python-headless 2>/dev/null || true
+        else
+            # For other packages, install normally but remove torch immediately if it gets installed
+            pip install "$package" 2>/dev/null || {
+                echo -e "${YELLOW}       ⚠️  Failed to install $package${NC}"
+            }
+            
+            # Check if torch was installed and remove it immediately
+            if python3 -c "import torch; import sys; import os; print('venv' if 'venv' in os.path.abspath(torch.__file__))" 2>/dev/null | grep -q "venv"; then
+                echo -e "${YELLOW}       ⚠️  $package pulled in torch - removing it...${NC}"
+                pip uninstall -y torch torchvision torchaudio 2>/dev/null || true
+                # Also remove physically
+                for site_packages in "$venv_path"/lib/python*/site-packages; do
+                    [ -d "$site_packages" ] && rm -rf "$site_packages/torch"* 2>/dev/null || true
+                done
+            fi
+        fi
+    done < "$req_file"
+    
+    deactivate 2>/dev/null || true
 }
 
 # Aggressively remove torch packages from venv (both via pip and filesystem)
@@ -531,12 +591,13 @@ if command -v uv &> /dev/null; then
         if [ "$USE_SYSTEM_SITE_PACKAGES" = "true" ] && [ "$DETECTED_PLATFORM" = "jetson" ]; then
             FILTERED_REQ=$(filter_jetson_requirements "$REQ_FILE")
             echo -e "${CYAN}   Filtered out torch/torchvision/torchaudio (using system CUDA versions)${NC}"
+            echo -e "${CYAN}   Installing packages carefully to prevent torch installation as dependency${NC}"
             
             # Uninstall any existing torch packages from venv BEFORE installation
             remove_torch_from_venv "$SKYGUARD_PATH/venv"
             
-            # Install filtered requirements
-            uv pip install -r "$FILTERED_REQ"
+            # Use safe installation method that handles torch dependencies
+            install_jetson_requirements_safely "$FILTERED_REQ" "$SKYGUARD_PATH/venv"
             
             # Aggressively remove torch packages AGAIN after installation (in case dependencies pulled them in)
             echo -e "${CYAN}   Final cleanup: Ensuring no torch packages remain in venv...${NC}"
@@ -551,12 +612,13 @@ if command -v uv &> /dev/null; then
         if [ "$USE_SYSTEM_SITE_PACKAGES" = "true" ] && [ "$DETECTED_PLATFORM" = "jetson" ]; then
             FILTERED_REQ=$(filter_jetson_requirements "requirements.txt")
             echo -e "${CYAN}   Filtered out torch/torchvision/torchaudio (using system CUDA versions)${NC}"
+            echo -e "${CYAN}   Installing packages carefully to prevent torch installation as dependency${NC}"
             
             # Uninstall any existing torch packages from venv BEFORE installation
             remove_torch_from_venv "$SKYGUARD_PATH/venv"
             
-            # Install filtered requirements
-            uv pip install -r "$FILTERED_REQ"
+            # Use safe installation method that handles torch dependencies
+            install_jetson_requirements_safely "$FILTERED_REQ" "$SKYGUARD_PATH/venv"
             
             # Aggressively remove torch packages AGAIN after installation (in case dependencies pulled them in)
             echo -e "${CYAN}   Final cleanup: Ensuring no torch packages remain in venv...${NC}"
@@ -620,12 +682,13 @@ else
         if [ "$USE_SYSTEM_SITE_PACKAGES" = "true" ] && [ "$DETECTED_PLATFORM" = "jetson" ]; then
             FILTERED_REQ=$(filter_jetson_requirements "$REQ_FILE")
             echo -e "${CYAN}   Filtered out torch/torchvision/torchaudio (using system CUDA versions)${NC}"
+            echo -e "${CYAN}   Installing packages carefully to prevent torch installation as dependency${NC}"
             
             # Uninstall any existing torch packages from venv BEFORE installation
             remove_torch_from_venv "$SKYGUARD_PATH/venv"
             
-            # Install filtered requirements
-            pip install -r "$FILTERED_REQ"
+            # Use safe installation method that handles torch dependencies
+            install_jetson_requirements_safely "$FILTERED_REQ" "$SKYGUARD_PATH/venv"
             
             # Aggressively remove torch packages AGAIN after installation (in case dependencies pulled them in)
             echo -e "${CYAN}   Final cleanup: Ensuring no torch packages remain in venv...${NC}"
@@ -640,12 +703,13 @@ else
         if [ "$USE_SYSTEM_SITE_PACKAGES" = "true" ] && [ "$DETECTED_PLATFORM" = "jetson" ]; then
             FILTERED_REQ=$(filter_jetson_requirements "requirements.txt")
             echo -e "${CYAN}   Filtered out torch/torchvision/torchaudio (using system CUDA versions)${NC}"
+            echo -e "${CYAN}   Installing packages carefully to prevent torch installation as dependency${NC}"
             
             # Uninstall any existing torch packages from venv BEFORE installation
             remove_torch_from_venv "$SKYGUARD_PATH/venv"
             
-            # Install filtered requirements
-            pip install -r "$FILTERED_REQ"
+            # Use safe installation method that handles torch dependencies
+            install_jetson_requirements_safely "$FILTERED_REQ" "$SKYGUARD_PATH/venv"
             
             # Aggressively remove torch packages AGAIN after installation (in case dependencies pulled them in)
             echo -e "${CYAN}   Final cleanup: Ensuring no torch packages remain in venv...${NC}"
