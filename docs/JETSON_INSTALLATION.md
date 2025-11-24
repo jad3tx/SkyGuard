@@ -40,7 +40,17 @@ NVIDIA Jetson devices provide significant advantages over Raspberry Pi for AI wo
    pip3 install torch-2.5.0a0+872d972e41.nv24.08.17622132-cp310-cp310-linux_aarch64.whl
    
    # Install torchvision (compatible with the PyTorch version above)
-   pip3 install torchvision
+   # NOTE: NVIDIA may not provide a pre-built torchvision wheel for JetPack 6.1
+   # If pip3 install torchvision fails or causes compatibility issues, build from source:
+   #   cd ~/SkyGuard
+   #   ./scripts/build_torchvision_jetson.sh
+   # 
+   # Or try installing with --no-deps (may work but not guaranteed):
+   pip3 install --no-deps torchvision==0.20.0 || {
+       echo "⚠️  Standard torchvision installation failed. Building from source..."
+       cd ~/SkyGuard
+       ./scripts/build_torchvision_jetson.sh
+   }
 
    # Note: numpy 1.26.0 will be installed in the venv (see requirements-jetson.txt)
    # If you encounter numpy versioning issues, ensure numpy < 2.0:

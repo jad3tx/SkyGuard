@@ -383,6 +383,11 @@ check_system_pytorch() {
     python3 -c "import torch; print('CUDA' if torch.cuda.is_available() else 'CPU')" 2>/dev/null || echo "NOT_FOUND"
 }
 
+# Check if torchvision is installed system-wide
+check_system_torchvision() {
+    python3 -c "import torchvision; print('FOUND')" 2>/dev/null || echo "NOT_FOUND"
+}
+
 # Install PyTorch system-wide for Jetson
 install_jetson_pytorch() {
     echo -e "${BLUE}📦 Installing PyTorch for Jetson (system-wide)...${NC}"
@@ -402,26 +407,93 @@ install_jetson_pytorch() {
     echo -e "${CYAN}   Downloading PyTorch wheel from NVIDIA...${NC}"
     echo -e "${CYAN}   URL: $TORCH_URL${NC}"
     
-    # Download the wheel
+    # Download the wheel to a writable location
+    DOWNLOAD_DIR="/tmp"
+    if [ ! -w "$DOWNLOAD_DIR" ]; then
+        DOWNLOAD_DIR="$HOME"
+    fi
+    
     if wget -q --spider "$TORCH_URL" 2>/dev/null; then
-        wget "$TORCH_URL" -O "/tmp/${TORCH_WHEEL}" || {
+        wget "$TORCH_URL" -O "${DOWNLOAD_DIR}/${TORCH_WHEEL}" || {
             echo -e "${RED}   ❌ Failed to download PyTorch wheel${NC}"
             return 1
         }
         
         echo -e "${CYAN}   Installing PyTorch wheel...${NC}"
-        pip3 install "/tmp/${TORCH_WHEEL}" || {
+        pip3 install "${DOWNLOAD_DIR}/${TORCH_WHEEL}" || {
             echo -e "${RED}   ❌ Failed to install PyTorch wheel${NC}"
-            rm -f "/tmp/${TORCH_WHEEL}"
+            rm -f "${DOWNLOAD_DIR}/${TORCH_WHEEL}"
             return 1
         }
         
-        echo -e "${CYAN}   Installing torchvision...${NC}"
-        pip3 install torchvision || {
-            echo -e "${YELLOW}   ⚠️  Failed to install torchvision (may need to install manually)${NC}"
-        }
+        echo -e "${CYAN}   Installing NVIDIA torchvision wheel for JetPack 6.1...${NC}"
+        # First, uninstall any existing torchvision that might be incompatible
+        pip3 uninstall -y torchvision 2>/dev/null || true
         
-        rm -f "/tmp/${TORCH_WHEEL}"
+        # Try to download NVIDIA's torchvision wheel for JetPack 6.1
+        TORCHVISION_WHEEL="torchvision-0.20.0+nv24.08.17622132-${PYTHON_TAG}-${PYTHON_TAG}-linux_aarch64.whl"
+        TORCHVISION_URL="https://developer.download.nvidia.com/compute/redist/jp/v61/pytorch/${TORCHVISION_WHEEL}"
+        
+        echo -e "${CYAN}   Trying NVIDIA torchvision wheel: $TORCHVISION_URL${NC}"
+        
+        if wget -q --spider "$TORCHVISION_URL" 2>/dev/null; then
+            wget "$TORCHVISION_URL" -O "${DOWNLOAD_DIR}/${TORCHVISION_WHEEL}" || {
+                echo -e "${YELLOW}   ⚠️  Failed to download NVIDIA torchvision wheel${NC}"
+                echo -e "${CYAN}   Trying PyPI torchvision 0.20.0 with --no-deps...${NC}"
+                pip3 install --no-deps torchvision==0.20.0 || {
+                    echo -e "${RED}   ❌ Failed to install torchvision${NC}"
+                    echo -e "${YELLOW}   You may need to install torchvision manually${NC}"
+                    return 1
+                }
+            }
+            
+            if [ -f "${DOWNLOAD_DIR}/${TORCHVISION_WHEEL}" ]; then
+                echo -e "${CYAN}   Installing NVIDIA torchvision wheel...${NC}"
+                pip3 install "${DOWNLOAD_DIR}/${TORCHVISION_WHEEL}" || {
+                    echo -e "${YELLOW}   ⚠️  Failed to install NVIDIA torchvision wheel${NC}"
+                    echo -e "${CYAN}   Trying PyPI torchvision 0.20.0 with --no-deps...${NC}"
+                    pip3 install --no-deps torchvision==0.20.0 || {
+                        echo -e "${RED}   ❌ Failed to install torchvision${NC}"
+                        rm -f "${DOWNLOAD_DIR}/${TORCHVISION_WHEEL}"
+                        return 1
+                    }
+                }
+                rm -f "${DOWNLOAD_DIR}/${TORCHVISION_WHEEL}"
+            fi
+        else
+            echo -e "${YELLOW}   ⚠️  NVIDIA torchvision wheel not available, trying PyPI version...${NC}"
+            echo -e "${CYAN}   Installing torchvision 0.20.0 with --no-deps...${NC}"
+            pip3 install --no-deps torchvision==0.20.0 || {
+                echo -e "${RED}   ❌ Failed to install torchvision${NC}"
+                echo -e "${YELLOW}   You may need to install torchvision manually${NC}"
+                return 1
+            }
+        fi
+        
+        # Verify torchvision is installed AND torch wasn't replaced
+        if python3 -c "import torchvision" 2>/dev/null; then
+            TV_VERSION=$(python3 -c "import torchvision; print(torchvision.__version__)" 2>/dev/null || echo "unknown")
+            TORCH_VERSION=$(python3 -c "import torch; print(torch.__version__)" 2>/dev/null || echo "unknown")
+            echo -e "${GREEN}   ✅ torchvision installed: $TV_VERSION${NC}"
+            
+            # Check if torch is still the NVIDIA version
+            if echo "$TORCH_VERSION" | grep -q "2.5.0a0.*nv24"; then
+                echo -e "${GREEN}   ✅ torch is still NVIDIA CUDA version: $TORCH_VERSION${NC}"
+            else
+                echo -e "${RED}   ❌ WARNING: torch was replaced with: $TORCH_VERSION${NC}"
+                echo -e "${YELLOW}   Reinstalling NVIDIA torch...${NC}"
+                pip3 install "${DOWNLOAD_DIR}/${TORCH_WHEEL}" --force-reinstall || {
+                    echo -e "${RED}   ❌ Failed to reinstall NVIDIA torch${NC}"
+                    rm -f "${DOWNLOAD_DIR}/${TORCH_WHEEL}"
+                    return 1
+                }
+                echo -e "${GREEN}   ✅ NVIDIA torch reinstalled${NC}"
+            fi
+        else
+            echo -e "${YELLOW}   ⚠️  torchvision installation verification failed${NC}"
+        fi
+        
+        rm -f "${DOWNLOAD_DIR}/${TORCH_WHEEL}"
         
         # Verify installation
         PYTORCH_CHECK=$(check_system_pytorch)
@@ -681,11 +753,26 @@ cd "$SKYGUARD_PATH"
 if [ "$DETECTED_PLATFORM" = "jetson" ]; then
     echo -e "${CYAN}   Checking for system-installed PyTorch...${NC}"
     PYTORCH_STATUS=$(check_system_pytorch)
+    TORCHVISION_STATUS=$(check_system_torchvision)
+    
     if [ "$PYTORCH_STATUS" = "CUDA" ]; then
         echo -e "${GREEN}   ✅ Found CUDA-enabled PyTorch in system${NC}"
+        if [ "$TORCHVISION_STATUS" = "FOUND" ]; then
+            echo -e "${GREEN}   ✅ Found torchvision in system${NC}"
+        else
+            echo -e "${YELLOW}   ⚠️  torchvision not found - will install it${NC}"
+            pip3 install torchvision || {
+                echo -e "${YELLOW}   ⚠️  Failed to install torchvision automatically${NC}"
+                echo -e "${CYAN}   Please install manually: pip3 install torchvision${NC}"
+            }
+        fi
         USE_SYSTEM_SITE_PACKAGES=true
     elif [ "$PYTORCH_STATUS" = "CPU" ]; then
         echo -e "${YELLOW}   ⚠️  Found PyTorch but CUDA not available - will use system packages anyway${NC}"
+        if [ "$TORCHVISION_STATUS" != "FOUND" ]; then
+            echo -e "${YELLOW}   ⚠️  torchvision not found - installing...${NC}"
+            pip3 install torchvision || true
+        fi
         USE_SYSTEM_SITE_PACKAGES=true
     else
         echo -e "${YELLOW}   ⚠️  No system PyTorch found${NC}"
