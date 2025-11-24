@@ -137,38 +137,54 @@ install_jetson_requirements_safely() {
         # For ultralytics, install with --no-deps first, then install its dependencies manually (excluding torch)
         if [[ "$package" =~ ^ultralytics ]]; then
             echo -e "${CYAN}       Installing ultralytics without dependencies (to avoid torch)...${NC}"
-            pip install --no-deps "$package" 2>/dev/null || {
-                echo -e "${YELLOW}       ⚠️  Failed to install ultralytics without deps, trying normal install...${NC}"
+            
+            # Try installing with --no-deps
+            if pip install --no-deps "$package" 2>/dev/null; then
+                echo -e "${GREEN}       ✅ ultralytics installed without dependencies${NC}"
+            else
+                echo -e "${YELLOW}       ⚠️  Failed to install ultralytics without deps${NC}"
+                echo -e "${CYAN}       Installing ultralytics normally, will remove torch if installed...${NC}"
                 pip install "$package" 2>/dev/null || true
-            }
-            
-            # Check if torch was installed and remove it
-            TORCH_INSTALLED=false
-            for site_packages in "$venv_path"/lib/python*/site-packages; do
-                if [ -d "$site_packages" ] && ([ -d "$site_packages/torch" ] || [ -d "$site_packages/torchvision" ] || [ -d "$site_packages/torchaudio" ]); then
-                    TORCH_INSTALLED=true
-                    break
-                fi
-            done
-            
-            if [ "$TORCH_INSTALLED" = true ]; then
-                echo -e "${YELLOW}       ⚠️  ultralytics pulled in torch - removing it...${NC}"
-                # Detect if running as root
-                local USE_SUDO=""
-                if [ "$(id -u)" -eq 0 ]; then
-                    USE_SUDO="sudo"
-                fi
-                pip uninstall -y torch torchvision torchaudio 2>/dev/null || true
-                if [ -n "$USE_SUDO" ]; then
-                    $USE_SUDO pip uninstall -y torch torchvision torchaudio 2>/dev/null || true
-                fi
+                
+                # IMMEDIATELY check and remove torch
+                sleep 1  # Give pip a moment to finish
+                TORCH_INSTALLED=false
                 for site_packages in "$venv_path"/lib/python*/site-packages; do
-                    if [ -d "$site_packages" ]; then
-                        $USE_SUDO rm -rf "$site_packages/torch"* 2>/dev/null || true
-                        $USE_SUDO rm -rf "$site_packages"/torch*.dist-info 2>/dev/null || true
-                        $USE_SUDO rm -rf "$site_packages"/torch*.egg-info 2>/dev/null || true
+                    if [ -d "$site_packages" ] && ([ -d "$site_packages/torch" ] || [ -d "$site_packages/torchvision" ] || [ -d "$site_packages/torchaudio" ]); then
+                        TORCH_INSTALLED=true
+                        break
                     fi
                 done
+                
+                if [ "$TORCH_INSTALLED" = true ]; then
+                    echo -e "${RED}       ❌ ultralytics pulled in torch - removing immediately...${NC}"
+                    # Detect if running as root
+                    local USE_SUDO=""
+                    if [ "$(id -u)" -eq 0 ]; then
+                        USE_SUDO="sudo"
+                    fi
+                    pip uninstall -y torch torchvision torchaudio 2>/dev/null || true
+                    if [ -n "$USE_SUDO" ]; then
+                        $USE_SUDO pip uninstall -y torch torchvision torchaudio 2>/dev/null || true
+                    fi
+                    # Aggressive filesystem removal
+                    for site_packages in "$venv_path"/lib/python*/site-packages; do
+                        if [ -d "$site_packages" ]; then
+                            $USE_SUDO rm -rf "$site_packages/torch" 2>/dev/null || true
+                            $USE_SUDO rm -rf "$site_packages/torchvision" 2>/dev/null || true
+                            $USE_SUDO rm -rf "$site_packages/torchaudio" 2>/dev/null || true
+                            $USE_SUDO rm -rf "$site_packages"/torch*.dist-info 2>/dev/null || true
+                            $USE_SUDO rm -rf "$site_packages"/torch*.egg-info 2>/dev/null || true
+                            $USE_SUDO rm -rf "$site_packages"/torchvision*.dist-info 2>/dev/null || true
+                            $USE_SUDO rm -rf "$site_packages"/torchvision*.egg-info 2>/dev/null || true
+                            $USE_SUDO rm -rf "$site_packages"/torchaudio*.dist-info 2>/dev/null || true
+                            $USE_SUDO rm -rf "$site_packages"/torchaudio*.egg-info 2>/dev/null || true
+                            # Remove torch.libs directory
+                            $USE_SUDO rm -rf "$site_packages"/torch.libs 2>/dev/null || true
+                        fi
+                    done
+                    echo -e "${GREEN}       ✅ torch removed${NC}"
+                fi
             fi
             
             # Install ultralytics dependencies manually (excluding torch)
@@ -242,6 +258,48 @@ install_jetson_requirements_safely() {
         pip install --force-reinstall "numpy==1.26.0" || {
             echo -e "${RED}   ❌ Failed to install numpy==1.26.0${NC}"
         }
+    fi
+    
+    # CRITICAL: Final torch check - verify torch is NOT in venv
+    echo -e "${CYAN}   Final verification: Checking for torch in venv...${NC}"
+    TORCH_IN_VENV=false
+    for site_packages in "$venv_path"/lib/python*/site-packages; do
+        if [ -d "$site_packages" ] && ([ -d "$site_packages/torch" ] || [ -d "$site_packages/torchvision" ] || [ -d "$site_packages/torchaudio" ]); then
+            TORCH_IN_VENV=true
+            break
+        fi
+    done
+    
+    if [ "$TORCH_IN_VENV" = true ]; then
+        echo -e "${RED}   ❌ CRITICAL: torch is still in venv after installation!${NC}"
+        echo -e "${YELLOW}   Performing emergency removal...${NC}"
+        # Detect if running as root
+        local USE_SUDO=""
+        if [ "$(id -u)" -eq 0 ]; then
+            USE_SUDO="sudo"
+        fi
+        pip uninstall -y torch torchvision torchaudio 2>/dev/null || true
+        if [ -n "$USE_SUDO" ]; then
+            $USE_SUDO pip uninstall -y torch torchvision torchaudio 2>/dev/null || true
+        fi
+        # Aggressive filesystem removal
+        for site_packages in "$venv_path"/lib/python*/site-packages; do
+            if [ -d "$site_packages" ]; then
+                $USE_SUDO rm -rf "$site_packages/torch" 2>/dev/null || true
+                $USE_SUDO rm -rf "$site_packages/torchvision" 2>/dev/null || true
+                $USE_SUDO rm -rf "$site_packages/torchaudio" 2>/dev/null || true
+                $USE_SUDO rm -rf "$site_packages"/torch*.dist-info 2>/dev/null || true
+                $USE_SUDO rm -rf "$site_packages"/torch*.egg-info 2>/dev/null || true
+                $USE_SUDO rm -rf "$site_packages"/torchvision*.dist-info 2>/dev/null || true
+                $USE_SUDO rm -rf "$site_packages"/torchvision*.egg-info 2>/dev/null || true
+                $USE_SUDO rm -rf "$site_packages"/torchaudio*.dist-info 2>/dev/null || true
+                $USE_SUDO rm -rf "$site_packages"/torchaudio*.egg-info 2>/dev/null || true
+                $USE_SUDO rm -rf "$site_packages"/torch.libs 2>/dev/null || true
+            fi
+        done
+        echo -e "${GREEN}   ✅ Emergency torch removal completed${NC}"
+    else
+        echo -e "${GREEN}   ✅ Confirmed: No torch packages in venv${NC}"
     fi
     
     deactivate 2>/dev/null || true

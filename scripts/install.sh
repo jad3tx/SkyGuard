@@ -145,6 +145,12 @@ remove_torch_from_venv() {
     
     echo -e "${CYAN}   Aggressively removing torch packages from venv...${NC}"
     
+    # Fix ownership first (in case packages were installed as root)
+    if [ "$(id -u)" -eq 0 ] && [ "$PLATFORM_USER" != "root" ] && id "$PLATFORM_USER" &>/dev/null; then
+        echo -e "${CYAN}   Fixing venv ownership to $PLATFORM_USER before removal...${NC}"
+        chown -R "$PLATFORM_USER:$PLATFORM_USER" "$venv_path" 2>/dev/null || true
+    fi
+    
     # First, try pip uninstall if venv is activated
     if [ -f "$venv_path/bin/activate" ]; then
         if [ "$(id -u)" -eq 0 ] && [ "$PLATFORM_USER" != "root" ] && id "$PLATFORM_USER" &>/dev/null; then
@@ -262,6 +268,14 @@ if [ ! -d "venv" ]; then
         python3 -m venv venv
     fi
     echo -e "${GREEN}✅ Virtual environment created${NC}"
+    
+    # If running as root, ensure venv is owned by the platform user
+    if [ "$(id -u)" -eq 0 ] && [ "$PLATFORM_USER" != "root" ]; then
+        if id "$PLATFORM_USER" &>/dev/null; then
+            echo -e "${CYAN}   Setting venv ownership to $PLATFORM_USER...${NC}"
+            chown -R "$PLATFORM_USER:$PLATFORM_USER" venv 2>/dev/null || true
+        fi
+    fi
 else
     echo -e "${YELLOW}⚠️  Virtual environment already exists${NC}"
     if [ "$USE_SYSTEM_SITE_PACKAGES" = "true" ]; then
@@ -272,19 +286,27 @@ else
             rm -rf venv
             python3 -m venv --system-site-packages venv
             echo -e "${GREEN}✅ Virtual environment recreated with system site packages${NC}"
+            
+            # Set ownership after recreation
+            if [ "$(id -u)" -eq 0 ] && [ "$PLATFORM_USER" != "root" ]; then
+                if id "$PLATFORM_USER" &>/dev/null; then
+                    echo -e "${CYAN}   Setting venv ownership to $PLATFORM_USER...${NC}"
+                    chown -R "$PLATFORM_USER:$PLATFORM_USER" venv 2>/dev/null || true
+                fi
+            fi
+        fi
+    fi
+    
+    # Fix ownership of existing venv if running as root
+    if [ "$(id -u)" -eq 0 ] && [ "$PLATFORM_USER" != "root" ]; then
+        if id "$PLATFORM_USER" &>/dev/null; then
+            echo -e "${CYAN}   Fixing venv ownership to $PLATFORM_USER...${NC}"
+            chown -R "$PLATFORM_USER:$PLATFORM_USER" venv 2>/dev/null || true
         fi
     fi
 fi
 
 echo -e "${BLUE}📦 Step 4: Activating virtual environment and installing Python packages...${NC}"
-
-# If running as root, ensure venv is owned by the platform user
-if [ "$(id -u)" -eq 0 ] && [ "$PLATFORM_USER" != "root" ]; then
-    if id "$PLATFORM_USER" &>/dev/null; then
-        echo -e "${CYAN}   Changing venv ownership to $PLATFORM_USER...${NC}"
-        chown -R "$PLATFORM_USER:$PLATFORM_USER" venv 2>/dev/null || true
-    fi
-fi
 
 # Activate venv
 source venv/bin/activate
@@ -292,6 +314,8 @@ source venv/bin/activate
 # Upgrade pip first (as the platform user if running as root)
 if [ "$(id -u)" -eq 0 ] && [ "$PLATFORM_USER" != "root" ] && id "$PLATFORM_USER" &>/dev/null; then
     runuser -l "$PLATFORM_USER" -c "cd '$PROJECT_ROOT' && source venv/bin/activate && pip install --upgrade pip"
+    # Fix ownership after pip upgrade (packages may have been installed as root)
+    chown -R "$PLATFORM_USER:$PLATFORM_USER" venv 2>/dev/null || true
 else
     pip install --upgrade pip
 fi
@@ -316,6 +340,8 @@ if [ -f "$REQUIREMENTS_FILE" ]; then
         # Install filtered requirements (as the platform user if running as root)
         if [ "$(id -u)" -eq 0 ] && [ "$PLATFORM_USER" != "root" ] && id "$PLATFORM_USER" &>/dev/null; then
             runuser -l "$PLATFORM_USER" -c "cd '$PROJECT_ROOT' && source venv/bin/activate && pip install -r '$FILTERED_REQ'"
+            # Fix ownership after installation (packages may have been installed as root)
+            chown -R "$PLATFORM_USER:$PLATFORM_USER" venv 2>/dev/null || true
         else
             pip install -r "$FILTERED_REQ"
         fi
@@ -328,6 +354,8 @@ if [ -f "$REQUIREMENTS_FILE" ]; then
     else
         if [ "$(id -u)" -eq 0 ] && [ "$PLATFORM_USER" != "root" ] && id "$PLATFORM_USER" &>/dev/null; then
             runuser -l "$PLATFORM_USER" -c "cd '$PROJECT_ROOT' && source venv/bin/activate && pip install -r '$REQUIREMENTS_FILE'"
+            # Fix ownership after installation
+            chown -R "$PLATFORM_USER:$PLATFORM_USER" venv 2>/dev/null || true
         else
             pip install -r "$REQUIREMENTS_FILE"
         fi
@@ -336,6 +364,8 @@ else
     echo -e "${YELLOW}⚠️  $REQUIREMENTS_FILE not found, using requirements.txt...${NC}"
     if [ "$(id -u)" -eq 0 ] && [ "$PLATFORM_USER" != "root" ] && id "$PLATFORM_USER" &>/dev/null; then
         runuser -l "$PLATFORM_USER" -c "cd '$PROJECT_ROOT' && source venv/bin/activate && pip install -r requirements.txt"
+        # Fix ownership after installation
+        chown -R "$PLATFORM_USER:$PLATFORM_USER" venv 2>/dev/null || true
     else
         pip install -r requirements.txt
     fi

@@ -43,6 +43,49 @@ if [ ! -d "$VENV_DIR" ]; then
     exit 1
 fi
 
+# Detect platform username
+detect_platform_username() {
+    local username=""
+    
+    # Check for Jetson
+    if [ -f "/etc/nv_tegra_release" ]; then
+        username="jad3"
+    elif [ -f "/proc/device-tree/model" ]; then
+        model=$(cat /proc/device-tree/model 2>/dev/null || echo "")
+        if echo "$model" | grep -qi "jetson\|tegra"; then
+            username="jad3"
+        elif echo "$model" | grep -qi "raspberry pi"; then
+            username="pi"
+        fi
+    elif [ -f "/etc/os-release" ]; then
+        if grep -qi "raspbian\|raspberry" /etc/os-release 2>/dev/null; then
+            username="pi"
+        fi
+    fi
+    
+    # Fallback: use current user if platform not detected
+    if [ -z "$username" ]; then
+        username=$(whoami)
+    fi
+    
+    echo "$username"
+}
+
+PLATFORM_USER=$(detect_platform_username)
+
+# Fix ownership if running as root or if files are owned by root
+if [ "$(id -u)" -eq 0 ] && [ "$PLATFORM_USER" != "root" ] && id "$PLATFORM_USER" &>/dev/null; then
+    echo -e "${CYAN}Fixing venv ownership to $PLATFORM_USER...${NC}"
+    chown -R "$PLATFORM_USER:$PLATFORM_USER" "$VENV_DIR" 2>/dev/null || true
+elif [ "$(stat -c '%U' "$VENV_DIR" 2>/dev/null)" = "root" ] && [ "$(whoami)" != "root" ]; then
+    echo -e "${YELLOW}⚠️  venv is owned by root, fixing ownership to $PLATFORM_USER...${NC}"
+    echo -e "${CYAN}   This may require sudo privileges...${NC}"
+    sudo chown -R "$PLATFORM_USER:$PLATFORM_USER" "$VENV_DIR" 2>/dev/null || {
+        echo -e "${RED}❌ Failed to fix ownership. Please run: sudo chown -R $PLATFORM_USER:$PLATFORM_USER $VENV_DIR${NC}"
+        exit 1
+    }
+fi
+
 # Check if venv has system site packages enabled
 if [ -f "$VENV_DIR/pyvenv.cfg" ]; then
     if grep -q "include-system-site-packages = true" "$VENV_DIR/pyvenv.cfg" 2>/dev/null; then
