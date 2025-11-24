@@ -190,12 +190,46 @@ install_jetson_requirements_safely() {
             # Install ultralytics dependencies manually (excluding torch)
             echo -e "${CYAN}       Installing ultralytics dependencies (excluding torch)...${NC}"
             # Common ultralytics dependencies (excluding torch/torchvision)
-            pip install pillow pyyaml requests tqdm pandas opencv-python-headless 2>/dev/null || true
+            # Use --no-deps for each to prevent transitive torch installation
+            for dep in pillow pyyaml requests tqdm pandas opencv-python-headless; do
+                pip install --no-deps "$dep" 2>/dev/null || pip install "$dep" 2>/dev/null || true
+                # Immediately check for torch after each dependency
+                sleep 0.5
+                if [ -d "$venv_path/lib/python"*/site-packages/torch ] 2>/dev/null; then
+                    echo -e "${RED}       ❌ $dep pulled in torch - removing...${NC}"
+                    local USE_SUDO=""
+                    if [ "$(id -u)" -eq 0 ]; then
+                        USE_SUDO="sudo"
+                    fi
+                    pip uninstall -y torch torchvision torchaudio 2>/dev/null || true
+                    if [ -n "$USE_SUDO" ]; then
+                        $USE_SUDO pip uninstall -y torch torchvision torchaudio 2>/dev/null || true
+                    fi
+                    for site_packages in "$venv_path"/lib/python*/site-packages; do
+                        if [ -d "$site_packages" ]; then
+                            $USE_SUDO rm -rf "$site_packages/torch"* 2>/dev/null || true
+                            $USE_SUDO rm -rf "$site_packages"/torch*.dist-info 2>/dev/null || true
+                            $USE_SUDO rm -rf "$site_packages"/torch*.egg-info 2>/dev/null || true
+                        fi
+                    done
+                fi
+            done
         else
-            # For other packages, install normally but remove torch immediately if it gets installed
-            pip install "$package" 2>/dev/null || {
-                echo -e "${YELLOW}       ⚠️  Failed to install $package${NC}"
+            # For other packages, install with constraint to prevent torch installation
+            # Create a temporary constraint file
+            CONSTRAINT_FILE=$(mktemp)
+            echo "--constraint <(echo 'torch==999.0.0')" > "$CONSTRAINT_FILE" 2>/dev/null || true
+            
+            # Try installing with explicit exclusion of torch
+            pip install "$package" --no-deps 2>/dev/null || {
+                # If --no-deps fails, try normal install but check immediately
+                pip install "$package" 2>/dev/null || {
+                    echo -e "${YELLOW}       ⚠️  Failed to install $package${NC}"
+                }
             }
+            
+            # Wait a moment for pip to finish
+            sleep 0.5
             
             # Check if torch was installed and remove it immediately
             # Check by looking for torch in site-packages directly (more reliable)
@@ -206,6 +240,8 @@ install_jetson_requirements_safely() {
                     break
                 fi
             done
+            
+            rm -f "$CONSTRAINT_FILE"
             
             if [ "$TORCH_INSTALLED" = true ]; then
                 echo -e "${YELLOW}       ⚠️  $package pulled in torch - removing it...${NC}"
@@ -262,6 +298,8 @@ install_jetson_requirements_safely() {
     
     # CRITICAL: Final torch check - verify torch is NOT in venv
     echo -e "${CYAN}   Final verification: Checking for torch in venv...${NC}"
+    
+    # Check 1: Filesystem check
     TORCH_IN_VENV=false
     for site_packages in "$venv_path"/lib/python*/site-packages; do
         if [ -d "$site_packages" ] && ([ -d "$site_packages/torch" ] || [ -d "$site_packages/torchvision" ] || [ -d "$site_packages/torchaudio" ]); then
@@ -270,7 +308,19 @@ install_jetson_requirements_safely() {
         fi
     done
     
-    if [ "$TORCH_IN_VENV" = true ]; then
+    # Check 2: Try to import torch from venv (more reliable - catches even if files exist but shouldn't be used)
+    TORCH_IMPORTABLE=false
+    TORCH_VERSION_VENV=$(python3 -c "import sys; sys.path.insert(0, '$venv_path/lib/python3.' + str(sys.version_info[1]) + '/site-packages'); import torch; print(torch.__version__)" 2>/dev/null || echo "")
+    if [ -n "$TORCH_VERSION_VENV" ]; then
+        # Check if this is coming from venv (not system)
+        TORCH_PATH=$(python3 -c "import sys; sys.path.insert(0, '$venv_path/lib/python3.' + str(sys.version_info[1]) + '/site-packages'); import torch; print(torch.__file__)" 2>/dev/null || echo "")
+        if echo "$TORCH_PATH" | grep -q "$venv_path"; then
+            TORCH_IMPORTABLE=true
+            echo -e "${RED}   ❌ CRITICAL: torch $TORCH_VERSION_VENV is importable from venv!${NC}"
+        fi
+    fi
+    
+    if [ "$TORCH_IN_VENV" = true ] || [ "$TORCH_IMPORTABLE" = true ]; then
         echo -e "${RED}   ❌ CRITICAL: torch is still in venv after installation!${NC}"
         echo -e "${YELLOW}   Performing emergency removal...${NC}"
         # Detect if running as root
@@ -295,9 +345,26 @@ install_jetson_requirements_safely() {
                 $USE_SUDO rm -rf "$site_packages"/torchaudio*.dist-info 2>/dev/null || true
                 $USE_SUDO rm -rf "$site_packages"/torchaudio*.egg-info 2>/dev/null || true
                 $USE_SUDO rm -rf "$site_packages"/torch.libs 2>/dev/null || true
+                # Remove any torch-related .so files
+                $USE_SUDO find "$site_packages" -name "*torch*.so" -delete 2>/dev/null || true
             fi
         done
         echo -e "${GREEN}   ✅ Emergency torch removal completed${NC}"
+        
+        # Verify removal
+        sleep 1
+        TORCH_STILL_THERE=false
+        for site_packages in "$venv_path"/lib/python*/site-packages; do
+            if [ -d "$site_packages" ] && ([ -d "$site_packages/torch" ] || [ -d "$site_packages/torchvision" ] || [ -d "$site_packages/torchaudio" ]); then
+                TORCH_STILL_THERE=true
+                break
+            fi
+        done
+        if [ "$TORCH_STILL_THERE" = true ]; then
+            echo -e "${RED}   ⚠️  WARNING: torch still detected after removal - manual cleanup may be needed${NC}"
+        else
+            echo -e "${GREEN}   ✅ Verified: torch removed from venv${NC}"
+        fi
     else
         echo -e "${GREEN}   ✅ Confirmed: No torch packages in venv${NC}"
     fi
@@ -584,7 +651,16 @@ done
 
 # Determine SkyGuard path
 if [ -z "$SKYGUARD_PATH" ]; then
-    SKYGUARD_PATH="/home/$DETECTED_USERNAME/SkyGuard"
+    # Try to auto-detect: if script is in parent directory, look for SkyGuard sibling
+    SCRIPT_DIR=$(dirname "$(readlink -f "$0" 2>/dev/null || realpath "$0" 2>/dev/null || echo "$0")")
+    if [ -d "$SCRIPT_DIR/SkyGuard" ]; then
+        SKYGUARD_PATH="$SCRIPT_DIR/SkyGuard"
+        echo -e "${CYAN}Auto-detected SkyGuard directory: $SKYGUARD_PATH${NC}"
+    else
+        # Fall back to default path
+        SKYGUARD_PATH="/home/$DETECTED_USERNAME/SkyGuard"
+        echo -e "${CYAN}Using default SkyGuard path: $SKYGUARD_PATH${NC}"
+    fi
 fi
 
 SKYGUARD_PATH=$(realpath "$SKYGUARD_PATH" 2>/dev/null || echo "$SKYGUARD_PATH")
