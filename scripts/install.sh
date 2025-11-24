@@ -54,6 +54,56 @@ detect_platform() {
     echo "$requirements_file"
 }
 
+# Detect platform username
+detect_platform_username() {
+    local username=""
+    
+    # Check for Jetson
+    if [ -f "/etc/nv_tegra_release" ]; then
+        username="jad3"
+    elif [ -f "/proc/device-tree/model" ]; then
+        model=$(cat /proc/device-tree/model 2>/dev/null || echo "")
+        if echo "$model" | grep -qi "jetson\|tegra"; then
+            username="jad3"
+        elif echo "$model" | grep -qi "raspberry pi"; then
+            username="pi"
+        fi
+    elif [ -f "/etc/os-release" ]; then
+        if grep -qi "raspbian\|raspberry" /etc/os-release 2>/dev/null; then
+            username="pi"
+        fi
+    fi
+    
+    # Fallback: use current user if platform not detected
+    if [ -z "$username" ]; then
+        username=$(whoami)
+    fi
+    
+    echo "$username"
+}
+
+# Run pip command as appropriate user
+run_pip_as_user() {
+    local current_user=$(whoami)
+    local target_user="$PLATFORM_USER"
+    
+    # If already running as target user, just run the command
+    if [ "$current_user" = "$target_user" ]; then
+        "$@"
+    # If running as root, switch to target user
+    elif [ "$current_user" = "root" ]; then
+        if id "$target_user" &>/dev/null; then
+            runuser -l "$target_user" -c "cd '$PROJECT_ROOT' && $*"
+        else
+            echo -e "${YELLOW}   ⚠️  User $target_user not found, running as current user${NC}"
+            "$@"
+        fi
+    # Otherwise, run as current user
+    else
+        "$@"
+    fi
+}
+
 # Check for system PyTorch on Jetson
 check_system_pytorch() {
     python3 -c "
@@ -97,9 +147,13 @@ remove_torch_from_venv() {
     
     # First, try pip uninstall if venv is activated
     if [ -f "$venv_path/bin/activate" ]; then
-        source "$venv_path/bin/activate"
-        pip uninstall -y torch torchvision torchaudio 2>/dev/null || true
-        deactivate 2>/dev/null || true
+        if [ "$(id -u)" -eq 0 ] && [ "$PLATFORM_USER" != "root" ] && id "$PLATFORM_USER" &>/dev/null; then
+            runuser -l "$PLATFORM_USER" -c "cd '$PROJECT_ROOT' && source venv/bin/activate && pip uninstall -y torch torchvision torchaudio" 2>/dev/null || true
+        else
+            source "$venv_path/bin/activate"
+            pip uninstall -y torch torchvision torchaudio 2>/dev/null || true
+            deactivate 2>/dev/null || true
+        fi
     fi
     
     # Then physically remove from site-packages directories
@@ -165,6 +219,8 @@ fi
 
 # Detect platform and select appropriate requirements file (before venv creation)
 REQUIREMENTS_FILE=$(detect_platform)
+PLATFORM_USER=$(detect_platform_username)
+echo -e "${CYAN}   Platform user: $PLATFORM_USER${NC}"
 
 # Check for system PyTorch on Jetson (before venv creation)
 USE_SYSTEM_SITE_PACKAGES=false
@@ -221,10 +277,24 @@ else
 fi
 
 echo -e "${BLUE}📦 Step 4: Activating virtual environment and installing Python packages...${NC}"
+
+# If running as root, ensure venv is owned by the platform user
+if [ "$(id -u)" -eq 0 ] && [ "$PLATFORM_USER" != "root" ]; then
+    if id "$PLATFORM_USER" &>/dev/null; then
+        echo -e "${CYAN}   Changing venv ownership to $PLATFORM_USER...${NC}"
+        chown -R "$PLATFORM_USER:$PLATFORM_USER" venv 2>/dev/null || true
+    fi
+fi
+
+# Activate venv
 source venv/bin/activate
 
-# Upgrade pip first
-pip install --upgrade pip
+# Upgrade pip first (as the platform user if running as root)
+if [ "$(id -u)" -eq 0 ] && [ "$PLATFORM_USER" != "root" ] && id "$PLATFORM_USER" &>/dev/null; then
+    runuser -l "$PLATFORM_USER" -c "cd '$PROJECT_ROOT' && source venv/bin/activate && pip install --upgrade pip"
+else
+    pip install --upgrade pip
+fi
 
 # Install dependencies
 if [ -f "$REQUIREMENTS_FILE" ]; then
@@ -243,8 +313,12 @@ if [ -f "$REQUIREMENTS_FILE" ]; then
         # Remove any existing torch packages from venv BEFORE installation
         remove_torch_from_venv "$PROJECT_ROOT/venv"
         
-        # Install filtered requirements
-        pip install -r "$FILTERED_REQ"
+        # Install filtered requirements (as the platform user if running as root)
+        if [ "$(id -u)" -eq 0 ] && [ "$PLATFORM_USER" != "root" ] && id "$PLATFORM_USER" &>/dev/null; then
+            runuser -l "$PLATFORM_USER" -c "cd '$PROJECT_ROOT' && source venv/bin/activate && pip install -r '$FILTERED_REQ'"
+        else
+            pip install -r "$FILTERED_REQ"
+        fi
         
         # Aggressively remove torch packages AGAIN after installation
         echo -e "${CYAN}   Final cleanup: Ensuring no torch packages remain in venv...${NC}"
@@ -252,11 +326,19 @@ if [ -f "$REQUIREMENTS_FILE" ]; then
         
         rm -f "$FILTERED_REQ"
     else
-        pip install -r "$REQUIREMENTS_FILE"
+        if [ "$(id -u)" -eq 0 ] && [ "$PLATFORM_USER" != "root" ] && id "$PLATFORM_USER" &>/dev/null; then
+            runuser -l "$PLATFORM_USER" -c "cd '$PROJECT_ROOT' && source venv/bin/activate && pip install -r '$REQUIREMENTS_FILE'"
+        else
+            pip install -r "$REQUIREMENTS_FILE"
+        fi
     fi
 else
     echo -e "${YELLOW}⚠️  $REQUIREMENTS_FILE not found, using requirements.txt...${NC}"
-    pip install -r requirements.txt
+    if [ "$(id -u)" -eq 0 ] && [ "$PLATFORM_USER" != "root" ] && id "$PLATFORM_USER" &>/dev/null; then
+        runuser -l "$PLATFORM_USER" -c "cd '$PROJECT_ROOT' && source venv/bin/activate && pip install -r requirements.txt"
+    else
+        pip install -r requirements.txt
+    fi
 fi
 
 echo -e "${BLUE}📦 Step 5: Making scripts executable...${NC}"

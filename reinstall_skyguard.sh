@@ -153,12 +153,20 @@ install_jetson_requirements_safely() {
             
             if [ "$TORCH_INSTALLED" = true ]; then
                 echo -e "${YELLOW}       ⚠️  ultralytics pulled in torch - removing it...${NC}"
+                # Detect if running as root
+                local USE_SUDO=""
+                if [ "$(id -u)" -eq 0 ]; then
+                    USE_SUDO="sudo"
+                fi
                 pip uninstall -y torch torchvision torchaudio 2>/dev/null || true
+                if [ -n "$USE_SUDO" ]; then
+                    $USE_SUDO pip uninstall -y torch torchvision torchaudio 2>/dev/null || true
+                fi
                 for site_packages in "$venv_path"/lib/python*/site-packages; do
                     if [ -d "$site_packages" ]; then
-                        rm -rf "$site_packages/torch"* 2>/dev/null || true
-                        rm -rf "$site_packages"/torch*.dist-info 2>/dev/null || true
-                        rm -rf "$site_packages"/torch*.egg-info 2>/dev/null || true
+                        $USE_SUDO rm -rf "$site_packages/torch"* 2>/dev/null || true
+                        $USE_SUDO rm -rf "$site_packages"/torch*.dist-info 2>/dev/null || true
+                        $USE_SUDO rm -rf "$site_packages"/torch*.egg-info 2>/dev/null || true
                     fi
                 done
             fi
@@ -185,19 +193,27 @@ install_jetson_requirements_safely() {
             
             if [ "$TORCH_INSTALLED" = true ]; then
                 echo -e "${YELLOW}       ⚠️  $package pulled in torch - removing it...${NC}"
+                # Detect if running as root
+                local USE_SUDO=""
+                if [ "$(id -u)" -eq 0 ]; then
+                    USE_SUDO="sudo"
+                fi
                 pip uninstall -y torch torchvision torchaudio 2>/dev/null || true
+                if [ -n "$USE_SUDO" ]; then
+                    $USE_SUDO pip uninstall -y torch torchvision torchaudio 2>/dev/null || true
+                fi
                 # Also remove physically
                 for site_packages in "$venv_path"/lib/python*/site-packages; do
                     if [ -d "$site_packages" ]; then
-                        rm -rf "$site_packages/torch" 2>/dev/null || true
-                        rm -rf "$site_packages/torchvision" 2>/dev/null || true
-                        rm -rf "$site_packages/torchaudio" 2>/dev/null || true
-                        rm -rf "$site_packages"/torch*.dist-info 2>/dev/null || true
-                        rm -rf "$site_packages"/torch*.egg-info 2>/dev/null || true
-                        rm -rf "$site_packages"/torchvision*.dist-info 2>/dev/null || true
-                        rm -rf "$site_packages"/torchvision*.egg-info 2>/dev/null || true
-                        rm -rf "$site_packages"/torchaudio*.dist-info 2>/dev/null || true
-                        rm -rf "$site_packages"/torchaudio*.egg-info 2>/dev/null || true
+                        $USE_SUDO rm -rf "$site_packages/torch" 2>/dev/null || true
+                        $USE_SUDO rm -rf "$site_packages/torchvision" 2>/dev/null || true
+                        $USE_SUDO rm -rf "$site_packages/torchaudio" 2>/dev/null || true
+                        $USE_SUDO rm -rf "$site_packages"/torch*.dist-info 2>/dev/null || true
+                        $USE_SUDO rm -rf "$site_packages"/torch*.egg-info 2>/dev/null || true
+                        $USE_SUDO rm -rf "$site_packages"/torchvision*.dist-info 2>/dev/null || true
+                        $USE_SUDO rm -rf "$site_packages"/torchvision*.egg-info 2>/dev/null || true
+                        $USE_SUDO rm -rf "$site_packages"/torchaudio*.dist-info 2>/dev/null || true
+                        $USE_SUDO rm -rf "$site_packages"/torchaudio*.egg-info 2>/dev/null || true
                     fi
                 done
             fi
@@ -241,31 +257,44 @@ remove_torch_from_venv() {
     
     echo -e "${CYAN}   Aggressively removing torch packages from venv...${NC}"
     
+    # Detect if running as root (packages may have been installed as root)
+    local USE_SUDO=""
+    if [ "$(id -u)" -eq 0 ]; then
+        USE_SUDO="sudo"
+        echo -e "${CYAN}   Running as root - using sudo for package removal${NC}"
+    fi
+    
     # First, try pip uninstall if venv is activated
     if [ -f "$venv_path/bin/activate" ]; then
         source "$venv_path/bin/activate"
+        # Try normal uninstall first
         pip uninstall -y torch torchvision torchaudio 2>/dev/null || true
+        # If running as root, also try with sudo (in case packages were installed as root)
+        if [ -n "$USE_SUDO" ]; then
+            $USE_SUDO pip uninstall -y torch torchvision torchaudio 2>/dev/null || true
+        fi
         deactivate 2>/dev/null || true
     fi
     
     # Then physically remove from site-packages directories
+    # Use sudo if running as root (packages may have been installed as root)
     for site_packages in "$venv_path"/lib/python*/site-packages; do
         if [ -d "$site_packages" ]; then
-            # Remove torch directories
-            rm -rf "$site_packages/torch" 2>/dev/null || true
-            rm -rf "$site_packages/torchvision" 2>/dev/null || true
-            rm -rf "$site_packages/torchaudio" 2>/dev/null || true
-            rm -rf "$site_packages/torch-"* 2>/dev/null || true
-            rm -rf "$site_packages/torchvision-"* 2>/dev/null || true
-            rm -rf "$site_packages/torchaudio-"* 2>/dev/null || true
+            # Remove torch directories (with sudo if needed)
+            $USE_SUDO rm -rf "$site_packages/torch" 2>/dev/null || true
+            $USE_SUDO rm -rf "$site_packages/torchvision" 2>/dev/null || true
+            $USE_SUDO rm -rf "$site_packages/torchaudio" 2>/dev/null || true
+            $USE_SUDO rm -rf "$site_packages/torch-"* 2>/dev/null || true
+            $USE_SUDO rm -rf "$site_packages/torchvision-"* 2>/dev/null || true
+            $USE_SUDO rm -rf "$site_packages/torchaudio-"* 2>/dev/null || true
             
-            # Remove torch egg-info and dist-info
-            rm -rf "$site_packages"/torch*.egg-info 2>/dev/null || true
-            rm -rf "$site_packages"/torch*.dist-info 2>/dev/null || true
-            rm -rf "$site_packages"/torchvision*.egg-info 2>/dev/null || true
-            rm -rf "$site_packages"/torchvision*.dist-info 2>/dev/null || true
-            rm -rf "$site_packages"/torchaudio*.egg-info 2>/dev/null || true
-            rm -rf "$site_packages"/torchaudio*.dist-info 2>/dev/null || true
+            # Remove torch egg-info and dist-info (with sudo if needed)
+            $USE_SUDO rm -rf "$site_packages"/torch*.egg-info 2>/dev/null || true
+            $USE_SUDO rm -rf "$site_packages"/torch*.dist-info 2>/dev/null || true
+            $USE_SUDO rm -rf "$site_packages"/torchvision*.egg-info 2>/dev/null || true
+            $USE_SUDO rm -rf "$site_packages"/torchvision*.dist-info 2>/dev/null || true
+            $USE_SUDO rm -rf "$site_packages"/torchaudio*.egg-info 2>/dev/null || true
+            $USE_SUDO rm -rf "$site_packages"/torchaudio*.dist-info 2>/dev/null || true
         fi
     done
     
