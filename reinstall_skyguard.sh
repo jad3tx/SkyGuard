@@ -195,7 +195,15 @@ install_jetson_requirements_safely() {
                 pip install --no-deps "$dep" 2>/dev/null || pip install "$dep" 2>/dev/null || true
                 # Immediately check for torch after each dependency
                 sleep 0.5
-                if [ -d "$venv_path/lib/python"*/site-packages/torch ] 2>/dev/null; then
+                # Check for torch using proper loop (quoted glob pattern)
+                TORCH_FOUND=false
+                for site_packages in "$venv_path"/lib/python*/site-packages; do
+                    if [ -d "$site_packages/torch" ] 2>/dev/null; then
+                        TORCH_FOUND=true
+                        break
+                    fi
+                done
+                if [ "$TORCH_FOUND" = true ]; then
                     echo -e "${RED}       ❌ $dep pulled in torch - removing...${NC}"
                     local USE_SUDO=""
                     if [ "$(id -u)" -eq 0 ]; then
@@ -215,12 +223,8 @@ install_jetson_requirements_safely() {
                 fi
             done
         else
-            # For other packages, install with constraint to prevent torch installation
-            # Create a temporary constraint file
-            CONSTRAINT_FILE=$(mktemp)
-            echo "--constraint <(echo 'torch==999.0.0')" > "$CONSTRAINT_FILE" 2>/dev/null || true
-            
-            # Try installing with explicit exclusion of torch
+            # For other packages, install normally but check immediately for torch
+            # Try installing with --no-deps first to avoid pulling in dependencies
             pip install "$package" --no-deps 2>/dev/null || {
                 # If --no-deps fails, try normal install but check immediately
                 pip install "$package" 2>/dev/null || {
@@ -240,8 +244,6 @@ install_jetson_requirements_safely() {
                     break
                 fi
             done
-            
-            rm -f "$CONSTRAINT_FILE"
             
             if [ "$TORCH_INSTALLED" = true ]; then
                 echo -e "${YELLOW}       ⚠️  $package pulled in torch - removing it...${NC}"
@@ -1064,17 +1066,37 @@ fi
 if [ "$DETECTED_PLATFORM" = "jetson" ]; then
     echo -e "\n${BLUE}🔍 Verifying PyTorch CUDA installation...${NC}"
     
-    # First, verify venv configuration
+    # First, verify venv configuration - if wrong, fix it and reinstall packages
     if ! verify_jetson_venv_config "$SKYGUARD_PATH/venv"; then
         echo -e "${RED}   ❌ CRITICAL: venv configuration is incorrect${NC}"
-        echo -e "${YELLOW}   Recreating venv with correct configuration...${NC}"
+        echo -e "${YELLOW}   Recreating venv with correct configuration and reinstalling packages...${NC}"
+        
+        # Backup installed packages list
+        source venv/bin/activate 2>/dev/null || true
+        INSTALLED_PACKAGES=$(pip freeze 2>/dev/null | grep -v "^torch\|^torchvision\|^torchaudio" || true)
+        deactivate 2>/dev/null || true
+        
+        # Remove and recreate venv
         rm -rf "$SKYGUARD_PATH/venv"
         if [ "$USE_SYSTEM_SITE_PACKAGES" = "true" ]; then
             python3 -m venv --system-site-packages "$SKYGUARD_PATH/venv"
         else
             python3 -m venv "$SKYGUARD_PATH/venv"
         fi
-        echo -e "${YELLOW}   ⚠️  Please re-run the installation step${NC}"
+        
+        # Reinstall packages
+        source venv/bin/activate
+        pip install --upgrade pip
+        
+        # Reinstall using the safe method
+        REQ_FILE=$(get_requirements_file)
+        if [ -f "$REQ_FILE" ]; then
+            FILTERED_REQ=$(filter_jetson_requirements "$REQ_FILE")
+            install_jetson_requirements_safely "$FILTERED_REQ" "$SKYGUARD_PATH/venv"
+            rm -f "$FILTERED_REQ"
+        fi
+        
+        echo -e "${GREEN}   ✅ Venv recreated and packages reinstalled${NC}"
     fi
     
     source venv/bin/activate
@@ -1112,8 +1134,38 @@ except Exception as e:
             echo -e "${YELLOW}   This will cause CUDA issues. Aggressively removing venv-installed torch...${NC}"
             deactivate 2>/dev/null || true
             remove_torch_from_venv "$SKYGUARD_PATH/venv"
+            
+            # Verify removal worked
             source venv/bin/activate
-            echo -e "${YELLOW}   ⚠️  Please verify system PyTorch is accessible and test again${NC}"
+            sleep 1
+            TORCH_IN_VENV_AFTER=$(python3 -c "
+import sys
+import os
+try:
+    import torch
+    torch_path = os.path.abspath(torch.__file__)
+    venv_path = os.path.abspath('$SKYGUARD_PATH/venv')
+    if venv_path in torch_path:
+        print('venv')
+    else:
+        print('system')
+except Exception:
+    print('not_found')
+" 2>/dev/null || echo "unknown")
+            
+            if [ "$TORCH_IN_VENV_AFTER" = "system" ]; then
+                echo -e "${GREEN}   ✅ Successfully removed venv torch, now using system PyTorch${NC}"
+                PYTORCH_CHECK=$(python3 -c "import torch; print('CUDA' if torch.cuda.is_available() else 'CPU')" 2>/dev/null || echo "NOT_FOUND")
+                if [ "$PYTORCH_CHECK" = "CUDA" ]; then
+                    echo -e "${GREEN}   ✅ CUDA is now available!${NC}"
+                fi
+            else
+                echo -e "${RED}   ❌ CRITICAL: Torch still in venv after removal attempt!${NC}"
+                echo -e "${YELLOW}   Manual cleanup required. Run:${NC}"
+                echo -e "${CYAN}   cd $SKYGUARD_PATH && source venv/bin/activate${NC}"
+                echo -e "${CYAN}   pip uninstall -y torch torchvision torchaudio${NC}"
+                echo -e "${CYAN}   rm -rf venv/lib/python*/site-packages/torch*${NC}"
+            fi
         elif [ "$TORCH_IN_VENV" = "system" ]; then
             echo -e "${GREEN}   ✅ Confirmed: Using system PyTorch (correct)${NC}"
         fi
@@ -1217,6 +1269,70 @@ else
 fi
 
 # Final summary
+# Final verification: Check if torch is in venv (CRITICAL CHECK)
+if [ "$DETECTED_PLATFORM" = "jetson" ] && [ -d "$SKYGUARD_PATH/venv" ]; then
+    echo -e "\n${BLUE}🔍 Final verification: Checking for torch in venv...${NC}"
+    cd "$SKYGUARD_PATH"
+    source venv/bin/activate 2>/dev/null || true
+    
+    # Check where torch is coming from
+    TORCH_SOURCE=$(python3 -c "
+import sys
+import os
+try:
+    import torch
+    torch_path = os.path.abspath(torch.__file__)
+    venv_path = os.path.abspath('$SKYGUARD_PATH/venv')
+    if venv_path in torch_path:
+        print('venv')
+    else:
+        print('system')
+    print(torch.__version__)
+except Exception as e:
+    print('not_found')
+" 2>/dev/null || echo "unknown")
+    
+    TORCH_VERSION=$(echo "$TORCH_SOURCE" | tail -1)
+    TORCH_LOCATION=$(echo "$TORCH_SOURCE" | head -1)
+    
+    if [ "$TORCH_LOCATION" = "venv" ]; then
+        echo -e "${RED}   ❌ CRITICAL: torch $TORCH_VERSION is installed in venv!${NC}"
+        echo -e "${YELLOW}   Removing venv-installed torch...${NC}"
+        deactivate 2>/dev/null || true
+        remove_torch_from_venv "$SKYGUARD_PATH/venv"
+        
+        # Verify it's gone
+        source venv/bin/activate 2>/dev/null || true
+        sleep 1
+        TORCH_AFTER=$(python3 -c "
+import sys
+import os
+try:
+    import torch
+    torch_path = os.path.abspath(torch.__file__)
+    venv_path = os.path.abspath('$SKYGUARD_PATH/venv')
+    if venv_path in torch_path:
+        print('venv')
+    else:
+        print('system')
+    print(torch.__version__)
+except Exception:
+    print('not_found')
+" 2>/dev/null || echo "unknown")
+        
+        if echo "$TORCH_AFTER" | grep -q "system"; then
+            echo -e "${GREEN}   ✅ Fixed! Now using system PyTorch${NC}"
+        else
+            echo -e "${RED}   ❌ WARNING: Torch removal may have failed${NC}"
+            echo -e "${YELLOW}   Manual cleanup may be required${NC}"
+        fi
+        deactivate 2>/dev/null || true
+    elif [ "$TORCH_LOCATION" = "system" ]; then
+        echo -e "${GREEN}   ✅ Good: Using system PyTorch $TORCH_VERSION${NC}"
+        deactivate 2>/dev/null || true
+    fi
+fi
+
 echo -e "\n${GREEN}✅ SkyGuard reinstallation complete!${NC}"
 echo -e "\n${CYAN}📋 Summary:${NC}"
 echo -e "   - SkyGuard path: $SKYGUARD_PATH"
