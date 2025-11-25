@@ -591,7 +591,30 @@ install_jetson_pytorch() {
 # Detect platform and get username
 echo -e "${BLUE}🔍 Detecting platform...${NC}"
 DETECTED_USERNAME=$(detect_platform)
+# CRITICAL: DETECTED_PLATFORM is set inside detect_platform(), but command substitution runs in subshell
+# So we need to re-detect or set it explicitly. Let's detect it again to ensure it's in main shell scope.
+if [ -f "/etc/nv_tegra_release" ]; then
+    DETECTED_PLATFORM="jetson"
+elif [ -f "/proc/device-tree/model" ]; then
+    model=$(cat /proc/device-tree/model 2>/dev/null || echo "")
+    if echo "$model" | grep -qi "jetson\|tegra"; then
+        DETECTED_PLATFORM="jetson"
+    elif echo "$model" | grep -qi "raspberry pi"; then
+        DETECTED_PLATFORM="raspberry_pi"
+    else
+        DETECTED_PLATFORM="unknown"
+    fi
+elif [ -f "/etc/os-release" ]; then
+    if grep -qi "raspbian\|raspberry" /etc/os-release 2>/dev/null; then
+        DETECTED_PLATFORM="raspberry_pi"
+    else
+        DETECTED_PLATFORM="unknown"
+    fi
+else
+    DETECTED_PLATFORM="unknown"
+fi
 echo -e "${CYAN}   Using username: $DETECTED_USERNAME${NC}"
+echo -e "${CYAN}   Detected platform: $DETECTED_PLATFORM${NC}"
 
 # Print usage
 usage() {
