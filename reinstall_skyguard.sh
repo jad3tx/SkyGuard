@@ -1550,3 +1550,40 @@ echo -e "   3. Configure system in: $SKYGUARD_PATH/config/skyguard.yaml"
 echo -e "   4. View main system logs: tail -f $SKYGUARD_PATH/logs/main.log"
 echo -e "   5. View web portal logs: tail -f $SKYGUARD_PATH/logs/web.log"
 
+# Move reinstall script to parent directory (peer of SkyGuard/)
+echo -e "\n${BLUE}📦 Moving reinstall script to parent directory...${NC}"
+SCRIPT_NAME=$(basename "$0")
+PARENT_DIR=$(dirname "$SKYGUARD_PATH")
+TARGET_SCRIPT="$PARENT_DIR/$SCRIPT_NAME"
+
+# Get absolute path of current script for comparison
+SCRIPT_DIR=""
+if SCRIPT_ABS=$(readlink -f "$0" 2>/dev/null); then
+    SCRIPT_DIR=$(dirname "$SCRIPT_ABS")
+elif SCRIPT_ABS=$(realpath "$0" 2>/dev/null); then
+    SCRIPT_DIR=$(dirname "$SCRIPT_ABS")
+else
+    # Fallback: use cd and pwd to get absolute path
+    SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
+fi
+
+# Only move if script is currently inside SkyGuard directory
+if [ "$SCRIPT_DIR" != "$PARENT_DIR" ]; then
+    if [ -f "$0" ]; then
+        echo -e "${CYAN}   Moving $SCRIPT_NAME to $PARENT_DIR/${NC}"
+        cp "$0" "$TARGET_SCRIPT" 2>/dev/null || {
+            echo -e "${YELLOW}   ⚠️  Failed to copy script to parent directory${NC}"
+            echo -e "${CYAN}   You may need to move it manually${NC}"
+        }
+        chmod +x "$TARGET_SCRIPT" 2>/dev/null || {
+            echo -e "${YELLOW}   ⚠️  Failed to make script executable${NC}"
+        }
+        echo -e "${GREEN}   ✅ Reinstall script moved to: $TARGET_SCRIPT${NC}"
+    else
+        echo -e "${YELLOW}   ⚠️  Could not determine script location${NC}"
+    fi
+else
+    echo -e "${CYAN}   Script already in parent directory${NC}"
+    chmod +x "$0" 2>/dev/null || true
+fi
+
