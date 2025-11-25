@@ -34,6 +34,8 @@ def check_pytorch() -> bool:
         if venv_path in torch_path:
             print(f"⚠️  PyTorch loaded from: venv ({torch_path})")
             print(f"   This may be the wrong version (should use system CUDA version)")
+            print(f"   💡 Check if venv has --system-site-packages enabled")
+            print(f"      Check: cat venv/pyvenv.cfg | grep include-system-site-packages")
         else:
             print(f"✅ PyTorch loaded from: system ({torch_path})")
         
@@ -45,13 +47,18 @@ def check_pytorch() -> bool:
         else:
             print(f"⚠️  CUDA available: False")
             print(f"   This may cause issues on Jetson")
+            print(f"   💡 If on Jetson, verify system PyTorch has CUDA support")
         
         return True
     except ImportError as e:
         print(f"❌ PyTorch not available: {e}")
+        print(f"   💡 On Jetson, ensure PyTorch is installed system-wide")
+        print(f"   💡 Verify venv has --system-site-packages enabled")
+        print(f"   💡 Check: python3 -c 'import torch; print(torch.__version__)'")
         return False
     except Exception as e:
         print(f"❌ Error checking PyTorch: {e}")
+        print(f"   Error type: {type(e).__name__}")
         import traceback
         traceback.print_exc()
         return False
@@ -60,6 +67,21 @@ def check_ultralytics() -> bool:
     """Check Ultralytics/YOLO installation."""
     print_section("🔍 Ultralytics/YOLO Installation")
     
+    # First check if torch is available (required for ultralytics)
+    try:
+        import torch
+        print(f"✅ PyTorch available for Ultralytics")
+    except ImportError as e:
+        print(f"❌ PyTorch not available (required for Ultralytics): {e}")
+        print(f"   This is why Ultralytics cannot be imported")
+        return False
+    except Exception as e:
+        print(f"❌ Error importing torch: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+    
+    # Now check ultralytics
     try:
         from ultralytics import YOLO
         print(f"✅ Ultralytics/YOLO is available")
@@ -78,6 +100,7 @@ def check_ultralytics() -> bool:
         return False
     except Exception as e:
         print(f"❌ Error checking Ultralytics: {e}")
+        print(f"   Error type: {type(e).__name__}")
         import traceback
         traceback.print_exc()
         return False

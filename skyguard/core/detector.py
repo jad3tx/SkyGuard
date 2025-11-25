@@ -15,14 +15,26 @@ from pathlib import Path
 from typing import List, Dict, Any, Optional, Tuple
 
 # Try to import PyTorch and YOLO, but don't fail if not available
+PYTORCH_AVAILABLE = False
+torch = None
+YOLO = None
+_import_error = None
+
 try:
     import torch
     from ultralytics import YOLO
     PYTORCH_AVAILABLE = True
-except ImportError:
+except ImportError as e:
     PYTORCH_AVAILABLE = False
     torch = None
     YOLO = None
+    _import_error = str(e)
+except Exception as e:
+    # Catch other errors (like RuntimeError from torchvision incompatibility)
+    PYTORCH_AVAILABLE = False
+    torch = None
+    YOLO = None
+    _import_error = f"{type(e).__name__}: {str(e)}"
 
 # Import platform detection
 try:
@@ -109,9 +121,21 @@ class BirdSegmentationDetector:
             
             # Only YOLO models are supported
             if not PYTORCH_AVAILABLE:
-                self.logger.error(
-                    "PyTorch/YOLO not available; cannot load YOLO model"
-                )
+                error_msg = "PyTorch/YOLO not available; cannot load YOLO model"
+                if _import_error:
+                    error_msg += f"\n   Import error: {_import_error}"
+                    # Provide helpful guidance based on error
+                    if "torch" in _import_error.lower() and "No module named" in _import_error:
+                        error_msg += "\n   💡 PyTorch cannot be imported. On Jetson, ensure:"
+                        error_msg += "\n      1. PyTorch is installed system-wide"
+                        error_msg += "\n      2. Virtual environment was created with --system-site-packages"
+                        error_msg += "\n      3. Verify: python3 -c 'import torch; print(torch.__version__)'"
+                    elif "ultralytics" in _import_error.lower():
+                        error_msg += "\n   💡 Ultralytics not found. Install with: pip install ultralytics"
+                    elif "torchvision" in _import_error.lower():
+                        error_msg += "\n   💡 torchvision compatibility issue detected"
+                        error_msg += "\n      This may require rebuilding torchvision for Jetson"
+                self.logger.error(error_msg)
                 return False
             
             # Determine device for inference
