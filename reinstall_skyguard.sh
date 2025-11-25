@@ -99,12 +99,16 @@ install_jetson_requirements_safely() {
     # Activate venv
     source "$venv_path/bin/activate"
     
+    # CRITICAL: Clear pip cache to prevent using cached torch packages
+    echo -e "${CYAN}   Clearing pip cache to prevent cached torch installation...${NC}"
+    pip cache purge 2>/dev/null || true
+    
     # FIRST: Install numpy==1.26.0 explicitly before anything else
     # This ensures numpy is pinned and won't be upgraded by other packages
     echo -e "${CYAN}   Installing numpy==1.26.0 first (required for Jetson)...${NC}"
-    pip install --force-reinstall "numpy==1.26.0" || {
+    pip install --no-cache-dir --force-reinstall "numpy==1.26.0" || {
         echo -e "${YELLOW}   ⚠️  Failed to install numpy==1.26.0, trying without force...${NC}"
-        pip install "numpy==1.26.0" || true
+        pip install --no-cache-dir "numpy==1.26.0" || true
     }
     
     # Read requirements file and install packages one by one
@@ -127,7 +131,7 @@ install_jetson_requirements_safely() {
         if [[ "$package" =~ ^numpy ]]; then
             echo -e "${CYAN}     Skipping $package (already installed as numpy==1.26.0)${NC}"
             # Ensure it's still the correct version
-            pip install --force-reinstall "numpy==1.26.0" 2>/dev/null || true
+            pip install --no-cache-dir --force-reinstall "numpy==1.26.0" 2>/dev/null || true
             continue
         fi
         
@@ -138,13 +142,13 @@ install_jetson_requirements_safely() {
         if [[ "$package" =~ ^ultralytics ]]; then
             echo -e "${CYAN}       Installing ultralytics without dependencies (to avoid torch)...${NC}"
             
-            # Try installing with --no-deps
-            if pip install --no-deps "$package" 2>/dev/null; then
+            # Try installing with --no-deps and --no-cache-dir
+            if pip install --no-cache-dir --no-deps "$package" 2>/dev/null; then
                 echo -e "${GREEN}       ✅ ultralytics installed without dependencies${NC}"
             else
                 echo -e "${YELLOW}       ⚠️  Failed to install ultralytics without deps${NC}"
                 echo -e "${CYAN}       Installing ultralytics normally, will remove torch if installed...${NC}"
-                pip install "$package" 2>/dev/null || true
+                pip install --no-cache-dir "$package" 2>/dev/null || true
                 
                 # IMMEDIATELY check and remove torch
                 sleep 1  # Give pip a moment to finish
@@ -190,9 +194,9 @@ install_jetson_requirements_safely() {
             # Install ultralytics dependencies manually (excluding torch)
             echo -e "${CYAN}       Installing ultralytics dependencies (excluding torch)...${NC}"
             # Common ultralytics dependencies (excluding torch/torchvision)
-            # Use --no-deps for each to prevent transitive torch installation
+            # Use --no-deps and --no-cache-dir for each to prevent transitive torch installation
             for dep in pillow pyyaml requests tqdm pandas opencv-python-headless; do
-                pip install --no-deps "$dep" 2>/dev/null || pip install "$dep" 2>/dev/null || true
+                pip install --no-cache-dir --no-deps "$dep" 2>/dev/null || pip install --no-cache-dir "$dep" 2>/dev/null || true
                 # Immediately check for torch after each dependency
                 sleep 0.5
                 # Check for torch using proper loop (quoted glob pattern)
@@ -282,7 +286,7 @@ install_jetson_requirements_safely() {
             else
                 echo -e "${YELLOW}       ⚠️  numpy was upgraded to $NUMPY_VERSION, reinstalling 1.26.0...${NC}"
             fi
-            pip install --force-reinstall "numpy==1.26.0" 2>/dev/null || true
+            pip install --no-cache-dir --force-reinstall "numpy==1.26.0" 2>/dev/null || true
         fi
     done < "$req_file"
     
@@ -293,7 +297,7 @@ install_jetson_requirements_safely() {
         echo -e "${GREEN}   ✅ numpy is correctly version 1.26.0${NC}"
     else
         echo -e "${YELLOW}   ⚠️  numpy version is $NUMPY_VERSION, forcing reinstall to 1.26.0...${NC}"
-        pip install --force-reinstall "numpy==1.26.0" || {
+        pip install --no-cache-dir --force-reinstall "numpy==1.26.0" || {
             echo -e "${RED}   ❌ Failed to install numpy==1.26.0${NC}"
         }
     fi
@@ -1333,6 +1337,29 @@ fi
 if [ "$DETECTED_PLATFORM" = "jetson" ] && [ -d "$SKYGUARD_PATH/venv" ]; then
     echo -e "\n${BLUE}🔍 Final verification: Checking for torch in venv...${NC}"
     cd "$SKYGUARD_PATH"
+    
+    # First, verify venv has --system-site-packages
+    if [ -f "venv/pyvenv.cfg" ]; then
+        if ! grep -q "include-system-site-packages = true" venv/pyvenv.cfg 2>/dev/null; then
+            echo -e "${RED}   ❌ CRITICAL: venv doesn't have --system-site-packages!${NC}"
+            echo -e "${YELLOW}   Recreating venv with --system-site-packages...${NC}"
+            deactivate 2>/dev/null || true
+            rm -rf venv
+            python3 -m venv --system-site-packages venv
+            echo -e "${GREEN}   ✅ Venv recreated with --system-site-packages${NC}"
+            echo -e "${YELLOW}   ⚠️  Packages will need to be reinstalled${NC}"
+            # Reinstall packages
+            source venv/bin/activate
+            pip install --upgrade pip
+            REQ_FILE=$(get_requirements_file)
+            if [ -f "$REQ_FILE" ]; then
+                FILTERED_REQ=$(filter_jetson_requirements "$REQ_FILE")
+                install_jetson_requirements_safely "$FILTERED_REQ" "$SKYGUARD_PATH/venv"
+                rm -f "$FILTERED_REQ"
+            fi
+        fi
+    fi
+    
     source venv/bin/activate 2>/dev/null || true
     
     # Check where torch is coming from
@@ -1357,11 +1384,39 @@ except Exception as e:
     
     if [ "$TORCH_LOCATION" = "venv" ]; then
         echo -e "${RED}   ❌ CRITICAL: torch $TORCH_VERSION is installed in venv!${NC}"
-        echo -e "${YELLOW}   Removing venv-installed torch...${NC}"
+        echo -e "${YELLOW}   Aggressively removing venv-installed torch...${NC}"
         deactivate 2>/dev/null || true
-        remove_torch_from_venv "$SKYGUARD_PATH/venv"
         
-        # Verify it's gone
+        # Multiple removal attempts
+        for attempt in 1 2 3; do
+            echo -e "${CYAN}   Removal attempt $attempt...${NC}"
+            remove_torch_from_venv "$SKYGUARD_PATH/venv"
+            sleep 2
+            
+            # Verify it's gone
+            source venv/bin/activate 2>/dev/null || true
+            TORCH_CHECK=$(python3 -c "
+import sys
+import os
+try:
+    import torch
+    torch_path = os.path.abspath(torch.__file__)
+    venv_path = os.path.abspath('$SKYGUARD_PATH/venv')
+    if venv_path in torch_path:
+        print('venv')
+    else:
+        print('system')
+except Exception:
+    print('not_found')
+" 2>/dev/null || echo "unknown")
+            
+            if [ "$TORCH_CHECK" != "venv" ]; then
+                break
+            fi
+            deactivate 2>/dev/null || true
+        done
+        
+        # Final check
         source venv/bin/activate 2>/dev/null || true
         sleep 1
         TORCH_AFTER=$(python3 -c "
@@ -1386,6 +1441,13 @@ except Exception:
         
         if [ "$TORCH_AFTER_LOCATION" = "system" ]; then
             echo -e "${GREEN}   ✅ Fixed! Now using system PyTorch $TORCH_AFTER_VERSION${NC}"
+            # Verify CUDA
+            CUDA_CHECK=$(python3 -c "import torch; print('CUDA' if torch.cuda.is_available() else 'CPU')" 2>/dev/null || echo "NOT_FOUND")
+            if [ "$CUDA_CHECK" = "CUDA" ]; then
+                echo -e "${GREEN}   ✅ CUDA is available!${NC}"
+            else
+                echo -e "${YELLOW}   ⚠️  CUDA not available (this may be expected)${NC}"
+            fi
         elif [ "$TORCH_AFTER_LOCATION" = "not_found" ]; then
             # Torch not found - check if venv has system-site-packages
             if [ -f "$SKYGUARD_PATH/venv/pyvenv.cfg" ] && grep -q "include-system-site-packages = true" "$SKYGUARD_PATH/venv/pyvenv.cfg" 2>/dev/null; then
@@ -1394,12 +1456,21 @@ except Exception:
                 echo -e "${CYAN}   Verify system PyTorch: python3 -c 'import torch; print(torch.__version__)'${NC}"
             else
                 echo -e "${GREEN}   ✅ Torch removed from venv${NC}"
-                echo -e "${YELLOW}   ⚠️  Note: venv doesn't have --system-site-packages, so system torch won't be accessible${NC}"
-                echo -e "${CYAN}   This is expected if venv was created without --system-site-packages${NC}"
+                echo -e "${RED}   ❌ CRITICAL: venv doesn't have --system-site-packages!${NC}"
+                echo -e "${YELLOW}   Recreating venv...${NC}"
+                deactivate 2>/dev/null || true
+                rm -rf venv
+                python3 -m venv --system-site-packages venv
+                echo -e "${YELLOW}   ⚠️  Please re-run installation${NC}"
             fi
         elif [ "$TORCH_AFTER_LOCATION" = "venv" ]; then
-            echo -e "${RED}   ❌ WARNING: Torch still in venv after removal attempt!${NC}"
-            echo -e "${YELLOW}   Manual cleanup may be required${NC}"
+            echo -e "${RED}   ❌ CRITICAL: Torch still in venv after removal attempts!${NC}"
+            echo -e "${YELLOW}   Manual cleanup required. Run:${NC}"
+            echo -e "${CYAN}   cd $SKYGUARD_PATH${NC}"
+            echo -e "${CYAN}   source venv/bin/activate${NC}"
+            echo -e "${CYAN}   pip uninstall -y torch torchvision torchaudio${NC}"
+            echo -e "${CYAN}   rm -rf venv/lib/python*/site-packages/torch*${NC}"
+            echo -e "${CYAN}   deactivate${NC}"
         else
             echo -e "${RED}   ❌ WARNING: Could not verify torch removal status${NC}"
             echo -e "${YELLOW}   Manual verification may be required${NC}"
@@ -1407,6 +1478,27 @@ except Exception:
         deactivate 2>/dev/null || true
     elif [ "$TORCH_LOCATION" = "system" ]; then
         echo -e "${GREEN}   ✅ Good: Using system PyTorch $TORCH_VERSION${NC}"
+        # Verify CUDA
+        CUDA_CHECK=$(python3 -c "import torch; print('CUDA' if torch.cuda.is_available() else 'CPU')" 2>/dev/null || echo "NOT_FOUND")
+        if [ "$CUDA_CHECK" = "CUDA" ]; then
+            echo -e "${GREEN}   ✅ CUDA is available!${NC}"
+        else
+            echo -e "${YELLOW}   ⚠️  CUDA not available${NC}"
+        fi
+        deactivate 2>/dev/null || true
+    elif [ "$TORCH_LOCATION" = "not_found" ]; then
+        # Check if venv has system-site-packages
+        if [ -f "$SKYGUARD_PATH/venv/pyvenv.cfg" ] && grep -q "include-system-site-packages = true" "$SKYGUARD_PATH/venv/pyvenv.cfg" 2>/dev/null; then
+            echo -e "${YELLOW}   ⚠️  Torch not found in venv, but system torch should be accessible${NC}"
+            echo -e "${CYAN}   Verify system PyTorch: python3 -c 'import torch; print(torch.__version__)'${NC}"
+        else
+            echo -e "${RED}   ❌ CRITICAL: venv doesn't have --system-site-packages!${NC}"
+            echo -e "${YELLOW}   Recreating venv with --system-site-packages...${NC}"
+            deactivate 2>/dev/null || true
+            rm -rf venv
+            python3 -m venv --system-site-packages venv
+            echo -e "${YELLOW}   ⚠️  Please re-run installation${NC}"
+        fi
         deactivate 2>/dev/null || true
     fi
 fi
