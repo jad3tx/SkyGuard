@@ -227,9 +227,9 @@ install_jetson_requirements_safely() {
                 fi
             done
         else
-            # For packages that need dependencies (like Flask needs werkzeug), install normally
+            # For packages that need dependencies (like Flask needs werkzeug, itsdangerous), install normally
             # Only use --no-deps for packages that might pull in torch
-            if [[ "$package" =~ ^(flask|flask-cors|werkzeug|requests|pyyaml|python-dotenv|pandas|pillow|opencv-python|imutils|psutil|twilio|pushbullet|schedule|pytest|pytest-cov|black|flake8|mypy|datasets) ]]; then
+            if [[ "$package" =~ ^(flask|flask-cors|werkzeug|itsdangerous|requests|pyyaml|python-dotenv|pandas|pillow|opencv-python|imutils|psutil|twilio|pushbullet|schedule|pytest|pytest-cov|black|flake8|mypy|datasets) ]]; then
                 # These packages are safe to install with dependencies (won't pull in torch)
                 echo -e "${CYAN}       Installing $package with dependencies...${NC}"
                 pip install --no-cache-dir "$package" 2>/dev/null || {
