@@ -947,8 +947,8 @@ if command -v uv &> /dev/null; then
     if [ -f "$REQ_FILE" ]; then
         echo -e "${CYAN}   Using requirements file: $REQ_FILE${NC}"
         
-        # For Jetson, filter out torch packages if using system packages
-        if [ "$USE_SYSTEM_SITE_PACKAGES" = "true" ] && [ "$DETECTED_PLATFORM" = "jetson" ]; then
+        # For Jetson, ALWAYS filter out torch packages (regardless of USE_SYSTEM_SITE_PACKAGES)
+        if [ "$DETECTED_PLATFORM" = "jetson" ]; then
             FILTERED_REQ=$(filter_jetson_requirements "$REQ_FILE")
             echo -e "${CYAN}   Filtered out torch/torchvision/torchaudio (using system CUDA versions)${NC}"
             echo -e "${CYAN}   Installing packages carefully to prevent torch installation as dependency${NC}"
@@ -1053,14 +1053,20 @@ else
     echo -e "${CYAN}   Upgrading pip...${NC}"
     pip install --upgrade pip
     
+    # CRITICAL: Clear pip cache to prevent using cached torch packages
+    echo -e "${CYAN}   Clearing pip cache to prevent cached torch installation...${NC}"
+    pip cache purge 2>/dev/null || true
+    
     echo -e "${CYAN}   Installing dependencies...${NC}"
     # Select requirements file based on detected platform
     REQ_FILE=$(get_requirements_file)
+    echo -e "${CYAN}   Debug: DETECTED_PLATFORM='$DETECTED_PLATFORM', REQ_FILE='$REQ_FILE'${NC}"
     if [ -f "$REQ_FILE" ]; then
         echo -e "${CYAN}   Using requirements file: $REQ_FILE${NC}"
         
-        # For Jetson, filter out torch packages if using system packages
-        if [ "$USE_SYSTEM_SITE_PACKAGES" = "true" ] && [ "$DETECTED_PLATFORM" = "jetson" ]; then
+        # For Jetson, ALWAYS filter out torch packages (regardless of USE_SYSTEM_SITE_PACKAGES)
+        if [ "$DETECTED_PLATFORM" = "jetson" ]; then
+            echo -e "${CYAN}   Jetson detected - filtering torch packages from $REQ_FILE${NC}"
             FILTERED_REQ=$(filter_jetson_requirements "$REQ_FILE")
             echo -e "${CYAN}   Filtered out torch/torchvision/torchaudio (using system CUDA versions)${NC}"
             echo -e "${CYAN}   Installing packages carefully to prevent torch installation as dependency${NC}"
@@ -1077,11 +1083,15 @@ else
             
             rm -f "$FILTERED_REQ"
         else
-            pip install -r "$REQ_FILE"
+            echo -e "${YELLOW}   ⚠️  WARNING: Installing without filtering (this should not happen on Jetson)${NC}"
+            echo -e "${YELLOW}   DETECTED_PLATFORM='$DETECTED_PLATFORM' (expected 'jetson')${NC}"
+            pip install --no-cache-dir -r "$REQ_FILE"
         fi
     elif [ -f "requirements.txt" ]; then
         echo -e "${CYAN}   Using fallback requirements file: requirements.txt${NC}"
-        if [ "$USE_SYSTEM_SITE_PACKAGES" = "true" ] && [ "$DETECTED_PLATFORM" = "jetson" ]; then
+        # For Jetson, ALWAYS filter out torch packages
+        if [ "$DETECTED_PLATFORM" = "jetson" ]; then
+            echo -e "${CYAN}   Jetson detected - filtering torch packages from requirements.txt${NC}"
             FILTERED_REQ=$(filter_jetson_requirements "requirements.txt")
             echo -e "${CYAN}   Filtered out torch/torchvision/torchaudio (using system CUDA versions)${NC}"
             echo -e "${CYAN}   Installing packages carefully to prevent torch installation as dependency${NC}"
@@ -1098,7 +1108,7 @@ else
             
             rm -f "$FILTERED_REQ"
         else
-            pip install -r requirements.txt
+            pip install --no-cache-dir -r requirements.txt
         fi
     else
         echo -e "${RED}   ❌ No requirements file found${NC}"
