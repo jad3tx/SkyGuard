@@ -227,14 +227,23 @@ install_jetson_requirements_safely() {
                 fi
             done
         else
-            # For other packages, install normally but check immediately for torch
-            # Try installing with --no-deps first to avoid pulling in dependencies
-            pip install "$package" --no-deps 2>/dev/null || {
-                # If --no-deps fails, try normal install but check immediately
-                pip install "$package" 2>/dev/null || {
+            # For packages that need dependencies (like Flask needs werkzeug), install normally
+            # Only use --no-deps for packages that might pull in torch
+            if [[ "$package" =~ ^(flask|flask-cors|werkzeug|requests|pyyaml|python-dotenv|pandas|pillow|opencv-python|imutils|psutil|twilio|pushbullet|schedule|pytest|pytest-cov|black|flake8|mypy|datasets) ]]; then
+                # These packages are safe to install with dependencies (won't pull in torch)
+                echo -e "${CYAN}       Installing $package with dependencies...${NC}"
+                pip install --no-cache-dir "$package" 2>/dev/null || {
                     echo -e "${YELLOW}       ⚠️  Failed to install $package${NC}"
                 }
-            }
+            else
+                # For other packages, try --no-deps first to avoid pulling in torch
+                pip install --no-cache-dir "$package" --no-deps 2>/dev/null || {
+                    # If --no-deps fails, try normal install but check immediately
+                    pip install --no-cache-dir "$package" 2>/dev/null || {
+                        echo -e "${YELLOW}       ⚠️  Failed to install $package${NC}"
+                    }
+                }
+            fi
             
             # Wait a moment for pip to finish
             sleep 0.5

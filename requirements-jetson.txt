@@ -50,6 +50,7 @@ psutil>=5.9.0
 # Web Interface
 flask>=2.3.0
 flask-cors>=4.0.0
+werkzeug>=2.3.0  # Required by Flask
 
 # Dataset Management
 datasets>=3.1.0  # For downloading and managing training datasets
