@@ -912,6 +912,27 @@ if command -v uv &> /dev/null; then
     if [ "$USE_SYSTEM_SITE_PACKAGES" = "true" ]; then
         echo -e "${CYAN}   Creating venv with system site packages (to use CUDA PyTorch)${NC}"
         uv venv --system-site-packages
+        
+        # Verify it was created correctly
+        if [ -f "venv/pyvenv.cfg" ]; then
+            if grep -q "include-system-site-packages = true" venv/pyvenv.cfg 2>/dev/null; then
+                echo -e "${GREEN}   ✅ Venv created with --system-site-packages${NC}"
+            else
+                echo -e "${RED}   ❌ ERROR: Venv created but system-site-packages not enabled!${NC}"
+                echo -e "${YELLOW}   Recreating with python3 -m venv...${NC}"
+                rm -rf venv
+                python3 -m venv --system-site-packages venv
+                if [ -f "venv/pyvenv.cfg" ] && grep -q "include-system-site-packages = true" venv/pyvenv.cfg 2>/dev/null; then
+                    echo -e "${GREEN}   ✅ Venv recreated with --system-site-packages${NC}"
+                else
+                    echo -e "${RED}   ❌ CRITICAL: Failed to create venv with --system-site-packages${NC}"
+                    exit 1
+                fi
+            fi
+        else
+            echo -e "${RED}   ❌ ERROR: Venv created but pyvenv.cfg missing!${NC}"
+            exit 1
+        fi
     else
         uv venv
     fi
@@ -997,6 +1018,27 @@ else
     if [ "$USE_SYSTEM_SITE_PACKAGES" = "true" ]; then
         echo -e "${CYAN}   Creating venv with system site packages (to use CUDA PyTorch)${NC}"
         python3 -m venv --system-site-packages venv
+        
+        # Verify it was created correctly
+        if [ -f "venv/pyvenv.cfg" ]; then
+            if grep -q "include-system-site-packages = true" venv/pyvenv.cfg 2>/dev/null; then
+                echo -e "${GREEN}   ✅ Venv created with --system-site-packages${NC}"
+            else
+                echo -e "${RED}   ❌ ERROR: Venv created but system-site-packages not enabled!${NC}"
+                echo -e "${YELLOW}   Recreating...${NC}"
+                rm -rf venv
+                python3 -m venv --system-site-packages venv
+                if [ -f "venv/pyvenv.cfg" ] && grep -q "include-system-site-packages = true" venv/pyvenv.cfg 2>/dev/null; then
+                    echo -e "${GREEN}   ✅ Venv recreated with --system-site-packages${NC}"
+                else
+                    echo -e "${RED}   ❌ CRITICAL: Failed to create venv with --system-site-packages${NC}"
+                    exit 1
+                fi
+            fi
+        else
+            echo -e "${RED}   ❌ ERROR: Venv created but pyvenv.cfg missing!${NC}"
+            exit 1
+        fi
     else
         python3 -m venv venv
     fi
@@ -1159,12 +1201,30 @@ except Exception:
                 if [ "$PYTORCH_CHECK" = "CUDA" ]; then
                     echo -e "${GREEN}   ✅ CUDA is now available!${NC}"
                 fi
-            else
+            elif [ "$TORCH_IN_VENV_AFTER" = "not_found" ]; then
+                # Torch not found - check if venv has system-site-packages
+                if [ -f "$SKYGUARD_PATH/venv/pyvenv.cfg" ] && grep -q "include-system-site-packages = true" "$SKYGUARD_PATH/venv/pyvenv.cfg" 2>/dev/null; then
+                    echo -e "${YELLOW}   ⚠️  Torch removed from venv, but system torch not accessible${NC}"
+                    echo -e "${YELLOW}   This may indicate system PyTorch is not installed or not accessible${NC}"
+                    echo -e "${CYAN}   Verify system PyTorch: python3 -c 'import torch; print(torch.__version__)'${NC}"
+                else
+                    echo -e "${GREEN}   ✅ Torch removed from venv${NC}"
+                    echo -e "${RED}   ❌ CRITICAL: venv doesn't have --system-site-packages!${NC}"
+                    echo -e "${YELLOW}   Recreating venv with --system-site-packages...${NC}"
+                    deactivate 2>/dev/null || true
+                    rm -rf "$SKYGUARD_PATH/venv"
+                    python3 -m venv --system-site-packages "$SKYGUARD_PATH/venv"
+                    echo -e "${YELLOW}   ⚠️  Please re-run the installation step${NC}"
+                fi
+            elif [ "$TORCH_IN_VENV_AFTER" = "venv" ]; then
                 echo -e "${RED}   ❌ CRITICAL: Torch still in venv after removal attempt!${NC}"
                 echo -e "${YELLOW}   Manual cleanup required. Run:${NC}"
                 echo -e "${CYAN}   cd $SKYGUARD_PATH && source venv/bin/activate${NC}"
                 echo -e "${CYAN}   pip uninstall -y torch torchvision torchaudio${NC}"
                 echo -e "${CYAN}   rm -rf venv/lib/python*/site-packages/torch*${NC}"
+            else
+                echo -e "${RED}   ❌ CRITICAL: Could not verify torch removal status!${NC}"
+                echo -e "${YELLOW}   Manual verification required${NC}"
             fi
         elif [ "$TORCH_IN_VENV" = "system" ]; then
             echo -e "${GREEN}   ✅ Confirmed: Using system PyTorch (correct)${NC}"
@@ -1320,11 +1380,29 @@ except Exception:
     print('not_found')
 " 2>/dev/null || echo "unknown")
         
-        if echo "$TORCH_AFTER" | grep -q "system"; then
-            echo -e "${GREEN}   ✅ Fixed! Now using system PyTorch${NC}"
-        else
-            echo -e "${RED}   ❌ WARNING: Torch removal may have failed${NC}"
+        # Parse the result
+        TORCH_AFTER_LOCATION=$(echo "$TORCH_AFTER" | head -1)
+        TORCH_AFTER_VERSION=$(echo "$TORCH_AFTER" | tail -1)
+        
+        if [ "$TORCH_AFTER_LOCATION" = "system" ]; then
+            echo -e "${GREEN}   ✅ Fixed! Now using system PyTorch $TORCH_AFTER_VERSION${NC}"
+        elif [ "$TORCH_AFTER_LOCATION" = "not_found" ]; then
+            # Torch not found - check if venv has system-site-packages
+            if [ -f "$SKYGUARD_PATH/venv/pyvenv.cfg" ] && grep -q "include-system-site-packages = true" "$SKYGUARD_PATH/venv/pyvenv.cfg" 2>/dev/null; then
+                echo -e "${YELLOW}   ⚠️  Torch removed from venv, but system torch not accessible${NC}"
+                echo -e "${YELLOW}   This may indicate system PyTorch is not installed or not accessible${NC}"
+                echo -e "${CYAN}   Verify system PyTorch: python3 -c 'import torch; print(torch.__version__)'${NC}"
+            else
+                echo -e "${GREEN}   ✅ Torch removed from venv${NC}"
+                echo -e "${YELLOW}   ⚠️  Note: venv doesn't have --system-site-packages, so system torch won't be accessible${NC}"
+                echo -e "${CYAN}   This is expected if venv was created without --system-site-packages${NC}"
+            fi
+        elif [ "$TORCH_AFTER_LOCATION" = "venv" ]; then
+            echo -e "${RED}   ❌ WARNING: Torch still in venv after removal attempt!${NC}"
             echo -e "${YELLOW}   Manual cleanup may be required${NC}"
+        else
+            echo -e "${RED}   ❌ WARNING: Could not verify torch removal status${NC}"
+            echo -e "${YELLOW}   Manual verification may be required${NC}"
         fi
         deactivate 2>/dev/null || true
     elif [ "$TORCH_LOCATION" = "system" ]; then
