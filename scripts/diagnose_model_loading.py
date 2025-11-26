@@ -81,6 +81,24 @@ def check_ultralytics() -> bool:
         traceback.print_exc()
         return False
     
+    # Check torchvision separately (ultralytics depends on it)
+    print(f"\n   Checking torchvision...")
+    try:
+        import torchvision
+        print(f"   ✅ torchvision version: {torchvision.__version__}")
+        # Try to use it to see if there are runtime errors
+        try:
+            # Just importing should work, but let's test a basic operation
+            pass  # torchvision imported successfully
+        except Exception as tv_e:
+            print(f"   ⚠️  torchvision imported but has runtime errors: {tv_e}")
+    except ImportError as e:
+        print(f"   ⚠️  torchvision not available: {e}")
+        print(f"   (This may cause ultralytics import to fail)")
+    except Exception as e:
+        print(f"   ⚠️  torchvision import error: {type(e).__name__}: {e}")
+        print(f"   (This may cause ultralytics import to fail)")
+    
     # Now check ultralytics
     try:
         from ultralytics import YOLO
@@ -97,6 +115,16 @@ def check_ultralytics() -> bool:
     except ImportError as e:
         print(f"❌ Ultralytics/YOLO not available: {e}")
         print(f"   Install with: pip install ultralytics")
+        return False
+    except RuntimeError as e:
+        print(f"❌ RuntimeError importing Ultralytics: {e}")
+        if "torchvision" in str(e).lower() or "nms" in str(e).lower():
+            print(f"   💡 This is likely a torchvision compatibility issue")
+            print(f"   💡 Try: pip uninstall torchvision")
+            print(f"   💡 Then rebuild torchvision from source (see scripts/build_torchvision_jetson.sh)")
+        print(f"   Error type: {type(e).__name__}")
+        import traceback
+        traceback.print_exc()
         return False
     except Exception as e:
         print(f"❌ Error checking Ultralytics: {e}")

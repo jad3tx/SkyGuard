@@ -31,6 +31,61 @@ fi
 TORCH_VERSION=$(python3 -c "import torch; print(torch.__version__)" 2>/dev/null)
 echo "PyTorch version: $TORCH_VERSION"
 
+# Detect Jetson model and set CUDA architecture
+# This suppresses the warning and optimizes the build
+if [ -f "/proc/device-tree/model" ]; then
+    JETSON_MODEL=$(cat /proc/device-tree/model | tr -d '\0')
+    echo "Jetson model: $JETSON_MODEL"
+    
+    # Set CUDA architecture based on Jetson model
+    # Orin series (Orin Nano, Orin NX, AGX Orin): sm_87
+    # Xavier series: sm_72
+    # Nano (older): sm_53
+    if echo "$JETSON_MODEL" | grep -qi "orin"; then
+        CUDA_ARCH="7.2;8.7"  # Support both Xavier and Orin for compatibility
+        echo "Setting CUDA architecture: $CUDA_ARCH (Orin series)"
+    elif echo "$JETSON_MODEL" | grep -qi "xavier"; then
+        CUDA_ARCH="7.2"
+        echo "Setting CUDA architecture: $CUDA_ARCH (Xavier series)"
+    else
+        # Default to Orin (most common for new installations)
+        CUDA_ARCH="7.2;8.7"
+        echo "Setting CUDA architecture: $CUDA_ARCH (default - supports Orin and Xavier)"
+    fi
+    
+    export TORCH_CUDA_ARCH_LIST="$CUDA_ARCH"
+    echo "✅ TORCH_CUDA_ARCH_LIST set to: $TORCH_CUDA_ARCH_LIST"
+else
+    # Not a Jetson, but set a reasonable default
+    export TORCH_CUDA_ARCH_LIST="7.0;7.5;8.0;8.6;8.9"
+    echo "⚠️  Not a Jetson device, using default CUDA architectures"
+fi
+
+# Check if we're in a venv
+if [ -n "$VIRTUAL_ENV" ]; then
+    echo "📦 Virtual environment detected: $VIRTUAL_ENV"
+    INSTALL_MODE="venv"
+else
+    INSTALL_MODE="user"
+fi
+
+# Uninstall existing torchvision (if any)
+echo ""
+echo "🧹 Removing existing torchvision installation..."
+echo "   Removing from venv (if in venv)..."
+pip3 uninstall -y torchvision 2>/dev/null || true
+python3 -m pip uninstall -y torchvision 2>/dev/null || true
+
+# CRITICAL: Also remove from user site-packages (takes precedence!)
+echo "   Removing from user site-packages..."
+python3 -m pip uninstall -y torchvision --user 2>/dev/null || true
+# Manually remove if pip doesn't work
+USER_SITE=$(python3 -m site --user-site 2>/dev/null || echo "$HOME/.local/lib/python3.10/site-packages")
+if [ -d "$USER_SITE/torchvision" ]; then
+    echo "   Removing $USER_SITE/torchvision..."
+    rm -rf "$USER_SITE/torchvision" "$USER_SITE/torchvision-*.dist-info" 2>/dev/null || true
+fi
+
 # Determine compatible torchvision version
 # For torch 2.5.0, use torchvision 0.20.0
 TV_VERSION="0.20.0"
@@ -72,15 +127,57 @@ git checkout "v$TV_VERSION"
 echo ""
 echo "🔨 Building torchvision (this may take 10-30 minutes)..."
 export BUILD_VERSION="$TV_VERSION"
-python3 setup.py install --user
+
+if [ "$INSTALL_MODE" = "venv" ]; then
+    echo "   Installing into virtual environment..."
+    # Explicitly disable user installation to ensure it goes to venv
+    python3 setup.py install --prefix="$VIRTUAL_ENV" --force
+    # Alternative: build wheel and install with pip (more reliable)
+    echo "   Building wheel..."
+    python3 setup.py bdist_wheel
+    WHEEL_FILE=$(ls -t dist/torchvision-*.whl | head -1)
+    if [ -n "$WHEEL_FILE" ]; then
+        echo "   Installing wheel with pip..."
+        pip install "$WHEEL_FILE" --force-reinstall --no-deps
+    else
+        echo "   ⚠️  Wheel not found, using setup.py install"
+        python3 setup.py install --force
+    fi
+else
+    echo "   Installing to user site-packages..."
+    python3 setup.py install --user
+fi
 
 # Verify installation
 echo ""
 echo "✅ Verifying installation..."
 if python3 -c "import torchvision; print(f'torchvision {torchvision.__version__} installed successfully')" 2>/dev/null; then
     echo "✅ torchvision installed successfully!"
+    
+    # Test that it actually works (not just imports)
     echo ""
-    echo "Test it:"
+    echo "🧪 Testing torchvision functionality..."
+    if python3 -c "
+import torch
+import torchvision
+print(f'PyTorch: {torch.__version__}')
+print(f'torchvision: {torchvision.__version__}')
+# Try to use a basic torchvision function
+try:
+    from torchvision import transforms
+    t = transforms.Compose([transforms.ToTensor()])
+    print('✅ torchvision transforms work')
+except Exception as e:
+    print(f'⚠️  torchvision transforms error: {e}')
+    raise
+" 2>/dev/null; then
+        echo "✅ torchvision is fully functional!"
+    else
+        echo "⚠️  torchvision imported but may have runtime issues"
+    fi
+    
+    echo ""
+    echo "Test it manually:"
     echo "  python3 -c \"import torch; import torchvision; print(f'PyTorch: {torch.__version__}'); print(f'torchvision: {torchvision.__version__}')\""
 else
     echo "❌ Installation verification failed"

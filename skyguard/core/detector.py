@@ -22,19 +22,65 @@ _import_error = None
 
 try:
     import torch
-    from ultralytics import YOLO
     PYTORCH_AVAILABLE = True
+    torch_available = True
 except ImportError as e:
     PYTORCH_AVAILABLE = False
     torch = None
     YOLO = None
-    _import_error = str(e)
-except Exception as e:
-    # Catch other errors (like RuntimeError from torchvision incompatibility)
-    PYTORCH_AVAILABLE = False
-    torch = None
+    _import_error = f"torch import failed: {str(e)}"
+    torch_available = False
+
+# Try importing torchvision separately - don't fail if it has issues
+_torchvision_available = False
+_torchvision_error = None
+if torch_available:
+    try:
+        import torchvision
+        _torchvision_available = True
+    except RuntimeError as e:
+        # torchvision has runtime errors (like "operator torchvision::nms does not exist")
+        # but ultralytics might still work
+        _torchvision_available = False
+        _torchvision_error = str(e)
+    except Exception as e:
+        _torchvision_available = False
+        _torchvision_error = f"{type(e).__name__}: {str(e)}"
+
+# Try importing ultralytics - this is what we actually need
+if torch_available:
+    try:
+        from ultralytics import YOLO
+        # If we get here, ultralytics imported successfully
+        # Even if torchvision has issues, ultralytics can still work
+        PYTORCH_AVAILABLE = True
+        if not _torchvision_available and _torchvision_error:
+            # Log warning but don't fail
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning(f"torchvision has compatibility issues: {_torchvision_error}")
+            logger.warning("ultralytics imported successfully despite torchvision issues")
+    except ImportError as e:
+        PYTORCH_AVAILABLE = False
+        YOLO = None
+        _import_error = f"ultralytics import failed: {str(e)}"
+    except RuntimeError as e:
+        # If ultralytics import fails due to torchvision, we still mark as unavailable
+        # but provide helpful error message
+        if "torchvision" in str(e).lower() or "nms" in str(e).lower():
+            PYTORCH_AVAILABLE = False
+            YOLO = None
+            _import_error = f"RuntimeError (torchvision issue): {str(e)}"
+        else:
+            PYTORCH_AVAILABLE = False
+            YOLO = None
+            _import_error = f"RuntimeError: {str(e)}"
+    except Exception as e:
+        PYTORCH_AVAILABLE = False
+        YOLO = None
+        _import_error = f"{type(e).__name__}: {str(e)}"
+else:
     YOLO = None
-    _import_error = f"{type(e).__name__}: {str(e)}"
 
 # Import platform detection
 try:
@@ -132,9 +178,13 @@ class BirdSegmentationDetector:
                         error_msg += "\n      3. Verify: python3 -c 'import torch; print(torch.__version__)'"
                     elif "ultralytics" in _import_error.lower():
                         error_msg += "\n   💡 Ultralytics not found. Install with: pip install ultralytics"
-                    elif "torchvision" in _import_error.lower():
+                    elif "torchvision" in _import_error.lower() or "nms" in _import_error.lower() or "runtimeerror" in _import_error.lower():
                         error_msg += "\n   💡 torchvision compatibility issue detected"
-                        error_msg += "\n      This may require rebuilding torchvision for Jetson"
+                        error_msg += "\n      This is likely due to incompatible torchvision version"
+                        error_msg += "\n      Solutions:"
+                        error_msg += "\n      1. Uninstall torchvision: pip uninstall torchvision"
+                        error_msg += "\n      2. Rebuild from source: bash scripts/build_torchvision_jetson.sh"
+                        error_msg += "\n      3. Or try: pip install torchvision==0.20.0 --no-deps"
                 self.logger.error(error_msg)
                 return False
             
