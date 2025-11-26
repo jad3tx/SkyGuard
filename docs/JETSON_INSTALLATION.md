@@ -386,6 +386,84 @@ Jetson devices have better thermal management than Raspberry Pi, but if overheat
 | Power Consumption | Lower | Higher |
 | Cost | Lower | Higher |
 
+## Starting Services as the Correct User
+
+**Important**: SkyGuard services must run as the user who installed PyTorch (typically `jad3` on Jetson, `pi` on Raspberry Pi), not as root. This is because PyTorch is installed in user site-packages (`~/.local/lib/python3.10/site-packages/`), which root cannot access.
+
+### Using the Start Scripts (Recommended)
+
+The start scripts automatically detect if they're running as root and switch to the correct user:
+
+```bash
+# The script will automatically use the correct user
+sudo ./scripts/start_skyguard.sh --background
+
+# Or run as the user directly (no sudo needed)
+./scripts/start_skyguard.sh --background
+```
+
+### Manual Startup (Without Scripts)
+
+If you need to start services manually, use one of these methods:
+
+#### Method 1: Switch to the User First
+
+```bash
+# Switch to the platform user (jad3 on Jetson, pi on RPi)
+su - jad3  # or 'su - pi' on Raspberry Pi
+
+# Navigate to SkyGuard directory
+cd ~/SkyGuard
+
+# Activate virtual environment
+source venv/bin/activate
+
+# Start main system in background
+nohup python3 -m skyguard.main --config config/skyguard.yaml > logs/main.log 2>&1 &
+
+# Start web portal in background
+nohup python3 skyguard/web/app.py > logs/web.log 2>&1 &
+```
+
+#### Method 2: Use `runuser` (When Running as Root)
+
+```bash
+# Start main system as user jad3
+runuser -l jad3 -c "cd ~/SkyGuard && source venv/bin/activate && nohup python3 -m skyguard.main --config config/skyguard.yaml > logs/main.log 2>&1 &"
+
+# Start web portal as user jad3
+runuser -l jad3 -c "cd ~/SkyGuard && source venv/bin/activate && nohup python3 skyguard/web/app.py > logs/web.log 2>&1 &"
+```
+
+#### Method 3: Use `sudo -u` (Alternative)
+
+```bash
+# Start main system
+sudo -u jad3 bash -c "cd ~/SkyGuard && source venv/bin/activate && nohup python3 -m skyguard.main --config config/skyguard.yaml > logs/main.log 2>&1 &"
+
+# Start web portal
+sudo -u jad3 bash -c "cd ~/SkyGuard && source venv/bin/activate && nohup python3 skyguard/web/app.py > logs/web.log 2>&1 &"
+```
+
+### Verifying Services Are Running as the Correct User
+
+```bash
+# Check which user the processes are running as
+ps aux | grep skyguard
+
+# Should show processes owned by 'jad3' (or 'pi' on RPi), not 'root'
+```
+
+### Troubleshooting
+
+**Problem**: Services start but can't load PyTorch models
+- **Solution**: Check that services are running as the correct user (not root)
+- **Fix**: Stop services and restart using one of the methods above
+
+**Problem**: "ModuleNotFoundError: No module named 'torch'"
+- **Solution**: Ensure you're running as the user who installed PyTorch
+- **Fix**: Use `runuser` or `su` to switch to the correct user before starting
+
 ## Additional Resources
 
 - [NVIDIA Jetson Developer Forums](https://forums.developer.nvidia.com/)
@@ -401,6 +479,7 @@ If you encounter issues specific to Jetson:
 2. Verify your PyTorch installation with CUDA support
 3. Check Jetson system logs: `dmesg | tail -50`
 4. Verify camera permissions and device access
+5. Ensure services are running as the correct user (not root)
 
 ---
 

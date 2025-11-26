@@ -280,21 +280,40 @@ echo
 if [[ ! $REPLY =~ ^[Nn]$ ]]; then
     cd "$SKYGUARD_PATH"
     
+    # Determine if we need to run as a different user
+    CURRENT_USER=$(whoami)
+    if [ "$CURRENT_USER" = "root" ] && [ "$DETECTED_USERNAME" != "root" ] && id "$DETECTED_USERNAME" &>/dev/null; then
+        echo -e "${CYAN}   Running as root - services will start as user: $DETECTED_USERNAME${NC}"
+        USE_RUNUSER=true
+        PLATFORM_USER="$DETECTED_USERNAME"
+    else
+        USE_RUNUSER=false
+        PLATFORM_USER="$CURRENT_USER"
+    fi
+    
     # Ensure logs directory exists
     mkdir -p logs
-    
-    # Activate virtual environment
-    if [ -f "venv/bin/activate" ]; then
-        source venv/bin/activate
+    if [ "$USE_RUNUSER" = true ]; then
+        chown -R "$PLATFORM_USER:$PLATFORM_USER" logs 2>/dev/null || true
     fi
     
     # Start main system
     echo -e "${CYAN}   Starting main detection system...${NC}"
-    nohup python3 -m skyguard.main --config config/skyguard.yaml > logs/main.log 2>&1 &
+    if [ "$USE_RUNUSER" = true ]; then
+        runuser -l "$PLATFORM_USER" -c "cd '$SKYGUARD_PATH' && source venv/bin/activate && nohup python3 -m skyguard.main --config config/skyguard.yaml > logs/main.log 2>&1 &"
+    else
+        if [ -f "venv/bin/activate" ]; then
+            source venv/bin/activate
+        fi
+        nohup python3 -m skyguard.main --config config/skyguard.yaml > logs/main.log 2>&1 &
+    fi
     MAIN_PID=$!
     sleep 2
     
-    if ps -p $MAIN_PID > /dev/null 2>&1; then
+    if ps -p $MAIN_PID > /dev/null 2>&1 2>/dev/null || pgrep -f "python.*skyguard.main" >/dev/null 2>&1; then
+        if [ -z "$MAIN_PID" ] || ! ps -p $MAIN_PID > /dev/null 2>&1; then
+            MAIN_PID=$(pgrep -f "python.*skyguard.main" | head -1)
+        fi
         echo -e "${GREEN}   ✅ Main system started (PID: $MAIN_PID)${NC}"
     else
         echo -e "${YELLOW}   ⚠️  Main system may have failed to start (check logs/main.log)${NC}"
@@ -302,11 +321,21 @@ if [[ ! $REPLY =~ ^[Nn]$ ]]; then
     
     # Start web portal
     echo -e "${CYAN}   Starting web portal...${NC}"
-    nohup python3 skyguard/web/app.py > logs/web.log 2>&1 &
+    if [ "$USE_RUNUSER" = true ]; then
+        runuser -l "$PLATFORM_USER" -c "cd '$SKYGUARD_PATH' && source venv/bin/activate && nohup python3 skyguard/web/app.py > logs/web.log 2>&1 &"
+    else
+        if [ -f "venv/bin/activate" ] && [ -z "$VIRTUAL_ENV" ]; then
+            source venv/bin/activate
+        fi
+        nohup python3 skyguard/web/app.py > logs/web.log 2>&1 &
+    fi
     WEB_PID=$!
     sleep 2
     
-    if ps -p $WEB_PID > /dev/null 2>&1; then
+    if ps -p $WEB_PID > /dev/null 2>&1 2>/dev/null || pgrep -f "skyguard.*web.*app" >/dev/null 2>&1; then
+        if [ -z "$WEB_PID" ] || ! ps -p $WEB_PID > /dev/null 2>&1; then
+            WEB_PID=$(pgrep -f "skyguard.*web.*app" | head -1)
+        fi
         echo -e "${GREEN}   ✅ Web portal started (PID: $WEB_PID)${NC}"
     else
         echo -e "${YELLOW}   ⚠️  Web portal may have failed to start (check logs/web.log)${NC}"

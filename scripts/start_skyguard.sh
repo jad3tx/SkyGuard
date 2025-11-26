@@ -142,21 +142,50 @@ start_main_system() {
     echo -e "${BLUE}🔍 Starting SkyGuard detection system...${NC}"
     log "Starting main detection system"
     
-    # Change to SkyGuard directory
-    cd "$SKYGUARD_DIR"
+    # Determine the user to run as
+    CURRENT_USER=$(whoami)
+    TARGET_USER="$PLATFORM_USER"
     
-    # Activate virtual environment
-    source "$VENV_DIR/bin/activate"
-    
-    # Start main system
-    if [ "$BACKGROUND" = true ]; then
-        nohup python -m skyguard.main --config config/skyguard.yaml > logs/main.log 2>&1 &
-        local main_pid=$!
-        echo "Main system started in background (PID: $main_pid)"
-        log "Main system started in background (PID: $main_pid)"
+    # If running as root, switch to platform user
+    if [ "$CURRENT_USER" = "root" ] && [ "$TARGET_USER" != "root" ]; then
+        echo -e "${CYAN}   Running as root - switching to user: $TARGET_USER${NC}"
+        # Use runuser to execute as the target user
+        cd "$SKYGUARD_DIR"
+        if [ "$BACKGROUND" = true ]; then
+            runuser -l "$TARGET_USER" -c "cd '$SKYGUARD_DIR' && source venv/bin/activate && nohup python -m skyguard.main --config config/skyguard.yaml > logs/main.log 2>&1 &" || {
+                echo -e "${RED}   ❌ Failed to start as user $TARGET_USER${NC}"
+                return 1
+            }
+            # Get the PID
+            sleep 1
+            local main_pid=$(pgrep -f "python.*skyguard.main" | head -1)
+            if [ -n "$main_pid" ]; then
+                echo "Main system started in background (PID: $main_pid)"
+                log "Main system started in background (PID: $main_pid)"
+            else
+                echo -e "${YELLOW}   ⚠️  Process started but PID not found${NC}"
+            fi
+        else
+            echo "Starting main system in foreground (Ctrl+C to stop)..."
+            runuser -l "$TARGET_USER" -c "cd '$SKYGUARD_DIR' && source venv/bin/activate && python -m skyguard.main --config config/skyguard.yaml"
+        fi
     else
-        echo "Starting main system in foreground (Ctrl+C to stop)..."
-        python -m skyguard.main --config config/skyguard.yaml
+        # Running as regular user - proceed normally
+        cd "$SKYGUARD_DIR"
+        
+        # Activate virtual environment
+        source "$VENV_DIR/bin/activate"
+        
+        # Start main system
+        if [ "$BACKGROUND" = true ]; then
+            nohup python -m skyguard.main --config config/skyguard.yaml > logs/main.log 2>&1 &
+            local main_pid=$!
+            echo "Main system started in background (PID: $main_pid)"
+            log "Main system started in background (PID: $main_pid)"
+        else
+            echo "Starting main system in foreground (Ctrl+C to stop)..."
+            python -m skyguard.main --config config/skyguard.yaml
+        fi
     fi
 }
 
@@ -165,21 +194,50 @@ start_web_portal() {
     echo -e "${BLUE}🌐 Starting SkyGuard web portal...${NC}"
     log "Starting web portal"
     
-    # Change to SkyGuard directory
-    cd "$SKYGUARD_DIR"
+    # Determine the user to run as
+    CURRENT_USER=$(whoami)
+    TARGET_USER="$PLATFORM_USER"
     
-    # Activate virtual environment
-    source "$VENV_DIR/bin/activate"
-    
-    # Start web portal
-    if [ "$BACKGROUND" = true ]; then
-        nohup python scripts/start_web_portal.py --host 0.0.0.0 --port 8080 > logs/web.log 2>&1 &
-        local web_pid=$!
-        echo "Web portal started in background (PID: $web_pid)"
-        log "Web portal started in background (PID: $web_pid)"
+    # If running as root, switch to platform user
+    if [ "$CURRENT_USER" = "root" ] && [ "$TARGET_USER" != "root" ]; then
+        echo -e "${CYAN}   Running as root - switching to user: $TARGET_USER${NC}"
+        # Use runuser to execute as the target user
+        cd "$SKYGUARD_DIR"
+        if [ "$BACKGROUND" = true ]; then
+            runuser -l "$TARGET_USER" -c "cd '$SKYGUARD_DIR' && source venv/bin/activate && nohup python scripts/start_web_portal.py --host 0.0.0.0 --port 8080 > logs/web.log 2>&1 &" || {
+                echo -e "${RED}   ❌ Failed to start as user $TARGET_USER${NC}"
+                return 1
+            }
+            # Get the PID
+            sleep 1
+            local web_pid=$(pgrep -f "start_web_portal.py" | head -1)
+            if [ -n "$web_pid" ]; then
+                echo "Web portal started in background (PID: $web_pid)"
+                log "Web portal started in background (PID: $web_pid)"
+            else
+                echo -e "${YELLOW}   ⚠️  Process started but PID not found${NC}"
+            fi
+        else
+            echo "Starting web portal in foreground (Ctrl+C to stop)..."
+            runuser -l "$TARGET_USER" -c "cd '$SKYGUARD_DIR' && source venv/bin/activate && python scripts/start_web_portal.py --host 0.0.0.0 --port 8080"
+        fi
     else
-        echo "Starting web portal in foreground (Ctrl+C to stop)..."
-        python scripts/start_web_portal.py --host 0.0.0.0 --port 8080
+        # Running as regular user - proceed normally
+        cd "$SKYGUARD_DIR"
+        
+        # Activate virtual environment
+        source "$VENV_DIR/bin/activate"
+        
+        # Start web portal
+        if [ "$BACKGROUND" = true ]; then
+            nohup python scripts/start_web_portal.py --host 0.0.0.0 --port 8080 > logs/web.log 2>&1 &
+            local web_pid=$!
+            echo "Web portal started in background (PID: $web_pid)"
+            log "Web portal started in background (PID: $web_pid)"
+        else
+            echo "Starting web portal in foreground (Ctrl+C to stop)..."
+            python scripts/start_web_portal.py --host 0.0.0.0 --port 8080
+        fi
     fi
 }
 
