@@ -130,22 +130,48 @@ export BUILD_VERSION="$TV_VERSION"
 
 if [ "$INSTALL_MODE" = "venv" ]; then
     echo "   Installing into virtual environment..."
-    # Explicitly disable user installation to ensure it goes to venv
-    python3 setup.py install --prefix="$VIRTUAL_ENV" --force
-    # Alternative: build wheel and install with pip (more reliable)
-    echo "   Building wheel..."
+    
+    # Fix venv permissions if needed
+    if [ ! -w "$VIRTUAL_ENV/lib/python3.10/site-packages" ]; then
+        echo "   ⚠️  Venv not writable, fixing permissions..."
+        sudo chown -R "$(whoami):$(whoami)" "$VIRTUAL_ENV" 2>/dev/null || {
+            echo "   ⚠️  Could not fix permissions, will try user installation"
+            INSTALL_MODE="user"
+        }
+    fi
+    
+    # Build wheel first (creates proper metadata)
+    echo "   Building wheel (this creates proper package metadata)..."
     python3 setup.py bdist_wheel
-    WHEEL_FILE=$(ls -t dist/torchvision-*.whl | head -1)
-    if [ -n "$WHEEL_FILE" ]; then
-        echo "   Installing wheel with pip..."
-        pip install "$WHEEL_FILE" --force-reinstall --no-deps
+    
+    # Find the wheel file (must be .whl, not .egg)
+    WHEEL_FILE=$(ls -t dist/torchvision-*.whl 2>/dev/null | head -1)
+    if [ -n "$WHEEL_FILE" ] && [ -f "$WHEEL_FILE" ]; then
+        echo "   Installing wheel with pip (ensures proper metadata)..."
+        if [ "$INSTALL_MODE" = "venv" ]; then
+            pip install "$WHEEL_FILE" --force-reinstall --no-deps
+        else
+            pip install "$WHEEL_FILE" --user --force-reinstall --no-deps
+        fi
+        echo "   ✅ Installed from wheel: $WHEEL_FILE"
     else
-        echo "   ⚠️  Wheel not found, using setup.py install"
-        python3 setup.py install --force
+        echo "   ⚠️  Wheel not found, using pip install (creates metadata)..."
+        if [ "$INSTALL_MODE" = "venv" ]; then
+            pip install . --force-reinstall --no-deps
+        else
+            pip install . --user --force-reinstall --no-deps
+        fi
     fi
 else
     echo "   Installing to user site-packages..."
-    python3 setup.py install --user
+    # Build wheel for user installation too
+    python3 setup.py bdist_wheel
+    WHEEL_FILE=$(ls -t dist/torchvision-*.whl 2>/dev/null | head -1)
+    if [ -n "$WHEEL_FILE" ] && [ -f "$WHEEL_FILE" ]; then
+        pip install "$WHEEL_FILE" --user --force-reinstall --no-deps
+    else
+        pip install . --user --force-reinstall --no-deps
+    fi
 fi
 
 # Verify installation

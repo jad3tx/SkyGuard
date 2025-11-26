@@ -136,23 +136,45 @@ fi
 
 # Step 1: Stop SkyGuard processes
 echo -e "\n${BLUE}🛑 Step 1: Stopping SkyGuard processes...${NC}"
-if pgrep -f "python.*skyguard.main" >/dev/null 2>&1; then
-    echo -e "${CYAN}   Found running SkyGuard main processes${NC}"
-    pkill -f "python.*skyguard.main" || true
-    sleep 1
-    echo -e "${GREEN}   ✅ Main processes stopped${NC}"
-else
-    echo -e "${CYAN}   No main processes running${NC}"
-fi
 
-if pgrep -f "skyguard.*web.*app" >/dev/null 2>&1; then
-    echo -e "${CYAN}   Found running SkyGuard web portal processes${NC}"
-    pkill -f "skyguard.*web.*app" || true
-    sleep 1
-    echo -e "${GREEN}   ✅ Web portal processes stopped${NC}"
-else
-    echo -e "${CYAN}   No web portal processes running${NC}"
-fi
+# Function to stop processes gracefully
+stop_processes() {
+    local pattern="$1"
+    local name="$2"
+    
+    if pgrep -f "$pattern" >/dev/null 2>&1; then
+        echo -e "${CYAN}   Found running $name processes${NC}"
+        
+        # Try to stop as current user first
+        if pkill -f "$pattern" 2>/dev/null; then
+            sleep 1
+            # Check if still running
+            if pgrep -f "$pattern" >/dev/null 2>&1; then
+                echo -e "${YELLOW}   ⚠️  Some processes still running, trying with sudo...${NC}"
+                sudo pkill -f "$pattern" 2>/dev/null || true
+                sleep 1
+            fi
+        else
+            # If pkill failed, try with sudo
+            echo -e "${YELLOW}   ⚠️  Permission denied, trying with sudo...${NC}"
+            sudo pkill -f "$pattern" 2>/dev/null || true
+            sleep 1
+        fi
+        
+        # Final check
+        if pgrep -f "$pattern" >/dev/null 2>&1; then
+            echo -e "${YELLOW}   ⚠️  Some $name processes may still be running${NC}"
+            echo -e "${CYAN}   You may need to stop them manually${NC}"
+        else
+            echo -e "${GREEN}   ✅ $name processes stopped${NC}"
+        fi
+    else
+        echo -e "${CYAN}   No $name processes running${NC}"
+    fi
+}
+
+stop_processes "python.*skyguard.main" "SkyGuard main"
+stop_processes "skyguard.*web.*app" "SkyGuard web portal"
 
 # Step 2: Update from git
 echo -e "\n${BLUE}📥 Step 2: Updating code from git...${NC}"
@@ -166,13 +188,40 @@ echo -e "${CYAN}   Target branch: $BRANCH${NC}"
 # Stash any local changes
 if [ -n "$(git status --porcelain 2>/dev/null)" ]; then
     echo -e "${YELLOW}   ⚠️  Uncommitted changes detected${NC}"
-    echo -e "${CYAN}   Stashing local changes...${NC}"
-    git stash push -m "Auto-stash before update $(date +%Y%m%d_%H%M%S)" || {
-        echo -e "${RED}   ❌ Failed to stash changes${NC}"
-        echo -e "${YELLOW}   Please commit or stash your changes manually${NC}"
-        exit 1
-    }
-    echo -e "${GREEN}   ✅ Changes stashed${NC}"
+    echo -e "${CYAN}   Stashing local changes (including untracked files)...${NC}"
+    
+    # Try to stash with untracked files included
+    if git stash push -u -m "Auto-stash before update $(date +%Y%m%d_%H%M%S)" 2>/dev/null; then
+        echo -e "${GREEN}   ✅ Changes stashed${NC}"
+    else
+        # If that fails, try without untracked files
+        echo -e "${CYAN}   Retrying stash (excluding untracked files)...${NC}"
+        if git stash push -m "Auto-stash before update $(date +%Y%m%d_%H%M%S)" 2>/dev/null; then
+            echo -e "${GREEN}   ✅ Changes stashed (untracked files preserved)${NC}"
+        else
+            # Last resort: check what's preventing the stash
+            echo -e "${YELLOW}   ⚠️  Could not stash changes automatically${NC}"
+            echo -e "${CYAN}   Checking git status...${NC}"
+            git status --short
+            
+            # Ask user what to do
+            echo ""
+            echo -e "${YELLOW}   Options:${NC}"
+            echo -e "${CYAN}   1. Commit your changes: git add . && git commit -m 'Your message'${NC}"
+            echo -e "${CYAN}   2. Manually stash: git stash${NC}"
+            echo -e "${CYAN}   3. Discard changes: git reset --hard HEAD${NC}"
+            echo -e "${CYAN}   4. Continue anyway (may cause conflicts): Press Enter${NC}"
+            read -p "   Choose option (1-4) or press Enter to continue: " -r
+            echo
+            
+            if [[ $REPLY =~ ^[1-3]$ ]]; then
+                echo -e "${YELLOW}   Please run the chosen option manually, then run this script again${NC}"
+                exit 1
+            else
+                echo -e "${YELLOW}   ⚠️  Continuing with uncommitted changes (may cause conflicts)${NC}"
+            fi
+        fi
+    fi
 fi
 
 # Switch to target branch if needed
