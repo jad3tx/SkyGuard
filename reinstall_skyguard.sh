@@ -1342,11 +1342,13 @@ cd "$SKYGUARD_PATH"
 
 # Determine if we need to run as a different user
 CURRENT_USER=$(whoami)
-if [ "$CURRENT_USER" = "root" ] && [ "$PLATFORM_USER" != "root" ] && id "$PLATFORM_USER" &>/dev/null; then
-    echo -e "${CYAN}   Running as root - services will start as user: $PLATFORM_USER${NC}"
+if [ "$CURRENT_USER" = "root" ] && [ "$DETECTED_USERNAME" != "root" ] && id "$DETECTED_USERNAME" &>/dev/null; then
+    echo -e "${CYAN}   Running as root - services will start as user: $DETECTED_USERNAME${NC}"
     USE_RUNUSER=true
+    PLATFORM_USER="$DETECTED_USERNAME"
 else
     USE_RUNUSER=false
+    PLATFORM_USER="$CURRENT_USER"
 fi
 
 # Start main system
