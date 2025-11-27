@@ -512,44 +512,41 @@ install_jetson_pytorch() {
         # First, uninstall any existing torchvision that might be incompatible
         pip3 uninstall -y torchvision 2>/dev/null || true
         
-        # Try to download NVIDIA's torchvision wheel for JetPack 6.1
-        TORCHVISION_WHEEL="torchvision-0.20.0+nv24.08.17622132-${PYTHON_TAG}-${PYTHON_TAG}-linux_aarch64.whl"
-        TORCHVISION_URL="https://developer.download.nvidia.com/compute/redist/jp/v61/pytorch/${TORCHVISION_WHEEL}"
+        # Use the NVIDIA Jetson AI Lab torchvision wheel (0.23.0 for JetPack 6.1)
+        TORCHVISION_WHEEL="torchvision-0.23.0-${PYTHON_TAG}-${PYTHON_TAG}-linux_aarch64.whl"
+        TORCHVISION_URL="https://pypi.jetson-ai-lab.io/jp6/cu126/+f/907/c4c1933789645/torchvision-0.23.0-${PYTHON_TAG}-${PYTHON_TAG}-linux_aarch64.whl#sha256=907c4c1933789645ebb20dd9181d40f8647978e6bd30086ae7b01febb937d2d1"
         
-        echo -e "${CYAN}   Trying NVIDIA torchvision wheel: $TORCHVISION_URL${NC}"
+        echo -e "${CYAN}   Downloading NVIDIA torchvision wheel from Jetson AI Lab...${NC}"
+        echo -e "${CYAN}   URL: $TORCHVISION_URL${NC}"
         
-        if wget -q --spider "$TORCHVISION_URL" 2>/dev/null; then
-            wget "$TORCHVISION_URL" -O "${DOWNLOAD_DIR}/${TORCHVISION_WHEEL}" || {
+        # Extract just the wheel filename from the URL (before the #)
+        TORCHVISION_WHEEL_URL=$(echo "$TORCHVISION_URL" | cut -d'#' -f1)
+        
+        if wget -q --spider "$TORCHVISION_WHEEL_URL" 2>/dev/null; then
+            wget "$TORCHVISION_WHEEL_URL" -O "${DOWNLOAD_DIR}/${TORCHVISION_WHEEL}" || {
                 echo -e "${YELLOW}   ⚠️  Failed to download NVIDIA torchvision wheel${NC}"
-                echo -e "${CYAN}   Trying PyPI torchvision 0.20.0 with --no-deps...${NC}"
-                pip3 install --no-deps torchvision==0.20.0 || {
-                    echo -e "${RED}   ❌ Failed to install torchvision${NC}"
-                    echo -e "${YELLOW}   You may need to install torchvision manually${NC}"
-                    return 1
-                }
+                echo -e "${RED}   ❌ Cannot proceed without torchvision${NC}"
+                return 1
             }
             
             if [ -f "${DOWNLOAD_DIR}/${TORCHVISION_WHEEL}" ]; then
-                echo -e "${CYAN}   Installing NVIDIA torchvision wheel...${NC}"
-                pip3 install "${DOWNLOAD_DIR}/${TORCHVISION_WHEEL}" || {
-                    echo -e "${YELLOW}   ⚠️  Failed to install NVIDIA torchvision wheel${NC}"
-                    echo -e "${CYAN}   Trying PyPI torchvision 0.20.0 with --no-deps...${NC}"
-                    pip3 install --no-deps torchvision==0.20.0 || {
-                        echo -e "${RED}   ❌ Failed to install torchvision${NC}"
-                        rm -f "${DOWNLOAD_DIR}/${TORCHVISION_WHEEL}"
-                        return 1
-                    }
+                echo -e "${CYAN}   Installing NVIDIA torchvision wheel (0.23.0)...${NC}"
+                pip3 install "${DOWNLOAD_DIR}/${TORCHVISION_WHEEL}" --no-deps || {
+                    echo -e "${RED}   ❌ Failed to install NVIDIA torchvision wheel${NC}"
+                    rm -f "${DOWNLOAD_DIR}/${TORCHVISION_WHEEL}"
+                    return 1
                 }
                 rm -f "${DOWNLOAD_DIR}/${TORCHVISION_WHEEL}"
+                echo -e "${GREEN}   ✅ torchvision 0.23.0 installed successfully${NC}"
+            else
+                echo -e "${RED}   ❌ Downloaded wheel file not found${NC}"
+                return 1
             fi
         else
-            echo -e "${YELLOW}   ⚠️  NVIDIA torchvision wheel not available, trying PyPI version...${NC}"
-            echo -e "${CYAN}   Installing torchvision 0.20.0 with --no-deps...${NC}"
-            pip3 install --no-deps torchvision==0.20.0 || {
-                echo -e "${RED}   ❌ Failed to install torchvision${NC}"
-                echo -e "${YELLOW}   You may need to install torchvision manually${NC}"
-                return 1
-            }
+            echo -e "${RED}   ❌ NVIDIA torchvision wheel not available at expected URL${NC}"
+            echo -e "${YELLOW}   Please install torchvision manually from:${NC}"
+            echo -e "${CYAN}   $TORCHVISION_URL${NC}"
+            return 1
         fi
         
         # Verify torchvision is installed AND torch wasn't replaced
@@ -874,18 +871,15 @@ if [ "$DETECTED_PLATFORM" = "jetson" ]; then
         if [ "$TORCHVISION_STATUS" = "FOUND" ]; then
             echo -e "${GREEN}   ✅ Found torchvision in system${NC}"
         else
-            echo -e "${YELLOW}   ⚠️  torchvision not found - will install it${NC}"
-            pip3 install torchvision || {
-                echo -e "${YELLOW}   ⚠️  Failed to install torchvision automatically${NC}"
-                echo -e "${CYAN}   Please install manually: pip3 install torchvision${NC}"
-            }
+            echo -e "${YELLOW}   ⚠️  torchvision not found - will install it via install_jetson_pytorch()${NC}"
+            # torchvision will be installed by install_jetson_pytorch() if needed
         fi
         USE_SYSTEM_SITE_PACKAGES=true
     elif [ "$PYTORCH_STATUS" = "CPU" ]; then
         echo -e "${YELLOW}   ⚠️  Found PyTorch but CUDA not available - will use system packages anyway${NC}"
         if [ "$TORCHVISION_STATUS" != "FOUND" ]; then
-            echo -e "${YELLOW}   ⚠️  torchvision not found - installing...${NC}"
-            pip3 install torchvision || true
+            echo -e "${YELLOW}   ⚠️  torchvision not found - will install it via install_jetson_pytorch()${NC}"
+            # torchvision will be installed by install_jetson_pytorch() if needed
         fi
         USE_SYSTEM_SITE_PACKAGES=true
     else
@@ -914,7 +908,8 @@ if [ "$DETECTED_PLATFORM" = "jetson" ]; then
                 echo -e "${CYAN}   For JetPack 6.1:${NC}"
                 echo -e "${CYAN}   wget https://developer.download.nvidia.com/compute/redist/jp/v61/pytorch/torch-2.5.0a0+872d972e41.nv24.08.17622132-cp310-cp310-linux_aarch64.whl${NC}"
                 echo -e "${CYAN}   pip3 install torch-2.5.0a0+872d972e41.nv24.08.17622132-cp310-cp310-linux_aarch64.whl${NC}"
-                echo -e "${CYAN}   pip3 install torchvision${NC}"
+                echo -e "${CYAN}   wget https://pypi.jetson-ai-lab.io/jp6/cu126/+f/907/c4c1933789645/torchvision-0.23.0-cp310-cp310-linux_aarch64.whl${NC}"
+                echo -e "${CYAN}   pip3 install torchvision-0.23.0-cp310-cp310-linux_aarch64.whl --no-deps${NC}"
                 exit 1
             fi
         else
