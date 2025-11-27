@@ -5,11 +5,35 @@ Helps identify why models can't be loaded.
 """
 
 import sys
+import os
 from pathlib import Path
 from typing import Optional
 
 # Add project root to path
 PROJECT_ROOT = Path(__file__).parent.parent
+
+# Auto-detect and use venv Python if available
+VENV_PYTHON = PROJECT_ROOT / "venv" / "bin" / "python3"
+if VENV_PYTHON.exists() and not os.environ.get("VIRTUAL_ENV"):
+    # Check if we should use venv Python
+    import subprocess
+    try:
+        # Test if venv Python works
+        result = subprocess.run(
+            [str(VENV_PYTHON), "--version"],
+            capture_output=True,
+            text=True,
+            timeout=5
+        )
+        if result.returncode == 0:
+            print("⚠️  Running outside venv. For accurate results, run:")
+            print(f"   cd {PROJECT_ROOT}")
+            print("   source venv/bin/activate")
+            print("   python scripts/diagnose_model_loading.py")
+            print("\nContinuing with system Python...\n")
+    except Exception:
+        pass
+
 sys.path.insert(0, str(PROJECT_ROOT))
 
 def print_section(title: str) -> None:

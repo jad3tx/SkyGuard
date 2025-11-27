@@ -508,44 +508,66 @@ install_jetson_pytorch() {
             return 1
         }
         
-        echo -e "${CYAN}   Installing NVIDIA torchvision wheel for JetPack 6.1...${NC}"
+        echo -e "${CYAN}   Installing compatible NVIDIA torchvision for PyTorch 2.5.0a0...${NC}"
         # First, uninstall any existing torchvision that might be incompatible
         pip3 uninstall -y torchvision 2>/dev/null || true
         
-        # Use the NVIDIA Jetson AI Lab torchvision wheel (0.23.0 for JetPack 6.1)
+        # For PyTorch 2.5.0a0, try torchvision 0.23.0 from Jetson AI Lab first
+        # If that doesn't work, fall back to building from source
         TORCHVISION_WHEEL="torchvision-0.23.0-${PYTHON_TAG}-${PYTHON_TAG}-linux_aarch64.whl"
-        TORCHVISION_URL="https://pypi.jetson-ai-lab.io/jp6/cu126/+f/907/c4c1933789645/torchvision-0.23.0-${PYTHON_TAG}-${PYTHON_TAG}-linux_aarch64.whl#sha256=907c4c1933789645ebb20dd9181d40f8647978e6bd30086ae7b01febb937d2d1"
+        TORCHVISION_URL="https://pypi.jetson-ai-lab.io/jp6/cu126/+f/907/c4c1933789645/${TORCHVISION_WHEEL}"
         
-        echo -e "${CYAN}   Downloading NVIDIA torchvision wheel from Jetson AI Lab...${NC}"
+        echo -e "${CYAN}   Attempting to download NVIDIA torchvision 0.23.0 from Jetson AI Lab...${NC}"
         echo -e "${CYAN}   URL: $TORCHVISION_URL${NC}"
         
-        # Extract just the wheel filename from the URL (before the #)
-        TORCHVISION_WHEEL_URL=$(echo "$TORCHVISION_URL" | cut -d'#' -f1)
+        TORCHVISION_INSTALLED=false
         
-        if wget -q --spider "$TORCHVISION_WHEEL_URL" 2>/dev/null; then
-            wget "$TORCHVISION_WHEEL_URL" -O "${DOWNLOAD_DIR}/${TORCHVISION_WHEEL}" || {
-                echo -e "${YELLOW}   ⚠️  Failed to download NVIDIA torchvision wheel${NC}"
-                echo -e "${RED}   ❌ Cannot proceed without torchvision${NC}"
-                return 1
-            }
-            
-            if [ -f "${DOWNLOAD_DIR}/${TORCHVISION_WHEEL}" ]; then
-                echo -e "${CYAN}   Installing NVIDIA torchvision wheel (0.23.0)...${NC}"
-                pip3 install "${DOWNLOAD_DIR}/${TORCHVISION_WHEEL}" --no-deps || {
-                    echo -e "${RED}   ❌ Failed to install NVIDIA torchvision wheel${NC}"
-                    rm -f "${DOWNLOAD_DIR}/${TORCHVISION_WHEEL}"
-                    return 1
-                }
-                rm -f "${DOWNLOAD_DIR}/${TORCHVISION_WHEEL}"
-                echo -e "${GREEN}   ✅ torchvision 0.23.0 installed successfully${NC}"
-            else
-                echo -e "${RED}   ❌ Downloaded wheel file not found${NC}"
-                return 1
+        # Try downloading and installing the wheel
+        if wget -q --spider "$TORCHVISION_URL" 2>/dev/null; then
+            if wget "$TORCHVISION_URL" -O "${DOWNLOAD_DIR}/${TORCHVISION_WHEEL}" 2>/dev/null; then
+                if [ -f "${DOWNLOAD_DIR}/${TORCHVISION_WHEEL}" ]; then
+                    echo -e "${CYAN}   Installing NVIDIA torchvision wheel (0.23.0)...${NC}"
+                    if pip3 install "${DOWNLOAD_DIR}/${TORCHVISION_WHEEL}" --no-deps 2>/dev/null; then
+                        # Verify it works with the installed PyTorch
+                        if python3 -c "import torchvision; from torchvision.ops import nms" 2>/dev/null; then
+                            TORCHVISION_INSTALLED=true
+                            echo -e "${GREEN}   ✅ torchvision 0.23.0 installed and verified${NC}"
+                        else
+                            echo -e "${YELLOW}   ⚠️  torchvision 0.23.0 installed but has compatibility issues${NC}"
+                            pip3 uninstall -y torchvision 2>/dev/null || true
+                        fi
+                        rm -f "${DOWNLOAD_DIR}/${TORCHVISION_WHEEL}"
+                    fi
+                fi
             fi
-        else
-            echo -e "${RED}   ❌ NVIDIA torchvision wheel not available at expected URL${NC}"
-            echo -e "${YELLOW}   Please install torchvision manually from:${NC}"
-            echo -e "${CYAN}   $TORCHVISION_URL${NC}"
+        fi
+        
+        # If wheel installation failed or has compatibility issues, build from source
+        if [ "$TORCHVISION_INSTALLED" = false ]; then
+            echo -e "${YELLOW}   ⚠️  Pre-built torchvision wheel not available or incompatible${NC}"
+            echo -e "${CYAN}   Building torchvision from source to match PyTorch 2.5.0a0...${NC}"
+            echo -e "${CYAN}   This will take 10-30 minutes...${NC}"
+            
+            # Check if build script exists
+            if [ -f "$SKYGUARD_PATH/scripts/build_torchvision_jetson.sh" ]; then
+                chmod +x "$SKYGUARD_PATH/scripts/build_torchvision_jetson.sh"
+                if "$SKYGUARD_PATH/scripts/build_torchvision_jetson.sh"; then
+                    TORCHVISION_INSTALLED=true
+                    echo -e "${GREEN}   ✅ torchvision built and installed from source${NC}"
+                else
+                    echo -e "${RED}   ❌ Failed to build torchvision from source${NC}"
+                fi
+            else
+                echo -e "${RED}   ❌ Build script not found: $SKYGUARD_PATH/scripts/build_torchvision_jetson.sh${NC}"
+                echo -e "${YELLOW}   Please build torchvision manually or install a compatible version${NC}"
+            fi
+        fi
+        
+        if [ "$TORCHVISION_INSTALLED" = false ]; then
+            echo -e "${RED}   ❌ Could not install compatible torchvision${NC}"
+            echo -e "${YELLOW}   You may need to install it manually:${NC}"
+            echo -e "${CYAN}   cd ~/SkyGuard${NC}"
+            echo -e "${CYAN}   ./scripts/build_torchvision_jetson.sh${NC}"
             return 1
         fi
         
