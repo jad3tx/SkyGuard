@@ -2,7 +2,8 @@
 # SkyGuard Installation Script
 # Supports Raspberry Pi, NVIDIA Jetson, and other Linux platforms
 
-set -e
+# Don't use set -e - we want to handle errors gracefully
+set -o pipefail  # Only fail on pipe errors, not individual commands
 
 # Colors for output
 RED='\033[0;31m'
@@ -187,18 +188,38 @@ remove_torch_from_venv() {
 }
 
 echo -e "${BLUE}📦 Step 1: Updating system packages...${NC}"
-sudo apt update
-sudo apt upgrade -y
+if ! sudo apt update; then
+    echo -e "${RED}❌ Failed to update package lists${NC}"
+    exit 1
+fi
+
+if ! sudo apt upgrade -y; then
+    echo -e "${YELLOW}⚠️  Some packages failed to upgrade, continuing...${NC}"
+fi
 
 echo -e "${BLUE}📦 Step 2: Installing system dependencies...${NC}"
+
+# Check Python version first
+PYTHON_VERSION=$(python3 --version 2>&1 | grep -oP '\d+\.\d+' | head -1 || echo "unknown")
+PYTHON_MAJOR=$(echo "$PYTHON_VERSION" | cut -d. -f1)
+PYTHON_MINOR=$(echo "$PYTHON_VERSION" | cut -d. -f2)
+
+echo -e "${CYAN}   Detected Python version: $PYTHON_VERSION${NC}"
+
+if [ "$PYTHON_MAJOR" -lt 3 ] || ([ "$PYTHON_MAJOR" -eq 3 ] && [ "$PYTHON_MINOR" -lt 8 ]); then
+    echo -e "${RED}❌ Python 3.8+ is required. Found: $PYTHON_VERSION${NC}"
+    echo -e "${YELLOW}   Please upgrade Python and try again${NC}"
+    exit 1
+fi
+
 # Install core dependencies (required)
-sudo apt install -y \
+echo -e "${CYAN}   Installing core dependencies...${NC}"
+if ! sudo apt install -y \
     python3 \
     python3-pip \
     python3-venv \
     python3-dev \
     git \
-    gh \
     wget \
     curl \
     build-essential \
@@ -212,7 +233,22 @@ sudo apt install -y \
     libswscale-dev \
     libv4l-dev \
     libxvidcore-dev \
-    libx264-dev
+    libx264-dev; then
+    echo -e "${RED}❌ Failed to install core dependencies${NC}"
+    exit 1
+fi
+
+# Try to install GitHub CLI (optional - may not be available in all repos)
+echo -e "${CYAN}   Installing GitHub CLI (optional)...${NC}"
+if sudo apt install -y gh 2>/dev/null; then
+    echo -e "${GREEN}✅ GitHub CLI installed${NC}"
+else
+    echo -e "${YELLOW}⚠️  GitHub CLI not available in default repos (optional, continuing...)${NC}"
+    echo -e "${CYAN}   You can install it later if needed:${NC}"
+    echo -e "${CYAN}   curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg${NC}"
+    echo -e "${CYAN}   echo \"deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main\" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null${NC}"
+    echo -e "${CYAN}   sudo apt update && sudo apt install gh${NC}"
+fi
 
 # Install BLAS/LAPACK library (try openblas first, fallback to atlas if needed)
 echo -e "${BLUE}Installing BLAS/LAPACK library...${NC}"
@@ -327,6 +363,8 @@ if [ -f "$REQUIREMENTS_FILE" ]; then
         echo -e "${YELLOW}Note: You may be prompted to install:${NC}"
         echo -e "${YELLOW}  - Raspberry Pi hardware dependencies (RPi.GPIO) - Answer 'yes' to enable GPIO features${NC}"
         echo -e "${YELLOW}  - Notification dependencies (Twilio, Pushbullet) - Answer 'yes' to enable notifications${NC}"
+        echo -e "${CYAN}   PyTorch installation on Raspberry Pi can take 15-30 minutes...${NC}"
+        echo -e "${CYAN}   Please be patient and ensure you have a stable internet connection${NC}"
     fi
     
     # For Jetson, filter out torch packages if using system packages
@@ -338,12 +376,22 @@ if [ -f "$REQUIREMENTS_FILE" ]; then
         remove_torch_from_venv "$PROJECT_ROOT/venv"
         
         # Install filtered requirements (as the platform user if running as root)
+        INSTALL_SUCCESS=false
         if [ "$(id -u)" -eq 0 ] && [ "$PLATFORM_USER" != "root" ] && id "$PLATFORM_USER" &>/dev/null; then
-            runuser -l "$PLATFORM_USER" -c "cd '$PROJECT_ROOT' && source venv/bin/activate && pip install -r '$FILTERED_REQ'"
+            if runuser -l "$PLATFORM_USER" -c "cd '$PROJECT_ROOT' && source venv/bin/activate && pip install --no-cache-dir -r '$FILTERED_REQ'"; then
+                INSTALL_SUCCESS=true
+            fi
             # Fix ownership after installation (packages may have been installed as root)
             chown -R "$PLATFORM_USER:$PLATFORM_USER" venv 2>/dev/null || true
         else
-            pip install -r "$FILTERED_REQ"
+            if pip install --no-cache-dir -r "$FILTERED_REQ"; then
+                INSTALL_SUCCESS=true
+            fi
+        fi
+        
+        if [ "$INSTALL_SUCCESS" = false ]; then
+            echo -e "${RED}❌ Failed to install some packages from $FILTERED_REQ${NC}"
+            echo -e "${YELLOW}   Continuing anyway...${NC}"
         fi
         
         # Aggressively remove torch packages AGAIN after installation
@@ -352,22 +400,71 @@ if [ -f "$REQUIREMENTS_FILE" ]; then
         
         rm -f "$FILTERED_REQ"
     else
-        if [ "$(id -u)" -eq 0 ] && [ "$PLATFORM_USER" != "root" ] && id "$PLATFORM_USER" &>/dev/null; then
-            runuser -l "$PLATFORM_USER" -c "cd '$PROJECT_ROOT' && source venv/bin/activate && pip install -r '$REQUIREMENTS_FILE'"
-            # Fix ownership after installation
-            chown -R "$PLATFORM_USER:$PLATFORM_USER" venv 2>/dev/null || true
-        else
-            pip install -r "$REQUIREMENTS_FILE"
+        # For Raspberry Pi, install packages with retries and better error handling
+        INSTALL_SUCCESS=false
+        MAX_RETRIES=2
+        
+        for attempt in $(seq 1 $MAX_RETRIES); do
+            if [ "$attempt" -gt 1 ]; then
+                echo -e "${YELLOW}   Retry attempt $attempt of $MAX_RETRIES...${NC}"
+            fi
+            
+            if [ "$(id -u)" -eq 0 ] && [ "$PLATFORM_USER" != "root" ] && id "$PLATFORM_USER" &>/dev/null; then
+                if runuser -l "$PLATFORM_USER" -c "cd '$PROJECT_ROOT' && source venv/bin/activate && pip install --no-cache-dir --timeout=300 -r '$REQUIREMENTS_FILE'"; then
+                    INSTALL_SUCCESS=true
+                    break
+                fi
+                # Fix ownership after installation
+                chown -R "$PLATFORM_USER:$PLATFORM_USER" venv 2>/dev/null || true
+            else
+                if pip install --no-cache-dir --timeout=300 -r "$REQUIREMENTS_FILE"; then
+                    INSTALL_SUCCESS=true
+                    break
+                fi
+            fi
+            
+            if [ "$attempt" -lt $MAX_RETRIES ]; then
+                echo -e "${YELLOW}   Installation failed, waiting 5 seconds before retry...${NC}"
+                sleep 5
+            fi
+        done
+        
+        if [ "$INSTALL_SUCCESS" = false ]; then
+            echo -e "${RED}❌ Failed to install packages after $MAX_RETRIES attempts${NC}"
+            echo -e "${YELLOW}   Some packages may have failed. Common issues:${NC}"
+            echo -e "${YELLOW}   - PyTorch: Very large package, may need more time or disk space${NC}"
+            echo -e "${YELLOW}   - Network timeout: Check your internet connection${NC}"
+            echo -e "${YELLOW}   - Disk space: Ensure you have at least 5GB free${NC}"
+            echo ""
+            echo -e "${CYAN}   You can try installing packages manually:${NC}"
+            echo -e "${CYAN}   source venv/bin/activate${NC}"
+            echo -e "${CYAN}   pip install --no-cache-dir -r $REQUIREMENTS_FILE${NC}"
+            echo ""
+            read -p "Continue anyway? (y/N): " -n 1 -r
+            echo
+            if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+                exit 1
+            fi
         fi
     fi
 else
     echo -e "${YELLOW}⚠️  $REQUIREMENTS_FILE not found, using requirements.txt...${NC}"
+    INSTALL_SUCCESS=false
     if [ "$(id -u)" -eq 0 ] && [ "$PLATFORM_USER" != "root" ] && id "$PLATFORM_USER" &>/dev/null; then
-        runuser -l "$PLATFORM_USER" -c "cd '$PROJECT_ROOT' && source venv/bin/activate && pip install -r requirements.txt"
+        if runuser -l "$PLATFORM_USER" -c "cd '$PROJECT_ROOT' && source venv/bin/activate && pip install --no-cache-dir --timeout=300 -r requirements.txt"; then
+            INSTALL_SUCCESS=true
+        fi
         # Fix ownership after installation
         chown -R "$PLATFORM_USER:$PLATFORM_USER" venv 2>/dev/null || true
     else
-        pip install -r requirements.txt
+        if pip install --no-cache-dir --timeout=300 -r requirements.txt; then
+            INSTALL_SUCCESS=true
+        fi
+    fi
+    
+    if [ "$INSTALL_SUCCESS" = false ]; then
+        echo -e "${RED}❌ Failed to install packages from requirements.txt${NC}"
+        exit 1
     fi
 fi
 
@@ -379,6 +476,43 @@ echo -e "${BLUE}📦 Step 6: Creating necessary directories...${NC}"
 mkdir -p logs
 mkdir -p data/detections
 mkdir -p models
+
+# Raspberry Pi specific setup
+if [ "$REQUIREMENTS_FILE" = "requirements-pi.txt" ]; then
+    echo -e "${BLUE}📦 Step 7: Raspberry Pi specific setup...${NC}"
+    
+    # Check if user is in gpio group (for GPIO access)
+    if groups | grep -q gpio; then
+        echo -e "${GREEN}✅ User is in gpio group${NC}"
+    else
+        echo -e "${YELLOW}⚠️  User is not in gpio group${NC}"
+        echo -e "${CYAN}   Adding user to gpio group for hardware access...${NC}"
+        if [ "$(id -u)" -eq 0 ]; then
+            usermod -a -G gpio "$PLATFORM_USER" 2>/dev/null || echo -e "${YELLOW}   ⚠️  Could not add user to gpio group (may need manual setup)${NC}"
+        else
+            echo -e "${YELLOW}   Run this command as root to enable GPIO:${NC}"
+            echo -e "${CYAN}   sudo usermod -a -G gpio $PLATFORM_USER${NC}"
+            echo -e "${YELLOW}   Then logout and login again for changes to take effect${NC}"
+        fi
+    fi
+    
+    # Check available disk space
+    AVAILABLE_SPACE=$(df -BG "$PROJECT_ROOT" | tail -1 | awk '{print $4}' | sed 's/G//')
+    if [ "$AVAILABLE_SPACE" -lt 5 ]; then
+        echo -e "${YELLOW}⚠️  Low disk space: ${AVAILABLE_SPACE}GB available${NC}"
+        echo -e "${YELLOW}   PyTorch installation requires at least 5GB free space${NC}"
+    else
+        echo -e "${GREEN}✅ Sufficient disk space: ${AVAILABLE_SPACE}GB available${NC}"
+    fi
+    
+    # Check if camera is available (optional)
+    if [ -c /dev/video0 ] || [ -c /dev/video1 ]; then
+        echo -e "${GREEN}✅ Camera device detected${NC}"
+    else
+        echo -e "${YELLOW}⚠️  No camera device detected (optional)${NC}"
+        echo -e "${CYAN}   Connect a USB webcam or enable the Pi camera module${NC}"
+    fi
+fi
 
 # Verify PyTorch CUDA on Jetson
 if [ "$REQUIREMENTS_FILE" = "requirements-jetson.txt" ]; then
@@ -444,6 +578,47 @@ fi
 echo ""
 echo -e "${GREEN}✅ Installation complete!${NC}"
 echo ""
+
+# Final verification
+echo -e "${BLUE}🔍 Verifying installation...${NC}"
+VERIFICATION_FAILED=false
+
+# Check if venv is working
+if [ ! -f "venv/bin/python3" ]; then
+    echo -e "${RED}❌ Virtual environment Python not found${NC}"
+    VERIFICATION_FAILED=true
+else
+    echo -e "${GREEN}✅ Virtual environment is working${NC}"
+fi
+
+# Check critical packages
+if [ "$REQUIREMENTS_FILE" = "requirements-pi.txt" ]; then
+    echo -e "${CYAN}   Checking critical packages...${NC}"
+    source venv/bin/activate
+    
+    for package in torch ultralytics opencv-python flask; do
+        if python3 -c "import $package" 2>/dev/null; then
+            VERSION=$(python3 -c "import $package; print($package.__version__)" 2>/dev/null || echo "installed")
+            echo -e "${GREEN}   ✅ $package ($VERSION)${NC}"
+        else
+            echo -e "${RED}   ❌ $package not found${NC}"
+            VERIFICATION_FAILED=true
+        fi
+    done
+    
+    deactivate
+fi
+
+if [ "$VERIFICATION_FAILED" = true ]; then
+    echo ""
+    echo -e "${YELLOW}⚠️  Some packages failed verification${NC}"
+    echo -e "${CYAN}   You may need to install them manually:${NC}"
+    echo -e "${CYAN}   source venv/bin/activate${NC}"
+    echo -e "${CYAN}   pip install --no-cache-dir -r $REQUIREMENTS_FILE${NC}"
+    echo ""
+fi
+
+echo ""
 echo -e "${BLUE}📋 Next steps:${NC}"
 echo "1. Configure the system:"
 echo "   source venv/bin/activate"
@@ -455,3 +630,12 @@ echo ""
 echo "3. Access the web portal:"
 echo "   Open http://<DEVICE_IP_ADDRESS>:8080 in your browser"
 echo ""
+
+if [ "$REQUIREMENTS_FILE" = "requirements-pi.txt" ]; then
+    echo -e "${CYAN}💡 Raspberry Pi Tips:${NC}"
+    echo "   - If GPIO doesn't work, logout and login again after adding to gpio group"
+    echo "   - Monitor temperature: watch -n 1 vcgencmd measure_temp"
+    echo "   - Check power supply: vcgencmd measure_volts"
+    echo "   - For better performance, use a 5V/5A power supply"
+    echo ""
+fi
