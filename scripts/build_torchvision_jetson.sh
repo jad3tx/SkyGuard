@@ -1,6 +1,7 @@
 #!/bin/bash
 # Build torchvision from source for NVIDIA Jetson
-# Compatible with torch 2.5.0a0 from NVIDIA
+# Compatible with PyTorch 2.5.0a0+872d972e41.nv24.08.17622132 (JetPack 6.1)
+# Hardcoded version: TorchVision 0.20.0
 
 set -e
 
@@ -87,10 +88,14 @@ if [ -d "$USER_SITE/torchvision" ]; then
     rm -rf "$USER_SITE/torchvision" "$USER_SITE/torchvision-*.dist-info" 2>/dev/null || true
 fi
 
-# Determine compatible torchvision version
-# For torch 2.5.0, use torchvision 0.20.0
+# Hardcoded compatible torchvision version for JetPack 6.1
+# PyTorch: 2.5.0a0+872d972e41.nv24.08.17622132
+# TorchVision: 0.20.0
+# Based on: https://github.com/hamzashafiq28/pytorch-jetson-jp6.1
 TV_VERSION="0.20.0"
+PYTORCH_TARGET="2.5.0a0"
 echo "Building torchvision version: $TV_VERSION"
+echo "Compatible with PyTorch: $PYTORCH_TARGET (JetPack 6.1)"
 
 # Install build dependencies
 echo ""

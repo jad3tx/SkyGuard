@@ -20,7 +20,25 @@ NVIDIA Jetson devices provide significant advantages over Raspberry Pi for AI wo
 
 ## Installation Steps
 
-### Step 1: Install PyTorch for Jetson
+### Step 1: Install cuSPARSELt 0.7.1
+
+**IMPORTANT**: cuSPARSELt is required for PyTorch on JetPack 6.1.
+
+1. Visit the [NVIDIA cuSPARSELt Downloads](https://developer.nvidia.com/cusparselt/downloads)
+2. Download cuSPARSELt 0.7.1 with these settings:
+   - **Target OS:** Linux
+   - **Target Architecture:** aarch64-jetson
+   - **Compilation:** Native
+   - **Distribution:** Ubuntu
+   - **Target Version:** 22.04
+   - **Target Type:** deb (local)
+3. Install the downloaded package:
+   ```bash
+   sudo dpkg -i <downloaded-cusparselt-package>.deb
+   sudo apt-get install -f
+   ```
+
+### Step 2: Install PyTorch for Jetson
 
 **IMPORTANT**: PyTorch must be installed from NVIDIA's repository, not from PyPI.
 
@@ -29,37 +47,19 @@ NVIDIA Jetson devices provide significant advantages over Raspberry Pi for AI wo
 1. Check your JetPack version:
    ```bash
    cat /etc/nv_tegra_release
-   # Or run:
-   sudo apt show nvidia-jetpack
    ```
 
-2. Install PyTorch from NVIDIA's repository:
-   ```bash
-   # For JetPack 6.1, use the CUDA-enabled PyTorch wheel:
-   wget https://developer.download.nvidia.com/compute/redist/jp/v61/pytorch/torch-2.5.0a0+872d972e41.nv24.08.17622132-cp310-cp310-linux_aarch64.whl
-   pip3 install torch-2.5.0a0+872d972e41.nv24.08.17622132-cp310-cp310-linux_aarch64.whl
-   
-   # Install torchvision from NVIDIA Jetson AI Lab (compatible with PyTorch 2.5.0)
-   wget https://pypi.jetson-ai-lab.io/jp6/cu126/+f/907/c4c1933789645/torchvision-0.23.0-cp310-cp310-linux_aarch64.whl
-   pip3 install torchvision-0.23.0-cp310-cp310-linux_aarch64.whl --no-deps
-   rm -f torchvision-0.23.0-cp310-cp310-linux_aarch64.whl
-   
-   # Note: If the wheel URL doesn't work, you can build from source:
-   #   cd ~/SkyGuard
-   #   ./scripts/build_torchvision_jetson.sh
+2. Download PyTorch wheel from NVIDIA Embedded Downloads:
+   - Visit: https://developer.nvidia.com/embedded/downloads
+   - Search for "PyTorch"
+   - Download the wheel file specifically for JetPack 6.1
+   - Ensure it matches your Python version (typically Python 3.10)
+   - The wheel file will have a name similar to `torch-2.x.x+nv24.xx-cp310-cp310-linux_aarch64.whl`
 
-   # Note: numpy 1.26.0 will be installed in the venv (see requirements-jetson.txt)
-   # If you encounter numpy versioning issues, ensure numpy < 2.0:
-   python3 -m pip install --user --force-reinstall "numpy==1.26.0"
-   ```
-   
-   **Note**: For JetPack 6.1, Python 3.10+ is typically used. Check the exact Python version:
+3. Install the downloaded PyTorch wheel:
    ```bash
-   python3 --version
+   pip3 install <downloaded-pytorch-wheel-file>.whl
    ```
-   
-   Then download the matching PyTorch wheel (cp310 for Python 3.10, cp311 for Python 3.11, etc.)
- 
 
 4. Verify PyTorch installation with CUDA:
    ```bash
@@ -73,11 +73,57 @@ NVIDIA Jetson devices provide significant advantages over Raspberry Pi for AI wo
    CUDA device: NVIDIA Tegra
    ```
 
+### Step 3: Build and Install TorchVision
+
+TorchVision must be built from source to match your PyTorch version.
+
+1. Install TorchVision build dependencies:
+   ```bash
+   sudo apt-get install -y \
+       libjpeg-dev \
+       zlib1g-dev \
+       libpython3-dev \
+       libopenblas-dev \
+       libavcodec-dev \
+       libavformat-dev \
+       libswscale-dev
+   ```
+
+2. Build TorchVision 0.20.0 from source:
+   ```bash
+   # Clone TorchVision repository
+   git clone --branch v0.20.0 https://github.com/pytorch/vision torchvision
+   cd torchvision
+   
+   # Set the build version
+   export BUILD_VERSION=0.20.0
+   
+   # Build and install TorchVision
+   python3 setup.py install --user
+   
+   # Return to parent directory (important!)
+   cd ../
+   
+   # Install Pillow compatibility (if needed)
+   pip3 install 'pillow<7' --user
+   ```
+
+   **Note**: The build process will take 10-30 minutes. Alternatively, you can use the provided build script:
+   ```bash
+   cd ~/SkyGuard
+   ./scripts/build_torchvision_jetson.sh
+   ```
+
+3. Verify TorchVision installation:
+   ```bash
+   python3 -c "import torchvision; print(f'TorchVision {torchvision.__version__} installed successfully')"
+   ```
+
 #### For JetPack 4.x
 
 Follow similar steps but use the appropriate PyTorch version for JetPack 4.x from NVIDIA's repository.
 
-### Step 2: Install System Dependencies
+### Step 4: Install System Dependencies
 
 ```bash
 sudo apt update
@@ -104,7 +150,7 @@ sudo apt install -y \
     libx264-dev
 ```
 
-### Step 3: Clone SkyGuard Repository
+### Step 5: Clone SkyGuard Repository
 
 ```bash
 cd ~
@@ -112,7 +158,7 @@ git clone https://github.com/jad3tx/SkyGuard.git
 cd SkyGuard
 ```
 
-### Step 4: Create Virtual Environment
+### Step 6: Create Virtual Environment
 
 **IMPORTANT**: For Jetson, you must create the virtual environment with `--system-site-packages` to access system-installed CUDA PyTorch:
 
@@ -124,20 +170,29 @@ pip install --upgrade pip
 
 **Note**: The installation script (`./scripts/install.sh`) will automatically create the venv with this flag if it detects Jetson and system PyTorch.
 
-### Step 5: Install SkyGuard Dependencies
+### Step 7: Install SkyGuard Dependencies
 
-The installation script will automatically detect Jetson and use the appropriate requirements file:
+The installation script will automatically detect Jetson and install everything:
 
 ```bash
 ./scripts/install.sh
 ```
 
+Or use the Jetson-specific script directly:
+
+```bash
+./scripts/install-jetson.sh
+```
+
 The script will:
-- Detect that you're on a Jetson device
-- Check for system-installed CUDA PyTorch
+- Install cuSPARSELt (if not already installed)
+- Install PyTorch from NVIDIA wheel (if not already installed)
+- Build and install TorchVision from source (if not already installed)
 - Create a virtual environment with `--system-site-packages` to access system PyTorch
 - Filter out torch/torchvision from requirements (to avoid installing non-CUDA versions)
 - Install all other dependencies
+
+**Note**: The installation script will prompt you for the PyTorch wheel file path if PyTorch is not already installed.
 
 Or manually:
 
@@ -155,7 +210,7 @@ pip install -r requirements-jetson.txt
 - If you see warnings about PyTorch, that's normal - PyTorch should already be installed from Step 1
 - If your venv was created without `--system-site-packages`, see "Fixing Virtual Environment" below
 
-### Step 6: Configure SkyGuard
+### Step 8: Configure SkyGuard
 
 ```bash
 source venv/bin/activate
@@ -168,7 +223,7 @@ The configuration wizard will:
 - Configure notifications (optional)
 - Set up storage paths
 
-### Step 7: Test Installation
+### Step 9: Test Installation
 
 Test that GPU acceleration is working:
 
@@ -267,11 +322,13 @@ If your virtual environment was created without `--system-site-packages`, it won
 - `torch.cuda.is_available()` returns `False`
 - Model runs on CPU instead of GPU
 
-**Fix Option 1: Use the Fix Script (Recommended)**
+**Fix Option 1: Re-run Installation Script (Recommended)**
 ```bash
 cd ~/SkyGuard
-./scripts/fix_jetson_venv.sh
+./scripts/install-jetson.sh
 ```
+
+The installation script will automatically detect and fix the virtual environment configuration.
 
 **Fix Option 2: Manual Fix**
 ```bash
@@ -479,9 +536,11 @@ If you encounter issues specific to Jetson:
 
 ---
 
-**Note**: This installation guide is optimized for JetPack 6.1. For other JetPack versions:
-- **JetPack 6.x**: Use Python 3.10+ wheels from https://pypi.jetson-ai-lab.io/jp6/
-- **JetPack 5.x**: Use Python 3.8+ wheels from https://pypi.jetson-ai-lab.io/jp5/
+**Note**: This installation guide is optimized for JetPack 6.1. The installation process follows the guide at: https://github.com/hamzashafiq28/pytorch-jetson-jp6.1
+
+For other JetPack versions:
+- **JetPack 6.x**: Use Python 3.10+ wheels from NVIDIA Embedded Downloads
+- **JetPack 5.x**: Use Python 3.8+ wheels from NVIDIA Embedded Downloads
 - **JetPack 4.x**: Use the appropriate PyTorch version from NVIDIA's repository
 
 Always check the [NVIDIA Developer Forums](https://forums.developer.nvidia.com/t/pytorch-for-jetson/) for the latest PyTorch installation instructions.

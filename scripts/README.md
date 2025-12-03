@@ -2,6 +2,55 @@
 
 This directory contains management scripts for the SkyGuard system.
 
+## 📦 Installation Scripts
+
+### `install.sh`
+Main installation script that automatically detects the platform (Jetson or Raspberry Pi) and calls the appropriate platform-specific install script.
+
+**Usage:**
+```bash
+./scripts/install.sh
+```
+
+The script will automatically:
+- Detect if you're on a Jetson or Raspberry Pi
+- Call `install-jetson.sh` for Jetson devices
+- Call `install-rpi.sh` for Raspberry Pi devices
+
+### `install-jetson.sh`
+Jetson-specific installation script. Handles:
+- System PyTorch detection and verification
+- Virtual environment with `--system-site-packages` for CUDA PyTorch access
+- Filtering torch packages from requirements (uses system CUDA versions)
+- CUDA verification and testing
+
+**Usage:**
+```bash
+./scripts/install-jetson.sh
+```
+
+### `install-rpi.sh`
+Raspberry Pi-specific installation script. Handles:
+- Standard virtual environment creation
+- Full PyTorch installation (CPU version)
+- GPIO group setup
+- Disk space and camera checks
+- Retry logic for package installation
+
+**Usage:**
+```bash
+./scripts/install-rpi.sh
+```
+
+### `install-common.sh`
+Shared functions used by both platform-specific install scripts. Contains:
+- System dependency installation
+- Virtual environment creation utilities
+- Common verification functions
+- Shared helper functions
+
+**Note:** This file is sourced by the platform-specific scripts and should not be run directly.
+
 ## 🚀 Startup Scripts
 
 ### `start_skyguard.sh`
