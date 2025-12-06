@@ -476,95 +476,136 @@ install_jetson_pytorch() {
     
     # CRITICAL: Check for cuSPARSELt (required for PyTorch on JetPack 6.1)
     echo -e "${CYAN}   Checking for cuSPARSELt prerequisite...${NC}"
-    CUSPARSELT_VERSION="0.7.1"
+    CUSPARSELT_VERSION="0.8.1"
     if dpkg -l | grep -q cusparselt; then
         INSTALLED_VERSION=$(dpkg -l | grep cusparselt | awk '{print $3}' | head -1)
         echo -e "${GREEN}   ✅ cuSPARSELt already installed: $INSTALLED_VERSION${NC}"
     else
         echo -e "${YELLOW}   cuSPARSELt $CUSPARSELT_VERSION is required but not installed${NC}"
-        echo -e "${CYAN}   Attempting automatic installation...${NC}"
+        echo -e "${CYAN}   Attempting automatic installation via NVIDIA repository...${NC}"
         
-        # Method 1: Try apt (may be available in JetPack repositories)
-        if command -v apt &>/dev/null; then
-            echo -e "${CYAN}   Trying apt install (checking JetPack repositories)...${NC}"
-            # Try different package names
-            for PKG_NAME in libcusparselt libcusparselt0 cusparselt; do
-                if sudo apt update 2>/dev/null && sudo apt install -y "$PKG_NAME" 2>/dev/null; then
-                    if dpkg -l | grep -q cusparselt; then
-                        INSTALLED_VERSION=$(dpkg -l | grep cusparselt | awk '{print $3}' | head -1)
-                        echo -e "${GREEN}   ✅ cuSPARSELt installed via apt ($PKG_NAME): $INSTALLED_VERSION${NC}"
-                        break
-                    fi
-                fi
-            done
+        DOWNLOAD_DIR="/tmp"
+        if [ ! -w "$DOWNLOAD_DIR" ]; then
+            DOWNLOAD_DIR="$HOME"
         fi
         
-        # Method 2: Try direct download from NVIDIA (if URL pattern is known)
-        if ! dpkg -l | grep -q cusparselt; then
-            echo -e "${CYAN}   Attempting direct download from NVIDIA...${NC}"
-            DOWNLOAD_DIR="/tmp"
-            if [ ! -w "$DOWNLOAD_DIR" ]; then
-                DOWNLOAD_DIR="$HOME"
-            fi
-            
-            # Try common URL patterns for cuSPARSELt 0.7.1 for Jetson
-            # Note: These URLs may not work as NVIDIA requires portal selection
-            CUSPARSELT_DEB="libcusparselt_${CUSPARSELT_VERSION}-1_arm64.deb"
-            POSSIBLE_URLS=(
-                "https://developer.download.nvidia.com/compute/cusparselt/redist/libcusparselt/${CUSPARSELT_VERSION}/${CUSPARSELT_DEB}"
-                "https://developer.download.nvidia.com/compute/cusparselt/redist/${CUSPARSELT_VERSION}/${CUSPARSELT_DEB}"
-            )
-            
-            CUSPARSELT_INSTALLED=false
-            for URL in "${POSSIBLE_URLS[@]}"; do
-                if wget -q --spider "$URL" 2>/dev/null; then
-                    echo -e "${CYAN}   Found cuSPARSELt at: $URL${NC}"
-                    if wget "$URL" -O "${DOWNLOAD_DIR}/${CUSPARSELT_DEB}" 2>/dev/null; then
-                        if [ -f "${DOWNLOAD_DIR}/${CUSPARSELT_DEB}" ]; then
-                            echo -e "${CYAN}   Installing cuSPARSELt package...${NC}"
-                            if sudo dpkg -i "${DOWNLOAD_DIR}/${CUSPARSELT_DEB}" 2>/dev/null || sudo apt-get install -y -f 2>/dev/null; then
+        # Download the repository setup package
+        CUSPARSELT_REPO_DEB="cusparselt-local-tegra-repo-ubuntu2204-${CUSPARSELT_VERSION}_${CUSPARSELT_VERSION}-1_arm64.deb"
+        CUSPARSELT_REPO_URL="https://developer.download.nvidia.com/compute/cusparselt/${CUSPARSELT_VERSION}/local_installers/${CUSPARSELT_REPO_DEB}"
+        
+        echo -e "${CYAN}   Downloading cuSPARSELt repository setup package...${NC}"
+        echo -e "${CYAN}   URL: $CUSPARSELT_REPO_URL${NC}"
+        
+        if wget "$CUSPARSELT_REPO_URL" -O "${DOWNLOAD_DIR}/${CUSPARSELT_REPO_DEB}" 2>/dev/null; then
+            if [ -f "${DOWNLOAD_DIR}/${CUSPARSELT_REPO_DEB}" ]; then
+                echo -e "${CYAN}   Installing cuSPARSELt repository...${NC}"
+                
+                # Install the repository package
+                if sudo dpkg -i "${DOWNLOAD_DIR}/${CUSPARSELT_REPO_DEB}" 2>/dev/null; then
+                    echo -e "${GREEN}   ✅ Repository package installed${NC}"
+                    
+                    # Copy the keyring
+                    REPO_DIR="/var/cusparselt-local-tegra-repo-ubuntu2204-${CUSPARSELT_VERSION}"
+                    if [ -d "$REPO_DIR" ]; then
+                        KEYRING_FILE=$(find "$REPO_DIR" -name "cusparselt-*-keyring.gpg" 2>/dev/null | head -1)
+                        if [ -n "$KEYRING_FILE" ] && [ -f "$KEYRING_FILE" ]; then
+                            echo -e "${CYAN}   Copying GPG keyring...${NC}"
+                            sudo cp "$KEYRING_FILE" /usr/share/keyrings/ 2>/dev/null || {
+                                echo -e "${YELLOW}   ⚠️  Failed to copy keyring, trying alternative method...${NC}"
+                                sudo apt-get install -f -y 2>/dev/null || true
+                            }
+                        fi
+                    fi
+                    
+                    # Update apt and install cuSPARSELt
+                    echo -e "${CYAN}   Updating apt repositories...${NC}"
+                    if sudo apt-get update 2>/dev/null; then
+                        echo -e "${CYAN}   Installing cuSPARSELt from repository...${NC}"
+                        # Try the correct package name first: cusparselt-cuda-12
+                        CUSPARSELT_INSTALLED=false
+                        if sudo apt-get install -y cusparselt-cuda-12 2>/dev/null; then
+                            if dpkg -l | grep -q cusparselt; then
+                                INSTALLED_VERSION=$(dpkg -l | grep cusparselt | awk '{print $3}' | head -1)
+                                echo -e "${GREEN}   ✅ cuSPARSELt installed: $INSTALLED_VERSION${NC}"
+                                CUSPARSELT_INSTALLED=true
+                            fi
+                        fi
+                        
+                        # Fallback to other package names if the primary one fails
+                        if [ "$CUSPARSELT_INSTALLED" = false ]; then
+                            echo -e "${CYAN}   Trying alternative package names...${NC}"
+                            for PKG_NAME in libcusparselt libcusparselt0 cusparselt; do
+                                if sudo apt-get install -y "$PKG_NAME" 2>/dev/null; then
+                                    if dpkg -l | grep -q cusparselt; then
+                                        INSTALLED_VERSION=$(dpkg -l | grep cusparselt | awk '{print $3}' | head -1)
+                                        echo -e "${GREEN}   ✅ cuSPARSELt installed: $INSTALLED_VERSION${NC}"
+                                        CUSPARSELT_INSTALLED=true
+                                        break
+                                    fi
+                                fi
+                            done
+                        fi
+                        
+                        if [ "$CUSPARSELT_INSTALLED" = false ]; then
+                            echo -e "${YELLOW}   ⚠️  Could not install cuSPARSELt from repository${NC}"
+                            echo -e "${CYAN}   Trying to fix dependencies...${NC}"
+                            sudo apt-get install -f -y 2>/dev/null || true
+                            
+                            # Try again after fixing dependencies
+                            if sudo apt-get install -y cusparselt-cuda-12 2>/dev/null; then
                                 if dpkg -l | grep -q cusparselt; then
                                     INSTALLED_VERSION=$(dpkg -l | grep cusparselt | awk '{print $3}' | head -1)
                                     echo -e "${GREEN}   ✅ cuSPARSELt installed: $INSTALLED_VERSION${NC}"
                                     CUSPARSELT_INSTALLED=true
-                                    rm -f "${DOWNLOAD_DIR}/${CUSPARSELT_DEB}"
-                                    break
                                 fi
                             fi
-                            rm -f "${DOWNLOAD_DIR}/${CUSPARSELT_DEB}"
+                            
+                            # Final fallback
+                            if [ "$CUSPARSELT_INSTALLED" = false ]; then
+                                for PKG_NAME in libcusparselt libcusparselt0 cusparselt; do
+                                    if sudo apt-get install -y "$PKG_NAME" 2>/dev/null; then
+                                        if dpkg -l | grep -q cusparselt; then
+                                            INSTALLED_VERSION=$(dpkg -l | grep cusparselt | awk '{print $3}' | head -1)
+                                            echo -e "${GREEN}   ✅ cuSPARSELt installed: $INSTALLED_VERSION${NC}"
+                                            CUSPARSELT_INSTALLED=true
+                                            break
+                                        fi
+                                    fi
+                                done
+                            fi
                         fi
+                    else
+                        echo -e "${YELLOW}   ⚠️  Failed to update apt repositories${NC}"
                     fi
-                fi
-            done
-            
-            # Method 3: Fall back to manual instructions if automatic methods failed
-            if [ "$CUSPARSELT_INSTALLED" = false ] && ! dpkg -l | grep -q cusparselt; then
-                echo -e "${YELLOW}   ⚠️  Automatic installation failed. Manual installation required.${NC}"
-                echo -e "${CYAN}   Please download cuSPARSELt manually from:${NC}"
-                echo -e "${CYAN}   https://developer.nvidia.com/cusparselt/downloads${NC}"
-                echo -e "${CYAN}   Select:${NC}"
-                echo -e "${CYAN}     - Target OS: Linux${NC}"
-                echo -e "${CYAN}     - Target Architecture: aarch64-jetson${NC}"
-                echo -e "${CYAN}     - Compilation: Native${NC}"
-                echo -e "${CYAN}     - Distribution: Ubuntu${NC}"
-                echo -e "${CYAN}     - Target Version: 22.04${NC}"
-                echo -e "${CYAN}     - Target Type: deb (local)${NC}"
-                echo ""
-                echo -e "${CYAN}   After downloading, install with:${NC}"
-                echo -e "${CYAN}     sudo dpkg -i <downloaded-cusparselt-package>.deb${NC}"
-                echo -e "${CYAN}     sudo apt-get install -f${NC}"
-                echo ""
-                read -p "Press Enter after installing cuSPARSELt, or Ctrl+C to cancel..."
-                
-                # Verify cuSPARSELt installation
-                if ! dpkg -l | grep -q cusparselt; then
-                    echo -e "${RED}   ❌ cuSPARSELt still not detected. PyTorch installation may fail.${NC}"
-                    echo -e "${YELLOW}   Continuing anyway, but PyTorch may not work correctly...${NC}"
+                    
+                    # Clean up
+                    rm -f "${DOWNLOAD_DIR}/${CUSPARSELT_REPO_DEB}"
                 else
-                    INSTALLED_VERSION=$(dpkg -l | grep cusparselt | awk '{print $3}' | head -1)
-                    echo -e "${GREEN}   ✅ cuSPARSELt installed: $INSTALLED_VERSION${NC}"
+                    echo -e "${YELLOW}   ⚠️  Failed to install repository package${NC}"
+                    echo -e "${CYAN}   Trying to fix dependencies...${NC}"
+                    sudo apt-get install -f -y 2>/dev/null || true
+                    rm -f "${DOWNLOAD_DIR}/${CUSPARSELT_REPO_DEB}"
                 fi
+            else
+                echo -e "${RED}   ❌ Failed to download repository package${NC}"
             fi
+        else
+            echo -e "${RED}   ❌ Failed to download cuSPARSELt repository package${NC}"
+            echo -e "${YELLOW}   URL may be incorrect or network issue${NC}"
+        fi
+        
+        # Final verification
+        if ! dpkg -l | grep -q cusparselt; then
+            echo -e "${RED}   ❌ cuSPARSELt installation failed${NC}"
+            echo -e "${YELLOW}   PyTorch installation may fail without cuSPARSELt${NC}"
+            echo -e "${CYAN}   You can try manual installation:${NC}"
+            echo -e "${CYAN}   wget $CUSPARSELT_REPO_URL${NC}"
+            echo -e "${CYAN}   sudo dpkg -i ${CUSPARSELT_REPO_DEB}${NC}"
+            echo -e "${CYAN}   sudo cp /var/cusparselt-local-tegra-repo-ubuntu2204-${CUSPARSELT_VERSION}/cusparselt-*-keyring.gpg /usr/share/keyrings/${NC}"
+            echo -e "${CYAN}   sudo apt-get update${NC}"
+            echo -e "${CYAN}   sudo apt-get install -y cusparselt-cuda-12${NC}"
+            echo ""
+            read -p "Press Enter to continue anyway, or Ctrl+C to cancel..."
         fi
     fi
     
