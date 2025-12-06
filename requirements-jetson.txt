@@ -18,7 +18,7 @@
 # torch/torchvision/torchaudio are commented out below to prevent installation in the venv.
 
 # Core Computer Vision
-opencv-python>=4.8.0
+opencv-python-headless==4.9.0.80  # Pinned for numpy 1.26.0 compatibility (newer versions require numpy>=2)
 numpy==1.26.0
 pillow>=10.0.0
 

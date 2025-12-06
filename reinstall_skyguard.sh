@@ -103,16 +103,19 @@ install_jetson_requirements_safely() {
     echo -e "${CYAN}   Clearing pip cache to prevent cached torch installation...${NC}"
     pip cache purge 2>/dev/null || true
     
-    # CRITICAL: Create a constraints file to prevent torch/torchvision/torchaudio upgrades
+    # CRITICAL: Create a constraints file to prevent torch/torchvision/torchaudio and numpy upgrades
     CONSTRAINTS_FILE="${req_file}.constraints"
-    cat > "$CONSTRAINTS_FILE" << 'EOF'
+    cat > "$CONSTRAINTS_FILE" << EOF
 # Prevent torch packages from being installed or upgraded in venv
 # These should come from system site-packages only
 torch==999.999.999
 torchvision==999.999.999
 torchaudio==999.999.999
+# CRITICAL: Pin numpy to 1.26.0 for CUDA compatibility on Jetson
+# Newer versions break CUDA support
+numpy==1.26.0
 EOF
-    echo -e "${CYAN}   Created constraints file to prevent torch package installation...${NC}"
+    echo -e "${CYAN}   Created constraints file to prevent torch package and numpy upgrades...${NC}"
     
     # FIRST: Install numpy==1.26.0 explicitly before anything else
     # This ensures numpy is pinned and won't be upgraded by other packages
@@ -149,6 +152,26 @@ EOF
             echo -e "${CYAN}     Skipping $package (already installed as numpy==1.26.0)${NC}"
             # Ensure it's still the correct version
             pip install --no-cache-dir --force-reinstall "numpy==1.26.0" 2>/dev/null || true
+            continue
+        fi
+        
+        # CRITICAL: Handle opencv-python packages specially to prevent numpy upgrades
+        # opencv-python-headless newer versions require numpy>=2, which breaks CUDA
+        if [[ "$package" =~ ^opencv-python ]]; then
+            echo -e "${CYAN}     Installing $package with numpy constraint...${NC}"
+            # Always use constraints to prevent numpy upgrades
+            if ! pip install --no-cache-dir --constraint "$CONSTRAINTS_FILE" --upgrade-strategy=only-if-needed "$package" 2>/dev/null; then
+                echo -e "${YELLOW}       ⚠️  Failed to install $package with constraints, trying without...${NC}"
+                pip install --no-cache-dir --upgrade-strategy=only-if-needed "$package" 2>/dev/null || true
+            fi
+            
+            # CRITICAL: Check if numpy was upgraded
+            NUMPY_VERSION=$(python3 -c "import numpy; print(numpy.__version__)" 2>/dev/null || echo "not_installed")
+            if [ "$NUMPY_VERSION" != "1.26.0" ]; then
+                echo -e "${RED}       ❌ CRITICAL: $package upgraded numpy to $NUMPY_VERSION!${NC}"
+                echo -e "${YELLOW}       Reinstalling numpy==1.26.0...${NC}"
+                pip install --no-cache-dir --force-reinstall "numpy==1.26.0" 2>/dev/null || true
+            fi
             continue
         fi
         
@@ -247,10 +270,24 @@ EOF
             # Common ultralytics dependencies (excluding torch/torchvision)
             # Use constraints and upgrade-strategy to prevent numpy upgrades
             for dep in pillow pyyaml requests tqdm pandas opencv-python-headless; do
-                # Try with constraints first to prevent numpy/torch upgrades
-                pip install --no-cache-dir --constraint "$CONSTRAINTS_FILE" --upgrade-strategy=only-if-needed --no-deps "$dep" 2>/dev/null || \
-                pip install --no-cache-dir --constraint "$CONSTRAINTS_FILE" --upgrade-strategy=only-if-needed "$dep" 2>/dev/null || \
-                pip install --no-cache-dir --upgrade-strategy=only-if-needed "$dep" 2>/dev/null || true
+                # CRITICAL: Always use constraints to prevent numpy upgrades
+                # Try with constraints and --no-deps first
+                if ! pip install --no-cache-dir --constraint "$CONSTRAINTS_FILE" --upgrade-strategy=only-if-needed --no-deps "$dep" 2>/dev/null; then
+                    # If --no-deps fails, try with constraints but allow dependencies (will still respect numpy constraint)
+                    if ! pip install --no-cache-dir --constraint "$CONSTRAINTS_FILE" --upgrade-strategy=only-if-needed "$dep" 2>/dev/null; then
+                        # Last resort: try without constraints but with upgrade-strategy
+                        echo -e "${YELLOW}       ⚠️  Failed to install $dep with constraints, trying without...${NC}"
+                        pip install --no-cache-dir --upgrade-strategy=only-if-needed "$dep" 2>/dev/null || true
+                    fi
+                fi
+                
+                # CRITICAL: After each dependency, check if numpy was upgraded and reinstall if needed
+                NUMPY_VERSION=$(python3 -c "import numpy; print(numpy.__version__)" 2>/dev/null || echo "not_installed")
+                if [ "$NUMPY_VERSION" != "1.26.0" ]; then
+                    echo -e "${RED}       ❌ CRITICAL: $dep upgraded numpy to $NUMPY_VERSION!${NC}"
+                    echo -e "${YELLOW}       Reinstalling numpy==1.26.0...${NC}"
+                    pip install --no-cache-dir --force-reinstall "numpy==1.26.0" 2>/dev/null || true
+                fi
                 # Immediately check for torch after each dependency
                 sleep 0.5
                 # Check for torch using proper loop (quoted glob pattern)
@@ -596,6 +633,9 @@ install_jetson_pytorch() {
         fi
         
         # Download the repository setup package
+        # Based on user's working command, the format is:
+        # cusparselt-local-tegra-repo-ubuntu2204-0.8.1_0.8.1-1_arm64.deb
+        # The version appears twice: once before the underscore and once after (as debian version)
         CUSPARSELT_REPO_DEB="cusparselt-local-tegra-repo-ubuntu2204-${CUSPARSELT_VERSION}_${CUSPARSELT_VERSION}-1_arm64.deb"
         CUSPARSELT_REPO_URL="https://developer.download.nvidia.com/compute/cusparselt/${CUSPARSELT_VERSION}/local_installers/${CUSPARSELT_REPO_DEB}"
         
@@ -1452,15 +1492,37 @@ if [ "$DETECTED_PLATFORM" = "jetson" ]; then
     
     if ! python3 -c "import ultralytics" 2>/dev/null; then
         echo -e "${YELLOW}   ⚠️  Ultralytics not found - installing...${NC}"
-        echo -e "${CYAN}   Installing ultralytics (will use system PyTorch/torchvision)...${NC}"
+        echo -e "${CYAN}   Installing ultralytics 8.3.0 (compatible with numpy 1.26.0)...${NC}"
         
-        # Install ultralytics without dependencies first to avoid pulling in torch
-        if pip install --no-cache-dir --no-deps ultralytics 2>/dev/null; then
-            echo -e "${GREEN}   ✅ Ultralytics installed${NC}"
+        # Create constraints file if it doesn't exist
+        if [ ! -f "${SKYGUARD_PATH}/requirements-jetson.txt.constraints" ]; then
+            TEMP_CONSTRAINTS="${SKYGUARD_PATH}/.temp_constraints"
+            cat > "$TEMP_CONSTRAINTS" << EOF
+torch==999.999.999
+torchvision==999.999.999
+torchaudio==999.999.999
+numpy==1.26.0
+EOF
+            CONSTRAINTS_FILE="$TEMP_CONSTRAINTS"
         else
-            # If --no-deps fails, install normally but check for torch
-            echo -e "${CYAN}   Installing ultralytics with dependencies (will remove torch if installed)...${NC}"
-            pip install --no-cache-dir ultralytics 2>/dev/null || true
+            CONSTRAINTS_FILE="${SKYGUARD_PATH}/requirements-jetson.txt.constraints"
+        fi
+        
+        # Install ultralytics 8.3.0 with constraints to prevent numpy/torch upgrades
+        if pip install --no-cache-dir --constraint "$CONSTRAINTS_FILE" --no-deps "ultralytics==8.3.0" 2>/dev/null; then
+            echo -e "${GREEN}   ✅ Ultralytics 8.3.0 installed without dependencies${NC}"
+        else
+            # If --no-deps fails, install with constraints but allow dependencies
+            echo -e "${CYAN}   Installing ultralytics 8.3.0 with constraints (will prevent torch/numpy upgrades)...${NC}"
+            pip install --no-cache-dir --constraint "$CONSTRAINTS_FILE" --upgrade-strategy=only-if-needed "ultralytics==8.3.0" 2>/dev/null || true
+            
+            # Check if numpy was upgraded
+            NUMPY_VERSION=$(python3 -c "import numpy; print(numpy.__version__)" 2>/dev/null || echo "not_installed")
+            if [ "$NUMPY_VERSION" != "1.26.0" ]; then
+                echo -e "${RED}       ❌ CRITICAL: ultralytics upgraded numpy to $NUMPY_VERSION!${NC}"
+                echo -e "${YELLOW}       Reinstalling numpy==1.26.0...${NC}"
+                pip install --no-cache-dir --force-reinstall "numpy==1.26.0" 2>/dev/null || true
+            fi
             
             # Check and remove torch if it was installed
             sleep 1
@@ -1486,10 +1548,54 @@ if [ "$DETECTED_PLATFORM" = "jetson" ]; then
         fi
         
         # Install ultralytics dependencies (excluding torch)
-        echo -e "${CYAN}   Installing ultralytics dependencies...${NC}"
-        for dep in pillow pyyaml requests tqdm pandas opencv-python-headless; do
-            pip install --no-cache-dir "$dep" 2>/dev/null || true
+        echo -e "${CYAN}   Installing ultralytics dependencies (preserving numpy 1.26.0)...${NC}"
+        # Create constraints file if it doesn't exist (for this verification step)
+        if [ ! -f "${SKYGUARD_PATH}/requirements-jetson.txt.constraints" ]; then
+            TEMP_CONSTRAINTS="${SKYGUARD_PATH}/.temp_constraints"
+            cat > "$TEMP_CONSTRAINTS" << EOF
+torch==999.999.999
+torchvision==999.999.999
+torchaudio==999.999.999
+numpy==1.26.0
+EOF
+            CONSTRAINTS_FILE="$TEMP_CONSTRAINTS"
+        else
+            CONSTRAINTS_FILE="${SKYGUARD_PATH}/requirements-jetson.txt.constraints"
+        fi
+        
+        for dep in pillow pyyaml requests tqdm pandas; do
+            # Use constraints to prevent numpy/torch upgrades
+            pip install --no-cache-dir --constraint "$CONSTRAINTS_FILE" --upgrade-strategy=only-if-needed "$dep" 2>/dev/null || \
+            pip install --no-cache-dir --upgrade-strategy=only-if-needed "$dep" 2>/dev/null || true
+            
+            # Check if numpy was upgraded
+            NUMPY_VERSION=$(python3 -c "import numpy; print(numpy.__version__)" 2>/dev/null || echo "not_installed")
+            if [ "$NUMPY_VERSION" != "1.26.0" ]; then
+                echo -e "${RED}       ❌ CRITICAL: $dep upgraded numpy to $NUMPY_VERSION!${NC}"
+                echo -e "${YELLOW}       Reinstalling numpy==1.26.0...${NC}"
+                pip install --no-cache-dir --force-reinstall "numpy==1.26.0" 2>/dev/null || true
+            fi
         done
+        
+        # Install opencv-python-headless separately with constraints (it's the main culprit for numpy upgrades)
+        echo -e "${CYAN}   Installing opencv-python-headless with numpy constraint...${NC}"
+        if ! pip install --no-cache-dir --constraint "$CONSTRAINTS_FILE" --upgrade-strategy=only-if-needed "opencv-python-headless==4.9.0.80" 2>/dev/null; then
+            echo -e "${YELLOW}       ⚠️  Failed with constraints, trying without...${NC}"
+            pip install --no-cache-dir --upgrade-strategy=only-if-needed "opencv-python-headless==4.9.0.80" 2>/dev/null || true
+        fi
+        
+        # CRITICAL: Check if numpy was upgraded by opencv-python-headless
+        NUMPY_VERSION=$(python3 -c "import numpy; print(numpy.__version__)" 2>/dev/null || echo "not_installed")
+        if [ "$NUMPY_VERSION" != "1.26.0" ]; then
+            echo -e "${RED}       ❌ CRITICAL: opencv-python-headless upgraded numpy to $NUMPY_VERSION!${NC}"
+            echo -e "${YELLOW}       Reinstalling numpy==1.26.0...${NC}"
+            pip install --no-cache-dir --force-reinstall "numpy==1.26.0" 2>/dev/null || true
+        fi
+        
+        # Clean up temp constraints if we created it
+        if [ -f "$TEMP_CONSTRAINTS" ]; then
+            rm -f "$TEMP_CONSTRAINTS" 2>/dev/null || true
+        fi
         
         # Verify installation
         if python3 -c "import ultralytics" 2>/dev/null; then
