@@ -986,11 +986,14 @@ class BirdSegmentationDetector:
         }
     
     def update_config(self, new_config: dict):
-        """Update detector configuration.
+        """Update detector configuration dynamically.
         
         Args:
             new_config: New configuration dictionary
         """
+        old_confidence = self.confidence_threshold
+        old_nms = self.nms_threshold
+        
         self.config.update(new_config)
         self.confidence_threshold = self.config.get(
             'confidence_threshold', 0.5
@@ -1004,7 +1007,21 @@ class BirdSegmentationDetector:
         self.classes = self.config.get('classes', ['bird'])
         self.detection_log_level = self.config.get('detection_log_level', 'standard')
         
-        self.logger.info("Detector configuration updated")
+        # Update species classifier thresholds if provided
+        if 'species_confidence_threshold' in new_config:
+            self.species_confidence_threshold = new_config['species_confidence_threshold']
+        
+        # Log the changes
+        changes = []
+        if old_confidence != self.confidence_threshold:
+            changes.append(f"confidence: {old_confidence:.3f} → {self.confidence_threshold:.3f}")
+        if old_nms != self.nms_threshold:
+            changes.append(f"nms: {old_nms:.3f} → {self.nms_threshold:.3f}")
+        
+        if changes:
+            self.logger.info(f"✅ Detector configuration updated: {', '.join(changes)}")
+        else:
+            self.logger.info("✅ Detector configuration updated (no threshold changes)")
 
 
 class RaptorDetector(BirdSegmentationDetector):

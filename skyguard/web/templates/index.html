@@ -308,6 +308,12 @@
                     </div>
                     <div class="row mt-3">
                         <div class="col-md-6">
+                            <label for="species-confidence-threshold" class="form-label">Species Confidence Threshold</label>
+                            <input type="range" class="form-range" id="species-confidence-threshold" min="0" max="1" step="0.01">
+                            <div class="form-text">Current value: <span id="species-confidence-value">0.6</span></div>
+                            <div class="form-text">Minimum confidence required for species classification</div>
+                        </div>
+                        <div class="col-md-6">
                             <label for="detection-log-level" class="form-label">Detection Log Level</label>
                             <select class="form-select" id="detection-log-level">
                                 <option value="minimal">Minimal - No detection logging</option>
@@ -816,6 +822,7 @@
             document.getElementById('camera-live-view').checked = config.camera.live_view || false;
             document.getElementById('confidence-threshold').value = config.ai.confidence_threshold;
             document.getElementById('nms-threshold').value = config.ai.nms_threshold;
+            document.getElementById('species-confidence-threshold').value = config.ai.species_confidence_threshold || 0.6;
             document.getElementById('detection-log-level').value = config.ai.detection_log_level || 'standard';
             document.getElementById('audio-enabled').checked = config.notifications.audio.enabled;
             document.getElementById('sms-enabled').checked = config.notifications.sms.enabled;
@@ -824,6 +831,7 @@
             // Update range value displays
             updateRangeValue('confidence-threshold', 'confidence-value');
             updateRangeValue('nms-threshold', 'nms-value');
+            updateRangeValue('species-confidence-threshold', 'species-confidence-value');
             
         } catch (error) {
             console.error('Failed to load configuration:', error);
@@ -862,6 +870,7 @@
                 ai: {
                     confidence_threshold: parseFloat(document.getElementById('confidence-threshold').value),
                     nms_threshold: parseFloat(document.getElementById('nms-threshold').value),
+                    species_confidence_threshold: parseFloat(document.getElementById('species-confidence-threshold').value),
                     detection_log_level: document.getElementById('detection-log-level').value
                 },
                 notifications: {
@@ -1440,6 +1449,7 @@
                 ai: {
                     confidence_threshold: getValue('confidence-threshold', 0.3),
                     nms_threshold: getValue('nms-threshold', 0.4),
+                    species_confidence_threshold: getValue('species-confidence-threshold', 0.6),
                     detection_log_level: getValue('detection-log-level', 'standard')
                 },
                 notifications: {
@@ -1508,6 +1518,7 @@
         // Initialize range value displays
         updateRangeValue('confidence-threshold', 'confidence-value');
         updateRangeValue('nms-threshold', 'nms-value');
+        updateRangeValue('species-confidence-threshold', 'species-confidence-value');
         updateRangeValue('camera-brightness', 'brightness-value');
         updateRangeValue('camera-contrast', 'contrast-value');
         updateRangeValue('live-brightness', 'live-brightness-value');
@@ -1518,7 +1529,7 @@
             'detection-interval', 'max-history', 'camera-source', 'camera-width', 
             'camera-height', 'camera-fps', 'camera-rotation', 'camera-flip-horizontal',
             'camera-flip-vertical', 'camera-brightness', 'camera-contrast', 
-            'camera-live-view', 'confidence-threshold', 'nms-threshold', 'detection-log-level',
+            'camera-live-view', 'confidence-threshold', 'nms-threshold', 'species-confidence-threshold', 'detection-log-level',
             'audio-enabled', 'sms-enabled', 'email-enabled'
         ];
         

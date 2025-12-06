@@ -56,6 +56,14 @@ class ConfigManager:
             return self.load_config()
         return self.config
     
+    def reload_config(self) -> Dict[str, Any]:
+        """Reload configuration from file.
+        
+        Returns:
+            Dictionary containing configuration settings
+        """
+        return self.load_config()
+    
     def save_config(self, config: Optional[Dict[str, Any]] = None) -> bool:
         """Save configuration to file.
         

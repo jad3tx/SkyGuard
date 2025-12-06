@@ -84,6 +84,50 @@ class SkyGuardSystem:
             self.logger.error(f"Failed to initialize SkyGuard system: {e}")
             return False
     
+    def update_detector_config(self, new_ai_config: dict):
+        """Update detector configuration dynamically without restarting.
+        
+        Args:
+            new_ai_config: New AI configuration dictionary
+        """
+        try:
+            if self.detector:
+                # Update the detector's configuration
+                self.detector.update_config(new_ai_config)
+                self.logger.info("✅ Detector configuration updated dynamically")
+                return True
+            else:
+                self.logger.warning("⚠️ Detector not initialized, cannot update config")
+                return False
+        except Exception as e:
+            self.logger.error(f"Failed to update detector configuration: {e}")
+            return False
+    
+    def reload_config(self):
+        """Reload configuration from file and update components dynamically."""
+        try:
+            # Reload config from file
+            self.config_manager.reload_config()
+            self.config = self.config_manager.get_config()
+            
+            # Update detector if AI config changed
+            if 'ai' in self.config:
+                self.update_detector_config(self.config['ai'])
+            
+            # Update camera manager if camera config changed
+            if self.camera_manager and 'camera' in self.config:
+                self.camera_manager.update_config(self.config['camera'])
+            
+            # Update alert system if notifications config changed
+            if self.alert_system and 'notifications' in self.config:
+                self.alert_system.update_config(self.config['notifications'])
+            
+            self.logger.info("✅ Configuration reloaded and components updated")
+            return True
+        except Exception as e:
+            self.logger.error(f"Failed to reload configuration: {e}")
+            return False
+    
     def run(self):
         """Run the main detection loop."""
         if not self.initialize():
@@ -102,9 +146,31 @@ class SkyGuardSystem:
         
         # Track last cleanup to run retention periodically (e.g., every 10 minutes)
         last_cleanup_ts = time.time()
+        
+        # Track config file modification time for dynamic reloading
+        import os
+        config_path = self.config_manager.config_path
+        last_config_mtime = os.path.getmtime(config_path) if os.path.exists(config_path) else 0
+        config_check_counter = 0  # Check config every N iterations
 
         try:
             while self.running:
+                # Check for config file changes periodically (every 10 iterations)
+                config_check_counter += 1
+                if config_check_counter >= 10:
+                    config_check_counter = 0
+                    try:
+                        current_mtime = os.path.getmtime(config_path) if os.path.exists(config_path) else 0
+                        if current_mtime > last_config_mtime:
+                            self.logger.info("📝 Configuration file changed, reloading dynamically...")
+                            if self.reload_config():
+                                last_config_mtime = current_mtime
+                                # Update detection interval if it changed
+                                detection_interval = self.config.get('system', {}).get('detection_interval', 2.0)
+                                self.logger.info(f"✅ Configuration reloaded - confidence threshold: {self.config.get('ai', {}).get('confidence_threshold', 0.5)}")
+                    except Exception as e:
+                        self.logger.debug(f"Config check failed (non-critical): {e}")
+                
                 # Capture frame from camera
                 frame = self.camera_manager.capture_frame()
                 if frame is None:
@@ -119,9 +185,9 @@ class SkyGuardSystem:
                 if detections:
                     self.logger.info(f"Found {len(detections)} detections, max confidence: {max(d['confidence'] for d in detections):.3f}")
                 
-                # Process detections
+                # Process detections using detector's current threshold (supports dynamic updates)
                 for detection in detections:
-                    if detection['confidence'] > self.config['ai']['confidence_threshold']:
+                    if detection['confidence'] > self.detector.confidence_threshold:
                         self._handle_raptor_detection(detection, frame)
                 
                 # Sleep between detection cycles
