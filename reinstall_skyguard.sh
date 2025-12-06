@@ -1339,6 +1339,70 @@ else
     echo -e "${GREEN}   ✅ Installation complete with pip${NC}"
 fi
 
+# Verify and install Ultralytics if missing (critical for Jetson)
+if [ "$DETECTED_PLATFORM" = "jetson" ]; then
+    echo -e "\n${BLUE}🔍 Verifying Ultralytics installation...${NC}"
+    source venv/bin/activate 2>/dev/null || true
+    
+    if ! python3 -c "import ultralytics" 2>/dev/null; then
+        echo -e "${YELLOW}   ⚠️  Ultralytics not found - installing...${NC}"
+        echo -e "${CYAN}   Installing ultralytics (will use system PyTorch/torchvision)...${NC}"
+        
+        # Install ultralytics without dependencies first to avoid pulling in torch
+        if pip install --no-cache-dir --no-deps ultralytics 2>/dev/null; then
+            echo -e "${GREEN}   ✅ Ultralytics installed${NC}"
+        else
+            # If --no-deps fails, install normally but check for torch
+            echo -e "${CYAN}   Installing ultralytics with dependencies (will remove torch if installed)...${NC}"
+            pip install --no-cache-dir ultralytics 2>/dev/null || true
+            
+            # Check and remove torch if it was installed
+            sleep 1
+            TORCH_IN_VENV=false
+            for site_packages in "$SKYGUARD_PATH/venv"/lib/python*/site-packages; do
+                if [ -d "$site_packages" ] && ([ -d "$site_packages/torch" ] || [ -d "$site_packages/torchvision" ]); then
+                    TORCH_IN_VENV=true
+                    break
+                fi
+            done
+            
+            if [ "$TORCH_IN_VENV" = true ]; then
+                echo -e "${YELLOW}   ⚠️  ultralytics pulled in torch - removing...${NC}"
+                pip uninstall -y torch torchvision torchaudio 2>/dev/null || true
+                for site_packages in "$SKYGUARD_PATH/venv"/lib/python*/site-packages; do
+                    if [ -d "$site_packages" ]; then
+                        rm -rf "$site_packages/torch"* 2>/dev/null || true
+                        rm -rf "$site_packages"/torch*.dist-info 2>/dev/null || true
+                        rm -rf "$site_packages"/torch*.egg-info 2>/dev/null || true
+                    fi
+                done
+            fi
+        fi
+        
+        # Install ultralytics dependencies (excluding torch)
+        echo -e "${CYAN}   Installing ultralytics dependencies...${NC}"
+        for dep in pillow pyyaml requests tqdm pandas opencv-python-headless; do
+            pip install --no-cache-dir "$dep" 2>/dev/null || true
+        done
+        
+        # Verify installation
+        if python3 -c "import ultralytics" 2>/dev/null; then
+            ULTRALYTICS_VERSION=$(python3 -c "import ultralytics; print(getattr(ultralytics, '__version__', 'installed'))" 2>/dev/null || echo "installed")
+            echo -e "${GREEN}   ✅ Ultralytics installed: $ULTRALYTICS_VERSION${NC}"
+        else
+            echo -e "${RED}   ❌ Failed to install Ultralytics${NC}"
+            echo -e "${YELLOW}   You may need to install it manually:${NC}"
+            echo -e "${CYAN}   source venv/bin/activate${NC}"
+            echo -e "${CYAN}   pip install ultralytics${NC}"
+        fi
+    else
+        ULTRALYTICS_VERSION=$(python3 -c "import ultralytics; print(getattr(ultralytics, '__version__', 'installed'))" 2>/dev/null || echo "installed")
+        echo -e "${GREEN}   ✅ Ultralytics already installed: $ULTRALYTICS_VERSION${NC}"
+    fi
+    
+    deactivate 2>/dev/null || true
+fi
+
 # Verify PyTorch CUDA on Jetson
 if [ "$DETECTED_PLATFORM" = "jetson" ]; then
     echo -e "\n${BLUE}🔍 Verifying PyTorch CUDA installation...${NC}"
