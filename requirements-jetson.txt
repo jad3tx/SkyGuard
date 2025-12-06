@@ -40,7 +40,7 @@ twilio>=8.5.0  # For SMS notifications
 pushbullet.py>=0.11.0  # For push notifications
 
 # Data Storage and Logging
-pandas>=2.0.0
+pandas==2.0.3  # Pinned for numpy 1.26.0 compatibility (newer versions may require numpy>=2)
 
 # Configuration and Utilities
 pyyaml>=6.0

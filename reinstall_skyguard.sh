@@ -127,9 +127,21 @@ EOF
         pip install --no-cache-dir "numpy==1.26.0" || true
     }
     
-    # Pin numpy to prevent upgrades (this tells pip not to upgrade it)
-    echo -e "${CYAN}   Pinning numpy version to prevent upgrades...${NC}"
-    pip install --no-cache-dir --upgrade-strategy=only-if-needed "numpy==1.26.0" 2>/dev/null || true
+    # CRITICAL: Lock numpy version aggressively to prevent ANY upgrades
+    # Use --force-reinstall to ensure it's locked, and mark it as a constraint
+    echo -e "${CYAN}   Locking numpy version to prevent ANY upgrades...${NC}"
+    # Install with --force-reinstall and --no-deps to lock it in place
+    pip install --no-cache-dir --force-reinstall --no-deps "numpy==1.26.0" 2>/dev/null || \
+    pip install --no-cache-dir --force-reinstall "numpy==1.26.0" 2>/dev/null || true
+    
+    # Verify numpy is locked
+    NUMPY_VERSION=$(python3 -c "import numpy; print(numpy.__version__)" 2>/dev/null || echo "not_installed")
+    if [ "$NUMPY_VERSION" != "1.26.0" ]; then
+        echo -e "${RED}   ❌ CRITICAL: Failed to lock numpy at 1.26.0 (got $NUMPY_VERSION)${NC}"
+        echo -e "${YELLOW}   This is a critical error - numpy must be 1.26.0 for CUDA${NC}"
+    else
+        echo -e "${GREEN}   ✅ numpy locked at 1.26.0${NC}"
+    fi
     
     # Read requirements file and install packages one by one
     # This allows us to catch and handle torch installation attempts
@@ -265,11 +277,51 @@ EOF
             fi
             
             # Install ultralytics dependencies manually (excluding torch)
-            # Use constraints and upgrade-strategy to prevent numpy/torch upgrades
+            # CRITICAL: Install opencv-python-headless FIRST with explicit version to prevent numpy upgrades
+            # Then install other dependencies
             echo -e "${CYAN}       Installing ultralytics dependencies (excluding torch, preserving numpy 1.26.0)...${NC}"
-            # Common ultralytics dependencies (excluding torch/torchvision)
-            # Use constraints and upgrade-strategy to prevent numpy upgrades
-            for dep in pillow pyyaml requests tqdm pandas opencv-python-headless; do
+            
+            # Step 1: Install opencv-python-headless FIRST with pinned version and --no-deps
+            # This prevents it from pulling in numpy>=2
+            echo -e "${CYAN}       Installing opencv-python-headless==4.9.0.80 (compatible with numpy 1.26.0)...${NC}"
+            echo -e "${CYAN}       Using --no-deps to prevent numpy upgrade...${NC}"
+            # Try with --no-deps first to prevent any dependency resolution
+            if ! pip install --no-cache-dir --constraint "$CONSTRAINTS_FILE" --no-deps "opencv-python-headless==4.9.0.80" 2>/dev/null; then
+                # If that fails, try without constraints but still --no-deps
+                echo -e "${YELLOW}       ⚠️  Failed with constraints, trying --no-deps only...${NC}"
+                pip install --no-cache-dir --no-deps "opencv-python-headless==4.9.0.80" 2>/dev/null || {
+                    # Last resort: allow dependencies but use constraints
+                    echo -e "${YELLOW}       ⚠️  --no-deps failed, trying with constraints...${NC}"
+                    pip install --no-cache-dir --constraint "$CONSTRAINTS_FILE" --upgrade-strategy=only-if-needed "opencv-python-headless==4.9.0.80" 2>/dev/null || true
+                }
+            fi
+            
+            # CRITICAL: Check numpy immediately after opencv-python-headless
+            NUMPY_VERSION=$(python3 -c "import numpy; print(numpy.__version__)" 2>/dev/null || echo "not_installed")
+            if [ "$NUMPY_VERSION" != "1.26.0" ]; then
+                echo -e "${RED}       ❌ CRITICAL: opencv-python-headless upgraded numpy to $NUMPY_VERSION!${NC}"
+                echo -e "${YELLOW}       Aggressively reinstalling numpy==1.26.0...${NC}"
+                # Uninstall wrong version first
+                pip uninstall -y numpy 2>/dev/null || true
+                # Reinstall with --no-deps
+                pip install --no-cache-dir --force-reinstall --no-deps "numpy==1.26.0" 2>/dev/null || \
+                pip install --no-cache-dir --force-reinstall "numpy==1.26.0" 2>/dev/null || true
+                
+                # Verify
+                NUMPY_VERSION_AFTER=$(python3 -c "import numpy; print(numpy.__version__)" 2>/dev/null || echo "not_installed")
+                if [ "$NUMPY_VERSION_AFTER" = "1.26.0" ]; then
+                    echo -e "${GREEN}       ✅ numpy restored to 1.26.0${NC}"
+                else
+                    echo -e "${RED}       ❌ FAILED to restore numpy (still $NUMPY_VERSION_AFTER)${NC}"
+                fi
+            else
+                echo -e "${GREEN}       ✅ numpy still at 1.26.0 after opencv-python-headless${NC}"
+            fi
+            
+            # Step 2: Install other dependencies (excluding opencv-python-headless which we just installed)
+            # CRITICAL: Install pandas separately with pinned version to prevent numpy upgrades
+            for dep in pillow pyyaml requests tqdm; do
+                echo -e "${CYAN}       Installing $dep...${NC}"
                 # CRITICAL: Always use constraints to prevent numpy upgrades
                 # Try with constraints and --no-deps first
                 if ! pip install --no-cache-dir --constraint "$CONSTRAINTS_FILE" --upgrade-strategy=only-if-needed --no-deps "$dep" 2>/dev/null; then
@@ -281,12 +333,62 @@ EOF
                     fi
                 fi
                 
-                # CRITICAL: After each dependency, check if numpy was upgraded and reinstall if needed
+                # Check numpy after each dependency
                 NUMPY_VERSION=$(python3 -c "import numpy; print(numpy.__version__)" 2>/dev/null || echo "not_installed")
                 if [ "$NUMPY_VERSION" != "1.26.0" ]; then
                     echo -e "${RED}       ❌ CRITICAL: $dep upgraded numpy to $NUMPY_VERSION!${NC}"
-                    echo -e "${YELLOW}       Reinstalling numpy==1.26.0...${NC}"
+                    echo -e "${YELLOW}       Aggressively reinstalling numpy==1.26.0...${NC}"
+                    pip uninstall -y numpy 2>/dev/null || true
+                    pip install --no-cache-dir --force-reinstall --no-deps "numpy==1.26.0" 2>/dev/null || \
                     pip install --no-cache-dir --force-reinstall "numpy==1.26.0" 2>/dev/null || true
+                fi
+            done
+            
+            # Step 3: Install pandas separately with pinned version (it may also try to upgrade numpy)
+            echo -e "${CYAN}       Installing pandas==2.0.3 (compatible with numpy 1.26.0)...${NC}"
+            if ! pip install --no-cache-dir --constraint "$CONSTRAINTS_FILE" --upgrade-strategy=only-if-needed --no-deps "pandas==2.0.3" 2>/dev/null; then
+                if ! pip install --no-cache-dir --constraint "$CONSTRAINTS_FILE" --upgrade-strategy=only-if-needed "pandas==2.0.3" 2>/dev/null; then
+                    echo -e "${YELLOW}       ⚠️  Failed with constraints, trying without...${NC}"
+                    pip install --no-cache-dir --upgrade-strategy=only-if-needed "pandas==2.0.3" 2>/dev/null || true
+                fi
+            fi
+            
+            # CRITICAL: Check numpy after pandas
+            NUMPY_VERSION=$(python3 -c "import numpy; print(numpy.__version__)" 2>/dev/null || echo "not_installed")
+            if [ "$NUMPY_VERSION" != "1.26.0" ]; then
+                echo -e "${RED}       ❌ CRITICAL: pandas upgraded numpy to $NUMPY_VERSION!${NC}"
+                echo -e "${YELLOW}       Aggressively reinstalling numpy==1.26.0...${NC}"
+                pip uninstall -y numpy 2>/dev/null || true
+                pip install --no-cache-dir --force-reinstall --no-deps "numpy==1.26.0" 2>/dev/null || \
+                pip install --no-cache-dir --force-reinstall "numpy==1.26.0" 2>/dev/null || true
+                
+                NUMPY_VERSION_AFTER=$(python3 -c "import numpy; print(numpy.__version__)" 2>/dev/null || echo "not_installed")
+                if [ "$NUMPY_VERSION_AFTER" = "1.26.0" ]; then
+                    echo -e "${GREEN}       ✅ numpy restored to 1.26.0${NC}"
+                else
+                    echo -e "${RED}       ❌ FAILED to restore numpy (still $NUMPY_VERSION_AFTER)${NC}"
+                fi
+            fi
+                
+                # CRITICAL: After each dependency, check if numpy was upgraded and AGGRESSIVELY reinstall
+                NUMPY_VERSION=$(python3 -c "import numpy; print(numpy.__version__)" 2>/dev/null || echo "not_installed")
+                if [ "$NUMPY_VERSION" != "1.26.0" ]; then
+                    echo -e "${RED}       ❌ CRITICAL: $dep upgraded numpy to $NUMPY_VERSION!${NC}"
+                    echo -e "${YELLOW}       Aggressively reinstalling numpy==1.26.0...${NC}"
+                    # Uninstall the wrong version first
+                    pip uninstall -y numpy 2>/dev/null || true
+                    # Reinstall with --no-deps to prevent dependency resolution
+                    pip install --no-cache-dir --force-reinstall --no-deps "numpy==1.26.0" 2>/dev/null || \
+                    pip install --no-cache-dir --force-reinstall "numpy==1.26.0" 2>/dev/null || true
+                    
+                    # Verify it worked
+                    NUMPY_VERSION_AFTER=$(python3 -c "import numpy; print(numpy.__version__)" 2>/dev/null || echo "not_installed")
+                    if [ "$NUMPY_VERSION_AFTER" = "1.26.0" ]; then
+                        echo -e "${GREEN}       ✅ numpy restored to 1.26.0${NC}"
+                    else
+                        echo -e "${RED}       ❌ FAILED to restore numpy to 1.26.0 (still $NUMPY_VERSION_AFTER)${NC}"
+                        echo -e "${YELLOW}       This is a critical error - installation may fail${NC}"
+                    fi
                 fi
                 # Immediately check for torch after each dependency
                 sleep 0.5
