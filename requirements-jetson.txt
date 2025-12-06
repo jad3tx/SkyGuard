@@ -28,7 +28,7 @@ pillow>=10.0.0
 # DO NOT uncomment these lines - they would install non-CUDA versions in the venv!
 # torch>=2.0.0  # Install from NVIDIA repository (system-wide, not in venv)
 # torchvision>=0.15.0  # Install from NVIDIA repository (system-wide, not in venv)
-ultralytics>=8.0.0  # YOLO implementation (will use CUDA if PyTorch has CUDA)
+ultralytics==8.3.0  # YOLO implementation (pinned for numpy 1.26.0 compatibility)
 
 # Hardware Integration (Jetson doesn't need RPi.GPIO)
 # pyserial>=3.5  # Optional: for serial communication

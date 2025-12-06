@@ -103,13 +103,30 @@ install_jetson_requirements_safely() {
     echo -e "${CYAN}   Clearing pip cache to prevent cached torch installation...${NC}"
     pip cache purge 2>/dev/null || true
     
+    # CRITICAL: Create a constraints file to prevent torch/torchvision/torchaudio upgrades
+    CONSTRAINTS_FILE="${req_file}.constraints"
+    cat > "$CONSTRAINTS_FILE" << 'EOF'
+# Prevent torch packages from being installed or upgraded in venv
+# These should come from system site-packages only
+torch==999.999.999
+torchvision==999.999.999
+torchaudio==999.999.999
+EOF
+    echo -e "${CYAN}   Created constraints file to prevent torch package installation...${NC}"
+    
     # FIRST: Install numpy==1.26.0 explicitly before anything else
     # This ensures numpy is pinned and won't be upgraded by other packages
+    # Use --no-deps to prevent any dependency resolution that might pull in torch
     echo -e "${CYAN}   Installing numpy==1.26.0 first (required for Jetson)...${NC}"
+    pip install --no-cache-dir --force-reinstall --no-deps "numpy==1.26.0" 2>/dev/null || \
     pip install --no-cache-dir --force-reinstall "numpy==1.26.0" || {
         echo -e "${YELLOW}   ⚠️  Failed to install numpy==1.26.0, trying without force...${NC}"
         pip install --no-cache-dir "numpy==1.26.0" || true
     }
+    
+    # Pin numpy to prevent upgrades (this tells pip not to upgrade it)
+    echo -e "${CYAN}   Pinning numpy version to prevent upgrades...${NC}"
+    pip install --no-cache-dir --upgrade-strategy=only-if-needed "numpy==1.26.0" 2>/dev/null || true
     
     # Read requirements file and install packages one by one
     # This allows us to catch and handle torch installation attempts
@@ -138,17 +155,50 @@ install_jetson_requirements_safely() {
         # Install package
         echo -e "${CYAN}     Installing $package...${NC}"
         
-        # For ultralytics, install with --no-deps first, then install its dependencies manually (excluding torch)
+        # CRITICAL: Before installing any package, ensure torch/torchvision are NOT in venv
+        # This prevents dependency resolution from pulling them in
+        TORCH_CHECK=false
+        for site_packages in "$venv_path"/lib/python*/site-packages; do
+            if [ -d "$site_packages" ] && ([ -d "$site_packages/torch" ] || [ -d "$site_packages/torchvision" ] || [ -d "$site_packages/torchaudio" ]); then
+                TORCH_CHECK=true
+                break
+            fi
+        done
+        if [ "$TORCH_CHECK" = true ]; then
+            echo -e "${RED}       ❌ CRITICAL: Found torch packages in venv before installing $package!${NC}"
+            echo -e "${YELLOW}       Removing torch packages immediately...${NC}"
+            pip uninstall -y torch torchvision torchaudio 2>/dev/null || true
+            for site_packages in "$venv_path"/lib/python*/site-packages; do
+                if [ -d "$site_packages" ]; then
+                    rm -rf "$site_packages/torch"* 2>/dev/null || true
+                    rm -rf "$site_packages"/torch*.dist-info 2>/dev/null || true
+                    rm -rf "$site_packages"/torch*.egg-info 2>/dev/null || true
+                fi
+            done
+        fi
+        
+        # For ultralytics, install with specific version and constraints to prevent numpy/torch upgrades
         if [[ "$package" =~ ^ultralytics ]]; then
-            echo -e "${CYAN}       Installing ultralytics without dependencies (to avoid torch)...${NC}"
+            # Extract version if specified, otherwise use pinned version for numpy 1.26.0 compatibility
+            if [[ "$package" =~ ==([0-9.]+) ]]; then
+                ULTRALYTICS_VERSION="${BASH_REMATCH[1]}"
+            else
+                # Default to 8.3.0 which is known to work with numpy 1.26.0
+                ULTRALYTICS_VERSION="8.3.0"
+                package="ultralytics==${ULTRALYTICS_VERSION}"
+            fi
             
-            # Try installing with --no-deps and --no-cache-dir
-            if pip install --no-cache-dir --no-deps "$package" 2>/dev/null; then
-                echo -e "${GREEN}       ✅ ultralytics installed without dependencies${NC}"
+            echo -e "${CYAN}       Installing ultralytics ${ULTRALYTICS_VERSION} (compatible with numpy 1.26.0)...${NC}"
+            echo -e "${CYAN}       Using constraints to prevent torch/numpy upgrades...${NC}"
+            
+            # Try installing with constraints and --no-deps first
+            if pip install --no-cache-dir --constraint "$CONSTRAINTS_FILE" --no-deps "$package" 2>/dev/null; then
+                echo -e "${GREEN}       ✅ ultralytics ${ULTRALYTICS_VERSION} installed without dependencies${NC}"
             else
                 echo -e "${YELLOW}       ⚠️  Failed to install ultralytics without deps${NC}"
-                echo -e "${CYAN}       Installing ultralytics normally, will remove torch if installed...${NC}"
-                pip install --no-cache-dir "$package" 2>/dev/null || true
+                echo -e "${CYAN}       Installing ultralytics with constraints (will prevent torch/numpy upgrades)...${NC}"
+                # Use constraints and upgrade-strategy to prevent numpy/torch upgrades
+                pip install --no-cache-dir --constraint "$CONSTRAINTS_FILE" --upgrade-strategy=only-if-needed "$package" 2>/dev/null || true
                 
                 # IMMEDIATELY check and remove torch
                 sleep 1  # Give pip a moment to finish
@@ -192,11 +242,15 @@ install_jetson_requirements_safely() {
             fi
             
             # Install ultralytics dependencies manually (excluding torch)
-            echo -e "${CYAN}       Installing ultralytics dependencies (excluding torch)...${NC}"
+            # Use constraints and upgrade-strategy to prevent numpy/torch upgrades
+            echo -e "${CYAN}       Installing ultralytics dependencies (excluding torch, preserving numpy 1.26.0)...${NC}"
             # Common ultralytics dependencies (excluding torch/torchvision)
-            # Use --no-deps and --no-cache-dir for each to prevent transitive torch installation
+            # Use constraints and upgrade-strategy to prevent numpy upgrades
             for dep in pillow pyyaml requests tqdm pandas opencv-python-headless; do
-                pip install --no-cache-dir --no-deps "$dep" 2>/dev/null || pip install --no-cache-dir "$dep" 2>/dev/null || true
+                # Try with constraints first to prevent numpy/torch upgrades
+                pip install --no-cache-dir --constraint "$CONSTRAINTS_FILE" --upgrade-strategy=only-if-needed --no-deps "$dep" 2>/dev/null || \
+                pip install --no-cache-dir --constraint "$CONSTRAINTS_FILE" --upgrade-strategy=only-if-needed "$dep" 2>/dev/null || \
+                pip install --no-cache-dir --upgrade-strategy=only-if-needed "$dep" 2>/dev/null || true
                 # Immediately check for torch after each dependency
                 sleep 0.5
                 # Check for torch using proper loop (quoted glob pattern)
@@ -236,10 +290,11 @@ install_jetson_requirements_safely() {
                     echo -e "${YELLOW}       ⚠️  Failed to install $package${NC}"
                 }
             else
-                # For other packages, try --no-deps first to avoid pulling in torch
-                pip install --no-cache-dir "$package" --no-deps 2>/dev/null || {
-                    # If --no-deps fails, try normal install but check immediately
-                    pip install --no-cache-dir "$package" 2>/dev/null || {
+                # For other packages, use constraints file and --no-deps to avoid pulling in torch
+                # Also use --upgrade-strategy=only-if-needed to prevent numpy upgrades
+                pip install --no-cache-dir --constraint "$CONSTRAINTS_FILE" --upgrade-strategy=only-if-needed "$package" --no-deps 2>/dev/null || {
+                    # If --no-deps fails, try with constraints but allow dependencies
+                    pip install --no-cache-dir --constraint "$CONSTRAINTS_FILE" --upgrade-strategy=only-if-needed "$package" 2>/dev/null || {
                         echo -e "${YELLOW}       ⚠️  Failed to install $package${NC}"
                     }
                 }
@@ -293,9 +348,34 @@ install_jetson_requirements_safely() {
             if [ "$NUMPY_VERSION" = "not_installed" ]; then
                 echo -e "${YELLOW}       ⚠️  numpy is missing, installing 1.26.0...${NC}"
             else
-                echo -e "${YELLOW}       ⚠️  numpy was upgraded to $NUMPY_VERSION, reinstalling 1.26.0...${NC}"
+                echo -e "${RED}       ❌ CRITICAL: numpy was upgraded to $NUMPY_VERSION!${NC}"
+                echo -e "${YELLOW}       This may have triggered torch/torchvision upgrades!${NC}"
+                echo -e "${CYAN}       Reinstalling numpy==1.26.0 and checking for torch...${NC}"
             fi
             pip install --no-cache-dir --force-reinstall "numpy==1.26.0" 2>/dev/null || true
+            
+            # CRITICAL: Check if torch was installed/upgraded due to numpy change
+            TORCH_IN_VENV=false
+            for site_packages in "$venv_path"/lib/python*/site-packages; do
+                if [ -d "$site_packages" ] && ([ -d "$site_packages/torch" ] || [ -d "$site_packages/torchvision" ] || [ -d "$site_packages/torchaudio" ]); then
+                    TORCH_IN_VENV=true
+                    break
+                fi
+            done
+            
+            if [ "$TORCH_IN_VENV" = true ]; then
+                echo -e "${RED}       ❌ CRITICAL: torch packages found in venv after numpy change!${NC}"
+                echo -e "${YELLOW}       Removing immediately...${NC}"
+                pip uninstall -y torch torchvision torchaudio 2>/dev/null || true
+                for site_packages in "$venv_path"/lib/python*/site-packages; do
+                    if [ -d "$site_packages" ]; then
+                        rm -rf "$site_packages/torch"* 2>/dev/null || true
+                        rm -rf "$site_packages"/torch*.dist-info 2>/dev/null || true
+                        rm -rf "$site_packages"/torch*.egg-info 2>/dev/null || true
+                    fi
+                done
+                echo -e "${GREEN}       ✅ torch packages removed${NC}"
+            fi
         fi
     done < "$req_file"
     
@@ -305,11 +385,37 @@ install_jetson_requirements_safely() {
     if [ "$NUMPY_VERSION" = "1.26.0" ]; then
         echo -e "${GREEN}   ✅ numpy is correctly version 1.26.0${NC}"
     else
-        echo -e "${YELLOW}   ⚠️  numpy version is $NUMPY_VERSION, forcing reinstall to 1.26.0...${NC}"
+        echo -e "${RED}   ❌ CRITICAL: numpy version is $NUMPY_VERSION (expected 1.26.0)${NC}"
+        echo -e "${YELLOW}   Forcing reinstall to 1.26.0...${NC}"
         pip install --no-cache-dir --force-reinstall "numpy==1.26.0" || {
             echo -e "${RED}   ❌ Failed to install numpy==1.26.0${NC}"
         }
+        
+        # Check for torch after numpy reinstall
+        TORCH_IN_VENV=false
+        for site_packages in "$venv_path"/lib/python*/site-packages; do
+            if [ -d "$site_packages" ] && ([ -d "$site_packages/torch" ] || [ -d "$site_packages/torchvision" ] || [ -d "$site_packages/torchaudio" ]); then
+                TORCH_IN_VENV=true
+                break
+            fi
+        done
+        
+        if [ "$TORCH_IN_VENV" = true ]; then
+            echo -e "${RED}   ❌ CRITICAL: torch packages found after numpy reinstall!${NC}"
+            echo -e "${YELLOW}   Removing...${NC}"
+            pip uninstall -y torch torchvision torchaudio 2>/dev/null || true
+            for site_packages in "$venv_path"/lib/python*/site-packages; do
+                if [ -d "$site_packages" ]; then
+                    rm -rf "$site_packages/torch"* 2>/dev/null || true
+                    rm -rf "$site_packages"/torch*.dist-info 2>/dev/null || true
+                    rm -rf "$site_packages"/torch*.egg-info 2>/dev/null || true
+                fi
+            done
+        fi
     fi
+    
+    # Clean up constraints file
+    rm -f "$CONSTRAINTS_FILE" 2>/dev/null || true
     
     # CRITICAL: Final torch check - verify torch is NOT in venv
     echo -e "${CYAN}   Final verification: Checking for torch in venv...${NC}"
