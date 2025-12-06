@@ -227,13 +227,31 @@ EOF
             echo -e "${CYAN}       Using constraints to prevent torch/numpy upgrades...${NC}"
             
             # Try installing with constraints and --no-deps first
+            ULTRALYTICS_INSTALLED=false
             if pip install --no-cache-dir --constraint "$CONSTRAINTS_FILE" --no-deps "$package" 2>/dev/null; then
                 echo -e "${GREEN}       ✅ ultralytics ${ULTRALYTICS_VERSION} installed without dependencies${NC}"
-            else
-                echo -e "${YELLOW}       ⚠️  Failed to install ultralytics without deps${NC}"
+                # Verify it can actually be imported (it might need dependencies)
+                if python3 -c "import ultralytics" 2>/dev/null; then
+                    echo -e "${GREEN}       ✅ ultralytics can be imported${NC}"
+                    ULTRALYTICS_INSTALLED=true
+                else
+                    echo -e "${YELLOW}       ⚠️  ultralytics installed but cannot be imported (needs dependencies)${NC}"
+                fi
+            fi
+            
+            # If --no-deps failed or ultralytics can't be imported, install with dependencies
+            if [ "$ULTRALYTICS_INSTALLED" = false ]; then
                 echo -e "${CYAN}       Installing ultralytics with constraints (will prevent torch/numpy upgrades)...${NC}"
                 # Use constraints and upgrade-strategy to prevent numpy/torch upgrades
                 pip install --no-cache-dir --constraint "$CONSTRAINTS_FILE" --upgrade-strategy=only-if-needed "$package" 2>/dev/null || true
+                
+                # Verify it can be imported now
+                if python3 -c "import ultralytics" 2>/dev/null; then
+                    echo -e "${GREEN}       ✅ ultralytics installed and can be imported${NC}"
+                    ULTRALYTICS_INSTALLED=true
+                else
+                    echo -e "${YELLOW}       ⚠️  ultralytics installed but still cannot be imported${NC}"
+                fi
                 
                 # IMMEDIATELY check and remove torch
                 sleep 1  # Give pip a moment to finish
@@ -1561,12 +1579,30 @@ EOF
         fi
         
         # Install ultralytics 8.3.0 with constraints to prevent numpy/torch upgrades
+        ULTRALYTICS_INSTALLED=false
         if pip install --no-cache-dir --constraint "$CONSTRAINTS_FILE" --no-deps "ultralytics==8.3.0" 2>/dev/null; then
             echo -e "${GREEN}   ✅ Ultralytics 8.3.0 installed without dependencies${NC}"
-        else
-            # If --no-deps fails, install with constraints but allow dependencies
+            # Verify it can actually be imported
+            if python3 -c "import ultralytics" 2>/dev/null; then
+                echo -e "${GREEN}   ✅ Ultralytics can be imported${NC}"
+                ULTRALYTICS_INSTALLED=true
+            else
+                echo -e "${YELLOW}   ⚠️  Ultralytics installed but cannot be imported (needs dependencies)${NC}"
+            fi
+        fi
+        
+        # If --no-deps failed or ultralytics can't be imported, install with dependencies
+        if [ "$ULTRALYTICS_INSTALLED" = false ]; then
             echo -e "${CYAN}   Installing ultralytics 8.3.0 with constraints (will prevent torch/numpy upgrades)...${NC}"
             pip install --no-cache-dir --constraint "$CONSTRAINTS_FILE" --upgrade-strategy=only-if-needed "ultralytics==8.3.0" 2>/dev/null || true
+            
+            # Verify it can be imported now
+            if python3 -c "import ultralytics" 2>/dev/null; then
+                echo -e "${GREEN}   ✅ Ultralytics installed and can be imported${NC}"
+                ULTRALYTICS_INSTALLED=true
+            else
+                echo -e "${YELLOW}   ⚠️  Ultralytics installed but still cannot be imported${NC}"
+            fi
             
             # Check if numpy was upgraded
             NUMPY_VERSION=$(python3 -c "import numpy; print(numpy.__version__)" 2>/dev/null || echo "not_installed")
