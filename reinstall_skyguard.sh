@@ -474,6 +474,40 @@ check_system_torchvision() {
 install_jetson_pytorch() {
     echo -e "${BLUE}📦 Installing PyTorch for Jetson (system-wide)...${NC}"
     
+    # CRITICAL: Check for cuSPARSELt (required for PyTorch on JetPack 6.1)
+    echo -e "${CYAN}   Checking for cuSPARSELt prerequisite...${NC}"
+    CUSPARSELT_VERSION="0.7.1"
+    if dpkg -l | grep -q cusparselt; then
+        INSTALLED_VERSION=$(dpkg -l | grep cusparselt | awk '{print $3}' | head -1)
+        echo -e "${GREEN}   ✅ cuSPARSELt already installed: $INSTALLED_VERSION${NC}"
+    else
+        echo -e "${RED}   ❌ cuSPARSELt $CUSPARSELT_VERSION is required but not installed${NC}"
+        echo -e "${YELLOW}   cuSPARSELt is a prerequisite for PyTorch on JetPack 6.1${NC}"
+        echo -e "${CYAN}   Download from: https://developer.nvidia.com/cusparselt/downloads${NC}"
+        echo -e "${CYAN}   Select:${NC}"
+        echo -e "${CYAN}     - Target OS: Linux${NC}"
+        echo -e "${CYAN}     - Target Architecture: aarch64-jetson${NC}"
+        echo -e "${CYAN}     - Compilation: Native${NC}"
+        echo -e "${CYAN}     - Distribution: Ubuntu${NC}"
+        echo -e "${CYAN}     - Target Version: 22.04${NC}"
+        echo -e "${CYAN}     - Target Type: deb (local)${NC}"
+        echo ""
+        echo -e "${CYAN}   After downloading, install with:${NC}"
+        echo -e "${CYAN}     sudo dpkg -i <downloaded-cusparselt-package>.deb${NC}"
+        echo -e "${CYAN}     sudo apt-get install -f${NC}"
+        echo ""
+        read -p "Press Enter after installing cuSPARSELt, or Ctrl+C to cancel..."
+        
+        # Verify cuSPARSELt installation
+        if ! dpkg -l | grep -q cusparselt; then
+            echo -e "${RED}   ❌ cuSPARSELt still not detected. PyTorch installation may fail.${NC}"
+            echo -e "${YELLOW}   Continuing anyway, but PyTorch may not work correctly...${NC}"
+        else
+            INSTALLED_VERSION=$(dpkg -l | grep cusparselt | awk '{print $3}' | head -1)
+            echo -e "${GREEN}   ✅ cuSPARSELt installed: $INSTALLED_VERSION${NC}"
+        fi
+    fi
+    
     # Detect Python version
     PYTHON_VERSION=$(python3 --version 2>&1 | grep -oP '\d+\.\d+' | head -1)
     PYTHON_MAJOR=$(echo "$PYTHON_VERSION" | cut -d. -f1)
@@ -552,14 +586,24 @@ install_jetson_pytorch() {
             if [ -f "$SKYGUARD_PATH/scripts/build_torchvision_jetson.sh" ]; then
                 chmod +x "$SKYGUARD_PATH/scripts/build_torchvision_jetson.sh"
                 if "$SKYGUARD_PATH/scripts/build_torchvision_jetson.sh"; then
-                    TORCHVISION_INSTALLED=true
-                    echo -e "${GREEN}   ✅ torchvision built and installed from source${NC}"
+                    # Verify the built torchvision works with nms operator
+                    if python3 -c "import torchvision; from torchvision.ops import nms" 2>/dev/null; then
+                        TORCHVISION_INSTALLED=true
+                        TV_VERSION=$(python3 -c "import torchvision; print(torchvision.__version__)" 2>/dev/null || echo "unknown")
+                        echo -e "${GREEN}   ✅ torchvision $TV_VERSION built and verified from source${NC}"
+                    else
+                        echo -e "${RED}   ❌ torchvision built but nms operator test failed${NC}"
+                        echo -e "${YELLOW}   This indicates a compatibility issue with PyTorch${NC}"
+                        TORCHVISION_INSTALLED=false
+                    fi
                 else
                     echo -e "${RED}   ❌ Failed to build torchvision from source${NC}"
+                    TORCHVISION_INSTALLED=false
                 fi
             else
                 echo -e "${RED}   ❌ Build script not found: $SKYGUARD_PATH/scripts/build_torchvision_jetson.sh${NC}"
                 echo -e "${YELLOW}   Please build torchvision manually or install a compatible version${NC}"
+                TORCHVISION_INSTALLED=false
             fi
         fi
         

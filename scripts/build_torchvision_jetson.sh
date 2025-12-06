@@ -90,9 +90,9 @@ fi
 
 # Hardcoded compatible torchvision version for JetPack 6.1
 # PyTorch: 2.5.0a0+872d972e41.nv24.08.17622132
-# TorchVision: 0.20.0
+# TorchVision: 0.23.0 (matches the wheel from Jetson AI Lab)
 # Based on: https://github.com/hamzashafiq28/pytorch-jetson-jp6.1
-TV_VERSION="0.20.0"
+TV_VERSION="0.23.0"
 PYTORCH_TARGET="2.5.0a0"
 echo "Building torchvision version: $TV_VERSION"
 echo "Compatible with PyTorch: $PYTORCH_TARGET (JetPack 6.1)"
@@ -203,10 +203,20 @@ try:
 except Exception as e:
     print(f'⚠️  torchvision transforms error: {e}')
     raise
+# CRITICAL: Test nms operator (this is the most common compatibility issue)
+try:
+    from torchvision.ops import nms
+    print('✅ torchvision.ops.nms works (critical for compatibility)')
+except Exception as e:
+    print(f'❌ torchvision.ops.nms failed: {e}')
+    print('   This indicates a compatibility issue with PyTorch')
+    raise
 " 2>/dev/null; then
         echo "✅ torchvision is fully functional!"
     else
-        echo "⚠️  torchvision imported but may have runtime issues"
+        echo "❌ torchvision has compatibility issues"
+        echo "   The nms operator test failed - this is critical for YOLO/Ultralytics"
+        exit 1
     fi
     
     echo ""
