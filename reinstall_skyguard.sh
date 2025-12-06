@@ -369,56 +369,6 @@ EOF
                     echo -e "${RED}       ❌ FAILED to restore numpy (still $NUMPY_VERSION_AFTER)${NC}"
                 fi
             fi
-                
-                # CRITICAL: After each dependency, check if numpy was upgraded and AGGRESSIVELY reinstall
-                NUMPY_VERSION=$(python3 -c "import numpy; print(numpy.__version__)" 2>/dev/null || echo "not_installed")
-                if [ "$NUMPY_VERSION" != "1.26.0" ]; then
-                    echo -e "${RED}       ❌ CRITICAL: $dep upgraded numpy to $NUMPY_VERSION!${NC}"
-                    echo -e "${YELLOW}       Aggressively reinstalling numpy==1.26.0...${NC}"
-                    # Uninstall the wrong version first
-                    pip uninstall -y numpy 2>/dev/null || true
-                    # Reinstall with --no-deps to prevent dependency resolution
-                    pip install --no-cache-dir --force-reinstall --no-deps "numpy==1.26.0" 2>/dev/null || \
-                    pip install --no-cache-dir --force-reinstall "numpy==1.26.0" 2>/dev/null || true
-                    
-                    # Verify it worked
-                    NUMPY_VERSION_AFTER=$(python3 -c "import numpy; print(numpy.__version__)" 2>/dev/null || echo "not_installed")
-                    if [ "$NUMPY_VERSION_AFTER" = "1.26.0" ]; then
-                        echo -e "${GREEN}       ✅ numpy restored to 1.26.0${NC}"
-                    else
-                        echo -e "${RED}       ❌ FAILED to restore numpy to 1.26.0 (still $NUMPY_VERSION_AFTER)${NC}"
-                        echo -e "${YELLOW}       This is a critical error - installation may fail${NC}"
-                    fi
-                fi
-                # Immediately check for torch after each dependency
-                sleep 0.5
-                # Check for torch using proper loop (quoted glob pattern)
-                TORCH_FOUND=false
-                for site_packages in "$venv_path"/lib/python*/site-packages; do
-                    if [ -d "$site_packages/torch" ] 2>/dev/null; then
-                        TORCH_FOUND=true
-                        break
-                    fi
-                done
-                if [ "$TORCH_FOUND" = true ]; then
-                    echo -e "${RED}       ❌ $dep pulled in torch - removing...${NC}"
-                    local USE_SUDO=""
-                    if [ "$(id -u)" -eq 0 ]; then
-                        USE_SUDO="sudo"
-                    fi
-                    pip uninstall -y torch torchvision torchaudio 2>/dev/null || true
-                    if [ -n "$USE_SUDO" ]; then
-                        $USE_SUDO pip uninstall -y torch torchvision torchaudio 2>/dev/null || true
-                    fi
-                    for site_packages in "$venv_path"/lib/python*/site-packages; do
-                        if [ -d "$site_packages" ]; then
-                            $USE_SUDO rm -rf "$site_packages/torch"* 2>/dev/null || true
-                            $USE_SUDO rm -rf "$site_packages"/torch*.dist-info 2>/dev/null || true
-                            $USE_SUDO rm -rf "$site_packages"/torch*.egg-info 2>/dev/null || true
-                        fi
-                    done
-                fi
-            done
         else
             # For packages that need dependencies (like Flask needs werkzeug, itsdangerous), install normally
             # Only use --no-deps for packages that might pull in torch
