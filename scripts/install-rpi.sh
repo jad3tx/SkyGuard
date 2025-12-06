@@ -172,9 +172,23 @@ fi
 echo -e "${CYAN}   Checking critical packages...${NC}"
 source venv/bin/activate
 
+# Function to get Python import name from pip package name
+get_import_name() {
+    local pkg_name="$1"
+    case "$pkg_name" in
+        opencv-python|opencv-python-headless)
+            echo "cv2"
+            ;;
+        *)
+            echo "$pkg_name"
+            ;;
+    esac
+}
+
 for package in torch ultralytics opencv-python flask; do
-    if python3 -c "import $package" 2>/dev/null; then
-        VERSION=$(python3 -c "import $package; print($package.__version__)" 2>/dev/null || echo "installed")
+    IMPORT_NAME=$(get_import_name "$package")
+    if python3 -c "import $IMPORT_NAME" 2>/dev/null; then
+        VERSION=$(python3 -c "import $IMPORT_NAME; print($IMPORT_NAME.__version__)" 2>/dev/null || echo "installed")
         echo -e "${GREEN}   ✅ $package ($VERSION)${NC}"
     else
         echo -e "${RED}   ❌ $package not found${NC}"
