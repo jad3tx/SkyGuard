@@ -24,14 +24,32 @@ PYTHON_VERSION=$(python3 --version 2>&1 | grep -oP '\d+\.\d+' | head -1)
 PYTHON_MAJOR_MINOR=$(echo "$PYTHON_VERSION" | cut -d. -f1,2)
 echo "Python version: $PYTHON_VERSION"
 
-# Check if torch is installed
-if ! python3 -c "import torch" 2>/dev/null; then
-    echo "❌ PyTorch is not installed. Please install it first."
-    exit 1
+# Check if torch is installed (check both system and user site-packages)
+TORCH_FOUND=false
+USER_SITE=""
+if python3 -c "import torch" 2>/dev/null; then
+    TORCH_FOUND=true
+    TORCH_VERSION=$(python3 -c "import torch; print(torch.__version__)" 2>/dev/null)
+    echo "PyTorch version: $TORCH_VERSION (system-wide)"
+else
+    # Try adding user site-packages to path
+    USER_SITE=$(python3 -m site --user-site 2>/dev/null || echo "")
+    if [ -n "$USER_SITE" ] && python3 -c "import sys; sys.path.insert(0, '$USER_SITE'); import torch" 2>/dev/null; then
+        TORCH_FOUND=true
+        TORCH_VERSION=$(python3 -c "import sys; sys.path.insert(0, '$USER_SITE'); import torch; print(torch.__version__)" 2>/dev/null)
+        echo "⚠️  PyTorch found in user site-packages: $USER_SITE"
+        echo "PyTorch version: $TORCH_VERSION"
+        echo "   This may cause issues - consider installing system-wide with: sudo pip3 install <pytorch-wheel>.whl"
+        # Export USER_SITE so it can be used later in the script
+        export PYTHONPATH="$USER_SITE:$PYTHONPATH"
+    fi
 fi
 
-TORCH_VERSION=$(python3 -c "import torch; print(torch.__version__)" 2>/dev/null)
-echo "PyTorch version: $TORCH_VERSION"
+if [ "$TORCH_FOUND" = false ]; then
+    echo "❌ PyTorch is not installed. Please install it first."
+    echo "   Install with: sudo pip3 install <pytorch-wheel>.whl"
+    exit 1
+fi
 
 # Detect Jetson model and set CUDA architecture
 # This suppresses the warning and optimizes the build
@@ -184,13 +202,20 @@ fi
 # Verify installation
 echo ""
 echo "✅ Verifying installation..."
-if python3 -c "import torchvision; print(f'torchvision {torchvision.__version__} installed successfully')" 2>/dev/null; then
+# Build verification command with user site-packages if needed
+VERIFY_CMD="import torch; import torchvision; print(f'torchvision {torchvision.__version__} installed successfully')"
+if [ -n "$USER_SITE" ]; then
+    VERIFY_CMD="import sys; sys.path.insert(0, '$USER_SITE'); $VERIFY_CMD"
+fi
+
+if python3 -c "$VERIFY_CMD" 2>/dev/null; then
     echo "✅ torchvision installed successfully!"
     
     # Test that it actually works (not just imports)
     echo ""
     echo "🧪 Testing torchvision functionality..."
-    if python3 -c "
+    # Build test command with user site-packages if needed
+    TEST_CMD="
 import torch
 import torchvision
 print(f'PyTorch: {torch.__version__}')
@@ -211,7 +236,12 @@ except Exception as e:
     print(f'❌ torchvision.ops.nms failed: {e}')
     print('   This indicates a compatibility issue with PyTorch')
     raise
-" 2>/dev/null; then
+"
+    if [ -n "$USER_SITE" ]; then
+        TEST_CMD="import sys; sys.path.insert(0, '$USER_SITE'); $TEST_CMD"
+    fi
+    
+    if python3 -c "$TEST_CMD" 2>/dev/null; then
         echo "✅ torchvision is fully functional!"
     else
         echo "❌ torchvision has compatibility issues"

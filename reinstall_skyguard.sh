@@ -595,12 +595,21 @@ install_jetson_pytorch() {
             return 1
         }
         
-        echo -e "${CYAN}   Installing PyTorch wheel...${NC}"
-        pip3 install "${DOWNLOAD_DIR}/${TORCH_WHEEL}" || {
-            echo -e "${RED}   ❌ Failed to install PyTorch wheel${NC}"
-            rm -f "${DOWNLOAD_DIR}/${TORCH_WHEEL}"
-            return 1
-        }
+        echo -e "${CYAN}   Installing PyTorch wheel (system-wide)...${NC}"
+        # Install system-wide using sudo to ensure it's accessible system-wide
+        # This is critical for Jetson - PyTorch must be in system site-packages
+        if sudo pip3 install "${DOWNLOAD_DIR}/${TORCH_WHEEL}" 2>&1; then
+            echo -e "${GREEN}   ✅ PyTorch installed system-wide${NC}"
+        else
+            echo -e "${YELLOW}   ⚠️  System-wide install failed, trying user install...${NC}"
+            # Fallback to user install if sudo fails
+            pip3 install "${DOWNLOAD_DIR}/${TORCH_WHEEL}" || {
+                echo -e "${RED}   ❌ Failed to install PyTorch wheel${NC}"
+                rm -f "${DOWNLOAD_DIR}/${TORCH_WHEEL}"
+                return 1
+            }
+            echo -e "${YELLOW}   ⚠️  PyTorch installed to user site-packages (may cause issues)${NC}"
+        fi
         
         echo -e "${CYAN}   Installing compatible NVIDIA torchvision for PyTorch 2.5.0a0...${NC}"
         # First, uninstall any existing torchvision that might be incompatible
@@ -621,14 +630,32 @@ install_jetson_pytorch() {
             if wget "$TORCHVISION_URL" -O "${DOWNLOAD_DIR}/${TORCHVISION_WHEEL}" 2>/dev/null; then
                 if [ -f "${DOWNLOAD_DIR}/${TORCHVISION_WHEEL}" ]; then
                     echo -e "${CYAN}   Installing NVIDIA torchvision wheel (0.23.0)...${NC}"
-                    if pip3 install "${DOWNLOAD_DIR}/${TORCHVISION_WHEEL}" --no-deps 2>/dev/null; then
+                    # Install with sudo if possible to match PyTorch installation location
+                    if sudo pip3 install "${DOWNLOAD_DIR}/${TORCHVISION_WHEEL}" --no-deps 2>/dev/null || pip3 install "${DOWNLOAD_DIR}/${TORCHVISION_WHEEL}" --no-deps 2>/dev/null; then
                         # Verify it works with the installed PyTorch
-                        if python3 -c "import torchvision; from torchvision.ops import nms" 2>/dev/null; then
-                            TORCHVISION_INSTALLED=true
-                            echo -e "${GREEN}   ✅ torchvision 0.23.0 installed and verified${NC}"
+                        # Add user site-packages to path if PyTorch is there
+                        USER_SITE=$(python3 -m site --user-site 2>/dev/null || echo "")
+                        if [ -n "$USER_SITE" ] && python3 -c "import sys; sys.path.insert(0, '$USER_SITE'); import torch" 2>/dev/null; then
+                            # PyTorch is in user site-packages, test torchvision the same way
+                            if python3 -c "import sys; sys.path.insert(0, '$USER_SITE'); import torchvision; from torchvision.ops import nms" 2>/dev/null; then
+                                TORCHVISION_INSTALLED=true
+                                echo -e "${GREEN}   ✅ torchvision 0.23.0 installed and verified${NC}"
+                            else
+                                echo -e "${YELLOW}   ⚠️  torchvision 0.23.0 installed but nms operator test failed${NC}"
+                                echo -e "${CYAN}   This may be due to PyTorch being in user site-packages${NC}"
+                                pip3 uninstall -y torchvision 2>/dev/null || true
+                                sudo pip3 uninstall -y torchvision 2>/dev/null || true
+                            fi
                         else
-                            echo -e "${YELLOW}   ⚠️  torchvision 0.23.0 installed but has compatibility issues${NC}"
-                            pip3 uninstall -y torchvision 2>/dev/null || true
+                            # PyTorch is system-wide, test normally
+                            if python3 -c "import torchvision; from torchvision.ops import nms" 2>/dev/null; then
+                                TORCHVISION_INSTALLED=true
+                                echo -e "${GREEN}   ✅ torchvision 0.23.0 installed and verified${NC}"
+                            else
+                                echo -e "${YELLOW}   ⚠️  torchvision 0.23.0 installed but has compatibility issues${NC}"
+                                pip3 uninstall -y torchvision 2>/dev/null || true
+                                sudo pip3 uninstall -y torchvision 2>/dev/null || true
+                            fi
                         fi
                         rm -f "${DOWNLOAD_DIR}/${TORCHVISION_WHEEL}"
                     fi
