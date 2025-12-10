@@ -113,6 +113,9 @@ class CameraManager:
             # Set buffer size to reduce latency
             self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
             
+            # Apply focus settings using v4l2-ctl
+            self._apply_focus_settings()
+            
             # Get actual properties
             actual_width = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
             actual_height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
@@ -122,6 +125,117 @@ class CameraManager:
             
         except Exception as e:
             self.logger.warning(f"Failed to configure camera properties: {e}")
+    
+    def _apply_focus_settings(self):
+        """Apply focus settings using v4l2-ctl command."""
+        try:
+            import subprocess
+            import os
+            
+            # Get camera device path
+            source = self.config.get('source', 0)
+            if isinstance(source, str):
+                source = int(source)
+            
+            # Try to find the video device
+            video_device = f"/dev/video{source}"
+            if not os.path.exists(video_device):
+                # Try common video devices
+                for dev in ['/dev/video0', '/dev/video1', '/dev/video2']:
+                    if os.path.exists(dev):
+                        video_device = dev
+                        break
+                else:
+                    self.logger.debug("No video device found for focus control")
+                    return
+            
+            focus_mode = self.config.get('focus_mode', 'manual')
+            focus_value = self.config.get('focus_value', 0)
+            
+            # Apply focus mode
+            if focus_mode == 'infinity':
+                # Set focus to infinity
+                subprocess.run(
+                    ['v4l2-ctl', '-d', video_device, '--set-ctrl', 'focus_absolute=0'],
+                    capture_output=True,
+                    timeout=2
+                )
+                # Enable auto focus off
+                subprocess.run(
+                    ['v4l2-ctl', '-d', video_device, '--set-ctrl', 'focus_auto=0'],
+                    capture_output=True,
+                    timeout=2
+                )
+                self.logger.info(f"Focus set to infinity on {video_device}")
+            elif focus_mode == 'auto':
+                # Enable auto focus
+                subprocess.run(
+                    ['v4l2-ctl', '-d', video_device, '--set-ctrl', 'focus_auto=1'],
+                    capture_output=True,
+                    timeout=2
+                )
+                self.logger.info(f"Focus set to auto on {video_device}")
+            elif focus_mode == 'manual':
+                # Set manual focus value
+                # Disable auto focus
+                subprocess.run(
+                    ['v4l2-ctl', '-d', video_device, '--set-ctrl', 'focus_auto=0'],
+                    capture_output=True,
+                    timeout=2
+                )
+                # Set manual focus value (typically 0-255 or 0-100)
+                # Try different value ranges
+                focus_abs = int(focus_value)
+                result = subprocess.run(
+                    ['v4l2-ctl', '-d', video_device, '--set-ctrl', f'focus_absolute={focus_abs}'],
+                    capture_output=True,
+                    timeout=2
+                )
+                if result.returncode == 0:
+                    self.logger.info(f"Focus set to manual value {focus_abs} on {video_device}")
+                else:
+                    self.logger.debug(f"Failed to set focus_absolute, trying alternative method")
+                    # Some cameras use different control names
+                    subprocess.run(
+                        ['v4l2-ctl', '-d', video_device, '--set-ctrl', f'focus={focus_abs}'],
+                        capture_output=True,
+                        timeout=2
+                    )
+        except FileNotFoundError:
+            self.logger.debug("v4l2-ctl not found, focus control unavailable")
+        except subprocess.TimeoutExpired:
+            self.logger.warning("Focus control command timed out")
+        except Exception as e:
+            self.logger.debug(f"Failed to apply focus settings: {e}")
+    
+    def update_config(self, new_config: dict):
+        """Update camera configuration dynamically.
+        
+        Args:
+            new_config: New camera configuration dictionary
+        """
+        old_focus_mode = self.config.get('focus_mode')
+        old_focus_value = self.config.get('focus_value')
+        
+        self.config.update(new_config)
+        
+        # Apply focus settings if they changed
+        new_focus_mode = self.config.get('focus_mode')
+        new_focus_value = self.config.get('focus_value')
+        
+        if (new_focus_mode != old_focus_mode or new_focus_value != old_focus_value):
+            self._apply_focus_settings()
+            self.logger.info(f"Camera focus updated: mode={new_focus_mode}, value={new_focus_value}")
+        
+        # Update other camera properties if needed
+        if 'width' in new_config or 'height' in new_config or 'fps' in new_config:
+            if self.cap and self.cap.isOpened():
+                if 'width' in new_config:
+                    self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, new_config['width'])
+                if 'height' in new_config:
+                    self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, new_config['height'])
+                if 'fps' in new_config:
+                    self.cap.set(cv2.CAP_PROP_FPS, new_config['fps'])
     
     def capture_frame(self) -> Optional[np.ndarray]:
         """Capture a frame from the camera.

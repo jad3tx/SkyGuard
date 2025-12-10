@@ -280,7 +280,21 @@
                             <input type="range" class="form-range" id="camera-contrast" min="-100" max="100" value="0">
                             <div class="form-text">Current value: <span id="contrast-value">0</span></div>
                         </div>
-                        <div class="col-md-9">
+                        <div class="col-md-3">
+                            <label for="camera-focus-mode" class="form-label">Focus Mode</label>
+                            <select class="form-select" id="camera-focus-mode">
+                                <option value="auto">Auto Focus</option>
+                                <option value="manual">Manual</option>
+                                <option value="infinity">Infinity</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="camera-focus-value" class="form-label">Focus Value</label>
+                            <input type="range" class="form-range" id="camera-focus-value" min="0" max="255" step="1" value="0">
+                            <div class="form-text">Current value: <span id="focus-value">0</span></div>
+                            <div class="form-text">(Only used in manual mode)</div>
+                        </div>
+                        <div class="col-md-3">
                             <div class="form-check mt-4">
                                 <input class="form-check-input" type="checkbox" id="camera-live-view">
                                 <label class="form-check-label" for="camera-live-view">
@@ -819,6 +833,8 @@
             document.getElementById('camera-flip-vertical').checked = config.camera.flip_vertical || false;
             document.getElementById('camera-brightness').value = config.camera.brightness || 0;
             document.getElementById('camera-contrast').value = config.camera.contrast || 0;
+            document.getElementById('camera-focus-mode').value = config.camera.focus_mode || 'infinity';
+            document.getElementById('camera-focus-value').value = config.camera.focus_value || 0;
             document.getElementById('camera-live-view').checked = config.camera.live_view || false;
             document.getElementById('confidence-threshold').value = config.ai.confidence_threshold;
             document.getElementById('nms-threshold').value = config.ai.nms_threshold;
@@ -832,6 +848,7 @@
             updateRangeValue('confidence-threshold', 'confidence-value');
             updateRangeValue('nms-threshold', 'nms-value');
             updateRangeValue('species-confidence-threshold', 'species-confidence-value');
+            updateRangeValue('camera-focus-value', 'focus-value');
             
         } catch (error) {
             console.error('Failed to load configuration:', error);
@@ -865,6 +882,8 @@
                     flip_vertical: document.getElementById('camera-flip-vertical').checked,
                     brightness: parseInt(document.getElementById('camera-brightness').value),
                     contrast: parseInt(document.getElementById('camera-contrast').value),
+                    focus_mode: document.getElementById('camera-focus-mode').value,
+                    focus_value: parseInt(document.getElementById('camera-focus-value').value),
                     live_view: document.getElementById('camera-live-view').checked
                 },
                 ai: {
@@ -1444,6 +1463,8 @@
                     flip_vertical: getValue('camera-flip-vertical', false),
                     brightness: getValue('camera-brightness', 0),
                     contrast: getValue('camera-contrast', 0),
+                    focus_mode: getValue('camera-focus-mode', 'infinity'),
+                    focus_value: getValue('camera-focus-value', 0),
                     live_view: getValue('camera-live-view', false)
                 },
                 ai: {
@@ -1521,6 +1542,16 @@
         updateRangeValue('species-confidence-threshold', 'species-confidence-value');
         updateRangeValue('camera-brightness', 'brightness-value');
         updateRangeValue('camera-contrast', 'contrast-value');
+        updateRangeValue('camera-focus-value', 'focus-value');
+        
+        // Enable/disable focus value slider based on focus mode
+        const focusModeSelect = document.getElementById('camera-focus-mode');
+        const focusValueSlider = document.getElementById('camera-focus-value');
+        function updateFocusValueEnabled() {
+            focusValueSlider.disabled = focusModeSelect.value !== 'manual';
+        }
+        focusModeSelect.addEventListener('change', updateFocusValueEnabled);
+        updateFocusValueEnabled(); // Initial state
         updateRangeValue('live-brightness', 'live-brightness-value');
         updateRangeValue('live-contrast', 'live-contrast-value');
         
@@ -1528,7 +1559,7 @@
         const configInputs = [
             'detection-interval', 'max-history', 'camera-source', 'camera-width', 
             'camera-height', 'camera-fps', 'camera-rotation', 'camera-flip-horizontal',
-            'camera-flip-vertical', 'camera-brightness', 'camera-contrast', 
+            'camera-flip-vertical', 'camera-brightness', 'camera-contrast', 'camera-focus-mode', 'camera-focus-value',
             'camera-live-view', 'confidence-threshold', 'nms-threshold', 'species-confidence-threshold', 'detection-log-level',
             'audio-enabled', 'sms-enabled', 'email-enabled'
         ];
