@@ -129,8 +129,10 @@ class SkyGuardWebPortal:
             try:
                 limit = request.args.get('limit', 50, type=int)
                 offset = request.args.get('offset', 0, type=int)
+                species = request.args.get('species', None, type=str)
+                class_name = request.args.get('class', None, type=str)
                 
-                detections = self._get_recent_detections(limit, offset)
+                detections = self._get_recent_detections(limit, offset, species=species, class_name=class_name)
                 total = self._get_total_detections()
                 page = (offset // limit) + 1
                 
@@ -571,6 +573,16 @@ class SkyGuardWebPortal:
             except Exception as e:
                 return jsonify({'error': str(e)}), 500
         
+        @self.app.route('/api/species/stats')
+        def api_species_stats():
+            """Get species detection statistics for reporting."""
+            try:
+                days = request.args.get('days', None, type=int)
+                stats = self.event_logger.get_species_stats(days=days)
+                return jsonify(stats)
+            except Exception as e:
+                return jsonify({'error': str(e)}), 500
+        
         @self.app.route('/api/system/restart', methods=['POST'])
         def api_system_restart():
             """Restart the system."""
@@ -682,10 +694,10 @@ class SkyGuardWebPortal:
     def _get_total_detections(self) -> int:
         """Get total number of detections."""
         try:
-            # Query event logger for total detections
-            detections = self.event_logger.get_detections(limit=10000)  # Get a large number to count all
-            return len(detections)
-        except:
+            # Use efficient COUNT query instead of loading all detections
+            return self.event_logger.count_detections()
+        except Exception as e:
+            self.logger.error(f"Failed to get total detections: {e}")
             return 0
     
     def _is_camera_connected(self) -> bool:
@@ -861,10 +873,26 @@ class SkyGuardWebPortal:
             self.logger.error(traceback.format_exc())
             return False
     
-    def _get_recent_detections(self, limit: int = 50, offset: int = 0) -> List[Dict[str, Any]]:
-        """Get recent detections."""
+    def _get_recent_detections(self, limit: int = 50, offset: int = 0, 
+                               species: Optional[str] = None, class_name: Optional[str] = None) -> List[Dict[str, Any]]:
+        """Get recent detections.
+        
+        Args:
+            limit: Maximum number of detections to return
+            offset: Number of detections to skip (for pagination)
+            species: Optional species filter
+            class_name: Optional class name filter
+            
+        Returns:
+            List of formatted detection dictionaries
+        """
         try:
-            detections = self.event_logger.get_detections(limit=limit)
+            detections = self.event_logger.get_detections(
+                limit=limit, 
+                offset=offset,
+                species_name=species,
+                class_name=class_name
+            )
             # Convert to expected format
             formatted_detections = []
             for detection in detections:
@@ -881,7 +909,8 @@ class SkyGuardWebPortal:
                 }
                 formatted_detections.append(formatted_detection)
             return formatted_detections
-        except:
+        except Exception as e:
+            self.logger.error(f"Failed to get recent detections: {e}")
             return []
     
     # Removed placeholder detection detail/image helpers in favor of DB-backed methods

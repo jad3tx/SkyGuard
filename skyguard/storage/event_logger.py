@@ -33,8 +33,29 @@ class EventLogger:
         """
         self.config = config
         self.logger = logging.getLogger(__name__)
-        self.db_path = Path(config.get('database_path', 'data/skyguard.db'))
-        self.images_path = Path(config.get('detection_images_path', 'data/detections'))
+        db_path_str = config.get('database_path', 'data/skyguard.db')
+        # Resolve to absolute path to ensure persistence across working directory changes
+        # Try multiple resolution strategies: absolute, relative to CWD, relative to project root
+        db_path_candidate = Path(db_path_str)
+        if db_path_candidate.is_absolute():
+            self.db_path = db_path_candidate
+        elif db_path_candidate.exists():
+            # Exists relative to current working directory
+            self.db_path = db_path_candidate.resolve()
+        else:
+            # Try relative to project root (SkyGuard/)
+            project_root = Path(__file__).parent.parent.parent
+            self.db_path = (project_root / db_path_str).resolve()
+        
+        images_path_str = config.get('detection_images_path', 'data/detections')
+        images_path_candidate = Path(images_path_str)
+        if images_path_candidate.is_absolute():
+            self.images_path = images_path_candidate
+        elif images_path_candidate.exists():
+            self.images_path = images_path_candidate.resolve()
+        else:
+            project_root = Path(__file__).parent.parent.parent
+            self.images_path = (project_root / images_path_str).resolve()
         # Log/table retention for system events (defaults to 30 days)
         self.retention_days = int(config.get('log_retention_days', 30))
         # Detection image retention (defaults to log_retention_days if not set)
@@ -73,7 +94,10 @@ class EventLogger:
         """
         try:
             if self.connection is None:
+                # Ensure database directory exists
+                self.db_path.parent.mkdir(parents=True, exist_ok=True)
                 self.connection = sqlite3.connect(str(self.db_path), check_same_thread=False)
+                self.connection.execute('PRAGMA journal_mode=WAL')
                 return True
             # Simple probe to validate connection
             try:
@@ -83,10 +107,12 @@ class EventLogger:
                 return True
             except Exception:
                 # Reconnect on failure
+                self.connection.close()
                 self.connection = sqlite3.connect(str(self.db_path), check_same_thread=False)
+                self.connection.execute('PRAGMA journal_mode=WAL')
                 return True
         except Exception as e:
-            self.logger.error(f"Failed to ensure DB connection: {e}")
+            self.logger.error(f"Failed to ensure DB connection to {self.db_path}: {e}")
             return False
     
     def _init_database(self) -> None:
@@ -95,8 +121,14 @@ class EventLogger:
         Creates required tables and indices if they do not already exist.
         """
         try:
+            # Ensure database directory exists
+            self.db_path.parent.mkdir(parents=True, exist_ok=True)
+            
             # Allow the same connection to be used across Flask request threads
+            # Use WAL mode for better concurrency
             self.connection = sqlite3.connect(str(self.db_path), check_same_thread=False)
+            # Enable WAL mode for better concurrent access
+            self.connection.execute('PRAGMA journal_mode=WAL')
             cursor = self.connection.cursor()
             
             # Create detections table
@@ -150,14 +182,18 @@ class EventLogger:
             # Create indexes for better performance
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_detections_timestamp ON detections(timestamp)')
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_detections_class ON detections(class_name)')
+            try:
+                cursor.execute('CREATE INDEX IF NOT EXISTS idx_detections_species ON detections(species_name)')
+            except sqlite3.OperationalError:
+                pass  # Column might not exist in older databases
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_system_events_timestamp ON system_events(timestamp)')
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_system_events_type ON system_events(event_type)')
             
             self.connection.commit()
-            self.logger.info("Database initialized successfully")
+            self.logger.info(f"Database initialized successfully at {self.db_path}")
             
         except Exception as e:
-            self.logger.error(f"Failed to initialize database: {e}")
+            self.logger.error(f"Failed to initialize database at {self.db_path}: {e}")
             raise
     
     def log_detection(self, detection: Dict[str, Any], frame: Optional[np.ndarray] = None) -> bool:
@@ -489,15 +525,65 @@ class EventLogger:
             self.logger.error(f"Failed to log system event: {e}")
             return False
     
+    def count_detections(self, start_time: Optional[float] = None, end_time: Optional[float] = None, 
+                        class_name: Optional[str] = None, species_name: Optional[str] = None) -> int:
+        """Count detection records from database.
+        
+        Args:
+            start_time: Start timestamp filter
+            end_time: End timestamp filter
+            class_name: Class name filter
+            species_name: Species name filter
+            
+        Returns:
+            Total count of matching detections
+        """
+        try:
+            if not self._ensure_connection():
+                return 0
+            
+            cursor = self.connection.cursor()
+            
+            # Build query
+            query = "SELECT COUNT(*) FROM detections WHERE 1=1"
+            params = []
+            
+            if start_time is not None:
+                query += " AND timestamp >= ?"
+                params.append(start_time)
+            
+            if end_time is not None:
+                query += " AND timestamp <= ?"
+                params.append(end_time)
+            
+            if class_name is not None:
+                query += " AND class_name = ?"
+                params.append(class_name)
+            
+            if species_name is not None:
+                query += " AND species_name = ?"
+                params.append(species_name)
+            
+            cursor.execute(query, params)
+            result = cursor.fetchone()
+            return result[0] if result else 0
+            
+        except Exception as e:
+            self.logger.error(f"Failed to count detections: {e}")
+            return 0
+    
     def get_detections(self, start_time: Optional[float] = None, end_time: Optional[float] = None, 
-                     class_name: Optional[str] = None, limit: int = 100) -> List[Dict[str, Any]]:
+                     class_name: Optional[str] = None, species_name: Optional[str] = None,
+                     limit: int = 100, offset: int = 0) -> List[Dict[str, Any]]:
         """Get detection records from database.
         
         Args:
             start_time: Start timestamp filter
             end_time: End timestamp filter
             class_name: Class name filter
+            species_name: Species name filter
             limit: Maximum number of records to return
+            offset: Number of records to skip (for pagination)
             
         Returns:
             List of detection records
@@ -524,8 +610,13 @@ class EventLogger:
                 query += " AND class_name = ?"
                 params.append(class_name)
             
-            query += " ORDER BY timestamp DESC LIMIT ?"
+            if species_name is not None:
+                query += " AND species_name = ?"
+                params.append(species_name)
+            
+            query += " ORDER BY timestamp DESC LIMIT ? OFFSET ?"
             params.append(limit)
+            params.append(offset)
             
             cursor.execute(query, params)
             rows = cursor.fetchall()
@@ -555,6 +646,104 @@ class EventLogger:
         except Exception as e:
             self.logger.error(f"Failed to get detections: {e}")
             return []
+    
+    def get_species_stats(self, days: Optional[int] = None) -> Dict[str, Any]:
+        """Get species detection statistics.
+        
+        Args:
+            days: Optional number of days to analyze (None = all time)
+            
+        Returns:
+            Dictionary with species statistics including counts, confidence averages, and reference images
+        """
+        try:
+            if not self._ensure_connection():
+                return {}
+            
+            cursor = self.connection.cursor()
+            
+            # Build query with optional time filter
+            if days is not None:
+                end_time = time.time()
+                start_time = end_time - (days * 24 * 60 * 60)
+                time_filter = "WHERE timestamp >= ?"
+                params = (start_time,)
+            else:
+                time_filter = ""
+                params = ()
+            
+            # Get species breakdown with statistics
+            query = f'''
+                SELECT 
+                    species_name,
+                    COUNT(*) as count,
+                    AVG(confidence) as avg_detection_confidence,
+                    AVG(species_confidence) as avg_species_confidence,
+                    MIN(timestamp) as first_seen,
+                    MAX(timestamp) as last_seen
+                FROM detections 
+                {time_filter}
+                AND species_name IS NOT NULL
+                GROUP BY species_name
+                ORDER BY count DESC
+            '''
+            
+            cursor.execute(query, params)
+            species_rows = cursor.fetchall()
+            
+            # Get reference images (most recent detection with segmented image for each species)
+            species_stats = []
+            for row in species_rows:
+                species_name = row[0]
+                count = row[1]
+                avg_detection_conf = row[2]
+                avg_species_conf = row[3]
+                first_seen = row[4]
+                last_seen = row[5]
+                
+                # Get reference image path (most recent segmented image for this species)
+                ref_image_query = '''
+                    SELECT segmented_image_path, image_path, timestamp
+                    FROM detections
+                    WHERE species_name = ? AND segmented_image_path IS NOT NULL
+                    ORDER BY timestamp DESC
+                    LIMIT 1
+                '''
+                if days is not None:
+                    ref_image_query = '''
+                        SELECT segmented_image_path, image_path, timestamp
+                        FROM detections
+                        WHERE species_name = ? AND segmented_image_path IS NOT NULL AND timestamp >= ?
+                        ORDER BY timestamp DESC
+                        LIMIT 1
+                    '''
+                    cursor.execute(ref_image_query, (species_name, start_time))
+                else:
+                    cursor.execute(ref_image_query, (species_name,))
+                
+                ref_image_row = cursor.fetchone()
+                reference_image = ref_image_row[0] if ref_image_row else None
+                fallback_image = ref_image_row[1] if ref_image_row and not reference_image else None
+                
+                species_stats.append({
+                    'species': species_name,
+                    'count': count,
+                    'avg_detection_confidence': float(avg_detection_conf) if avg_detection_conf else None,
+                    'avg_species_confidence': float(avg_species_conf) if avg_species_conf else None,
+                    'first_seen': first_seen,
+                    'last_seen': last_seen,
+                    'reference_image': reference_image or fallback_image,
+                })
+            
+            return {
+                'period_days': days,
+                'total_species': len(species_stats),
+                'species_breakdown': species_stats,
+            }
+            
+        except Exception as e:
+            self.logger.error(f"Failed to get species stats: {e}")
+            return {}
     
     def get_detection_stats(self, days: int = 7) -> Dict[str, Any]:
         """Get detection statistics for the specified period.
@@ -588,6 +777,16 @@ class EventLogger:
             ''', (start_time,))
             class_stats = cursor.fetchall()
             
+            # Species breakdown
+            cursor.execute('''
+                SELECT species_name, COUNT(*) as count, AVG(species_confidence) as avg_confidence
+                FROM detections 
+                WHERE timestamp >= ? AND species_name IS NOT NULL
+                GROUP BY species_name
+                ORDER BY count DESC
+            ''', (start_time,))
+            species_stats = cursor.fetchall()
+            
             # Daily breakdown
             cursor.execute('''
                 SELECT DATE(datetime(timestamp, 'unixepoch')) as date, COUNT(*) as count
@@ -602,6 +801,7 @@ class EventLogger:
                 'period_days': days,
                 'total_detections': total_detections,
                 'class_breakdown': [{'class': row[0], 'count': row[1], 'avg_confidence': row[2]} for row in class_stats],
+                'species_breakdown': [{'species': row[0], 'count': row[1], 'avg_confidence': row[2]} for row in species_stats],
                 'daily_breakdown': [{'date': row[0], 'count': row[1]} for row in daily_stats],
                 'start_time': start_time,
                 'end_time': end_time,
