@@ -716,9 +716,9 @@
                                              alt="Detection image"
                                              data-detection-id="${detection.id}"
                                              data-has-segmented="${detection.segmented_image_path ? 'true' : 'false'}"
-                                             style="cursor: ${detection.segmented_image_path ? 'pointer' : 'default'}; max-width: 100%; height: auto;"
+                                             style="cursor: pointer; max-width: 100%; height: auto;"
                                              onerror="this.style.display='none'">
-                                        ${detection.segmented_image_path ? '<small class="text-muted"><i class="fas fa-tag"></i> Click to view species annotation</small>' : ''}
+                                        <small class="text-muted"><i class="fas fa-expand"></i> Click to view full size${detection.segmented_image_path ? ' (species annotation available)' : ''}</small>
                                     </div>
                                 </div>
                             </div>
@@ -798,9 +798,9 @@
                                          alt="Detection image"
                                          data-detection-id="${detection.id}"
                                          data-has-segmented="${detection.segmented_image_path ? 'true' : 'false'}"
-                                         style="cursor: ${detection.segmented_image_path ? 'pointer' : 'default'}; max-width: 100%; height: auto;"
+                                         style="cursor: pointer; max-width: 100%; height: auto;"
                                          onerror="this.style.display='none'">
-                                    ${detection.segmented_image_path ? '<small class="text-muted"><i class="fas fa-tag"></i> Click to view species annotation</small>' : ''}
+                                    <small class="text-muted"><i class="fas fa-expand"></i> Click to view full size${detection.segmented_image_path ? ' (species annotation available)' : ''}</small>
                                 </div>
                             </div>
                         </div>
@@ -1579,13 +1579,13 @@
             const detectionId = e.target.getAttribute('data-detection-id');
             const hasSegmented = e.target.getAttribute('data-has-segmented') === 'true';
             
-            if (hasSegmented && detectionId) {
-                showImageModal(detectionId);
+            if (detectionId) {
+                showImageModal(detectionId, hasSegmented);
             }
         }
     });
     
-    function showImageModal(detectionId) {
+    function showImageModal(detectionId, hasSegmented) {
         // Get the modal element
         const modal = document.getElementById('detection-image-modal');
         if (!modal) {
@@ -1593,30 +1593,85 @@
             return;
         }
         
-        // Set image source
-        const modalImg = document.getElementById('modal-segmented-image');
+        // Set image source - show regular detection image by default
+        const modalImg = document.getElementById('modal-detection-image');
+        const segmentedImg = document.getElementById('modal-segmented-image');
+        const viewToggle = document.getElementById('modal-view-toggle');
+        const viewToggleContainer = document.getElementById('modal-view-toggle-container');
+        
         if (modalImg) {
-            modalImg.src = `/api/detections/${detectionId}/segmented`;
+            modalImg.src = `/api/detections/${detectionId}/image`;
+            modalImg.style.display = 'block';
+        }
+        
+        if (segmentedImg) {
+            if (hasSegmented) {
+                segmentedImg.src = `/api/detections/${detectionId}/segmented`;
+                segmentedImg.style.display = 'none';
+            } else {
+                segmentedImg.style.display = 'none';
+            }
+        }
+        
+        // Show/hide toggle button based on whether segmented image exists
+        if (viewToggleContainer) {
+            viewToggleContainer.style.display = hasSegmented ? 'block' : 'none';
+        }
+        
+        // Reset toggle state
+        if (viewToggle) {
+            viewToggle.textContent = 'View Species Annotation';
+            viewToggle.onclick = function() {
+                toggleModalView(hasSegmented);
+            };
         }
         
         // Show modal using Bootstrap
         const bsModal = new bootstrap.Modal(modal);
         bsModal.show();
     }
+    
+    function toggleModalView(hasSegmented) {
+        if (!hasSegmented) return;
+        
+        const modalImg = document.getElementById('modal-detection-image');
+        const segmentedImg = document.getElementById('modal-segmented-image');
+        const viewToggle = document.getElementById('modal-view-toggle');
+        
+        if (modalImg && segmentedImg && viewToggle) {
+            const showingSegmented = segmentedImg.style.display === 'block';
+            
+            if (showingSegmented) {
+                // Switch to regular image
+                modalImg.style.display = 'block';
+                segmentedImg.style.display = 'none';
+                viewToggle.textContent = 'View Species Annotation';
+            } else {
+                // Switch to segmented image
+                modalImg.style.display = 'none';
+                segmentedImg.style.display = 'block';
+                viewToggle.textContent = 'View Original Image';
+            }
+        }
+    }
 </script>
 
 <!-- Detection Image Modal -->
 <div class="modal fade" id="detection-image-modal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Species Annotated Detection</h5>
+                <h5 class="modal-title">Detection Image</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body text-center">
-                <img id="modal-segmented-image" src="" alt="Segmented detection" class="img-fluid">
+                <img id="modal-detection-image" src="" alt="Detection image" class="img-fluid modal-image">
+                <img id="modal-segmented-image" src="" alt="Segmented detection" class="img-fluid modal-image" style="display: none;">
             </div>
             <div class="modal-footer">
+                <div id="modal-view-toggle-container" style="display: none;">
+                    <button type="button" class="btn btn-primary" id="modal-view-toggle">View Species Annotation</button>
+                </div>
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
@@ -1634,9 +1689,15 @@
         border-radius: 4px;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
-    #modal-segmented-image {
+    .modal-image {
         max-height: 80vh;
+        max-width: 100%;
         border-radius: 4px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    #modal-detection-image,
+    #modal-segmented-image {
+        margin: 0 auto;
     }
 </style>
 {% endblock %}

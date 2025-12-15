@@ -18,8 +18,8 @@ camera:
   contrast: 0
   flip_horizontal: false
   flip_vertical: false
-  focus_mode: infinity
-  focus_value: 0
+  focus_mode: manual
+  focus_value: 15
   fps: 30
   height: 1080
   live_view: false

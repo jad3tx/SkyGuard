@@ -126,17 +126,27 @@ class CameraManager:
         except Exception as e:
             self.logger.warning(f"Failed to configure camera properties: {e}")
     
-    def _apply_focus_settings(self):
-        """Apply focus settings using v4l2-ctl command."""
+    def _apply_focus_settings(self) -> None:
+        """Apply focus settings using v4l2-ctl command.
+
+        This method attempts to use both legacy ``focus_auto`` and
+        newer ``focus_automatic_continuous`` controls so that cameras
+        configured via:
+
+        - ``v4l2-ctl -d /dev/video0 --set-ctrl=focus_automatic_continuous=0``
+        - ``v4l2-ctl -d /dev/video0 --set-ctrl=focus_absolute=15``
+
+        can be reproduced through the SkyGuard configuration.
+        """
         try:
             import subprocess
             import os
-            
+
             # Get camera device path
             source = self.config.get('source', 0)
             if isinstance(source, str):
                 source = int(source)
-            
+
             # Try to find the video device
             video_device = f"/dev/video{source}"
             if not os.path.exists(video_device):
@@ -148,65 +158,55 @@ class CameraManager:
                 else:
                     self.logger.debug("No video device found for focus control")
                     return
-            
+
             focus_mode = self.config.get('focus_mode', 'manual')
             focus_value = self.config.get('focus_value', 0)
-            
+
+            # Helper: try a control name but do not fail hard if unsupported
+            def _try_ctrl(ctrl: str) -> None:
+                try:
+                    subprocess.run(
+                        ['v4l2-ctl', '-d', video_device, '--set-ctrl', ctrl],
+                        capture_output=True,
+                        timeout=2,
+                        check=False,
+                    )
+                except Exception:
+                    # Best-effort; detailed errors are not critical here
+                    self.logger.debug("Failed to apply v4l2 control '%s' on %s", ctrl, video_device)
+
             # Apply focus mode
             if focus_mode == 'infinity':
-                # Set focus to infinity
-                subprocess.run(
-                    ['v4l2-ctl', '-d', video_device, '--set-ctrl', 'focus_absolute=0'],
-                    capture_output=True,
-                    timeout=2
-                )
-                # Enable auto focus off
-                subprocess.run(
-                    ['v4l2-ctl', '-d', video_device, '--set-ctrl', 'focus_auto=0'],
-                    capture_output=True,
-                    timeout=2
-                )
-                self.logger.info(f"Focus set to infinity on {video_device}")
+                # Disable continuous/auto focus
+                _try_ctrl('focus_automatic_continuous=0')
+                _try_ctrl('focus_auto=0')
+                # Set focus to infinity (camera-specific, 0 is commonly infinity)
+                _try_ctrl('focus_absolute=0')
+                self.logger.info("Focus set to infinity on %s", video_device)
             elif focus_mode == 'auto':
-                # Enable auto focus
-                subprocess.run(
-                    ['v4l2-ctl', '-d', video_device, '--set-ctrl', 'focus_auto=1'],
-                    capture_output=True,
-                    timeout=2
-                )
-                self.logger.info(f"Focus set to auto on {video_device}")
+                # Enable continuous/auto focus
+                _try_ctrl('focus_automatic_continuous=1')
+                _try_ctrl('focus_auto=1')
+                self.logger.info("Focus set to auto on %s", video_device)
             elif focus_mode == 'manual':
-                # Set manual focus value
-                # Disable auto focus
-                subprocess.run(
-                    ['v4l2-ctl', '-d', video_device, '--set-ctrl', 'focus_auto=0'],
-                    capture_output=True,
-                    timeout=2
-                )
-                # Set manual focus value (typically 0-255 or 0-100)
-                # Try different value ranges
+                # Disable continuous/auto focus then set manual value
+                _try_ctrl('focus_automatic_continuous=0')
+                _try_ctrl('focus_auto=0')
                 focus_abs = int(focus_value)
                 result = subprocess.run(
                     ['v4l2-ctl', '-d', video_device, '--set-ctrl', f'focus_absolute={focus_abs}'],
                     capture_output=True,
-                    timeout=2
+                    timeout=2,
                 )
                 if result.returncode == 0:
-                    self.logger.info(f"Focus set to manual value {focus_abs} on {video_device}")
+                    self.logger.info("Focus set to manual value %d on %s", focus_abs, video_device)
                 else:
-                    self.logger.debug(f"Failed to set focus_absolute, trying alternative method")
-                    # Some cameras use different control names
-                    subprocess.run(
-                        ['v4l2-ctl', '-d', video_device, '--set-ctrl', f'focus={focus_abs}'],
-                        capture_output=True,
-                        timeout=2
-                    )
+                    self.logger.debug("Failed to set focus_absolute, trying alternative control name")
+                    _try_ctrl(f'focus={focus_abs}')
         except FileNotFoundError:
             self.logger.debug("v4l2-ctl not found, focus control unavailable")
-        except subprocess.TimeoutExpired:
-            self.logger.warning("Focus control command timed out")
-        except Exception as e:
-            self.logger.debug(f"Failed to apply focus settings: {e}")
+        except Exception as exc:
+            self.logger.debug("Failed to apply focus settings: %s", exc)
     
     def update_config(self, new_config: dict):
         """Update camera configuration dynamically.

@@ -141,6 +141,8 @@ class ConfigManager:
                 'rotation': 0,
                 'flip_horizontal': False,
                 'flip_vertical': False,
+                'focus_mode': 'manual',
+                'focus_value': 15,
             },
             'ai': {
                 'model_path': 'models/yolo11n-seg.pt',
