@@ -54,39 +54,62 @@ install_system_dependencies() {
     PYTHON_VERSION=$(python3 --version 2>&1 | grep -oP '\d+\.\d+' | head -1 || echo "unknown")
     PYTHON_MAJOR=$(echo "$PYTHON_VERSION" | cut -d. -f1)
     PYTHON_MINOR=$(echo "$PYTHON_VERSION" | cut -d. -f2)
+    PYTHON_FULL_VERSION=$(python3 --version 2>&1 | grep -oP '\d+\.\d+\.\d+' | head -1 || echo "$PYTHON_VERSION.0")
+    PYTHON_MICRO=$(echo "$PYTHON_FULL_VERSION" | cut -d. -f3)
 
-    echo -e "${CYAN}   Detected Python version: $PYTHON_VERSION${NC}"
+    echo -e "${CYAN}   Detected Python version: $PYTHON_FULL_VERSION${NC}"
 
     if [ "$PYTHON_MAJOR" -lt 3 ] || ([ "$PYTHON_MAJOR" -eq 3 ] && [ "$PYTHON_MINOR" -lt 8 ]); then
-        echo -e "${RED}❌ Python 3.8+ is required. Found: $PYTHON_VERSION${NC}"
+        echo -e "${RED}❌ Python 3.8+ is required. Found: $PYTHON_FULL_VERSION${NC}"
         echo -e "${YELLOW}   Please upgrade Python and try again${NC}"
         exit 1
     fi
 
     # Install core dependencies (required)
     echo -e "${CYAN}   Installing core dependencies...${NC}"
-    if ! sudo apt install -y \
-        python3 \
-        python3-pip \
-        python3-venv \
-        python3-dev \
-        git \
-        wget \
-        curl \
-        build-essential \
-        cmake \
-        pkg-config \
-        libjpeg-dev \
-        libtiff5-dev \
-        libpng-dev \
-        libavcodec-dev \
-        libavformat-dev \
-        libswscale-dev \
-        libv4l-dev \
-        libxvidcore-dev \
-        libx264-dev; then
+    
+    # Build base package list
+    BASE_PACKAGES="python3 python3-pip python3-venv git wget curl build-essential cmake pkg-config libjpeg-dev libtiff5-dev libpng-dev libavcodec-dev libavformat-dev libswscale-dev libv4l-dev libxvidcore-dev libx264-dev"
+    
+    # Try to install version-specific Python dev package first
+    PYTHON_DEV_PKG=""
+    if [ -n "$PYTHON_VERSION" ] && [ "$PYTHON_VERSION" != "unknown" ]; then
+        # Try version-specific package (e.g., python3.13-dev)
+        PYTHON_DEV_SPECIFIC="python${PYTHON_VERSION}-dev"
+        echo -e "${CYAN}   Attempting to install version-specific Python dev package: $PYTHON_DEV_SPECIFIC${NC}"
+        if sudo apt install -y "$PYTHON_DEV_SPECIFIC" 2>/dev/null; then
+            PYTHON_DEV_PKG="$PYTHON_DEV_SPECIFIC"
+            echo -e "${GREEN}✅ Installed $PYTHON_DEV_SPECIFIC${NC}"
+        else
+            echo -e "${YELLOW}⚠️  $PYTHON_DEV_SPECIFIC not available, will try python3-dev${NC}"
+        fi
+    fi
+    
+    # If version-specific package failed, use generic python3-dev
+    if [ -z "$PYTHON_DEV_PKG" ]; then
+        PYTHON_DEV_PKG="python3-dev"
+    fi
+    
+    # Install all packages
+    if ! sudo apt install -y $BASE_PACKAGES $PYTHON_DEV_PKG; then
         echo -e "${RED}❌ Failed to install core dependencies${NC}"
         exit 1
+    fi
+    
+    # Verify Python.h is available
+    PYTHON_INCLUDE=$(python3 -c "import sysconfig; print(sysconfig.get_path('include'))" 2>/dev/null || echo "")
+    if [ -n "$PYTHON_INCLUDE" ] && [ -f "$PYTHON_INCLUDE/Python.h" ]; then
+        echo -e "${GREEN}✅ Python.h found at $PYTHON_INCLUDE/Python.h${NC}"
+    else
+        echo -e "${YELLOW}⚠️  Python.h not found in expected location${NC}"
+        echo -e "${CYAN}   Searching for Python.h...${NC}"
+        PYTHON_H_FOUND=$(find /usr/include -name "Python.h" 2>/dev/null | head -1 || echo "")
+        if [ -n "$PYTHON_H_FOUND" ]; then
+            echo -e "${GREEN}✅ Python.h found at $PYTHON_H_FOUND${NC}"
+        else
+            echo -e "${YELLOW}⚠️  Python.h not found. Some packages may fail to build.${NC}"
+            echo -e "${CYAN}   You may need to install: sudo apt install -y python${PYTHON_VERSION}-dev${NC}"
+        fi
     fi
 
     # Try to install GitHub CLI (optional - may not be available in all repos)
