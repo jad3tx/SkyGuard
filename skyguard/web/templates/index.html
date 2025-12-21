@@ -1047,6 +1047,15 @@
                     ? '<span class="badge bg-success">Loaded</span>' 
                     : '<span class="badge bg-danger">Not Loaded</span>';
                 
+                let errorRow = '';
+                if (speciesModel.error) {
+                    errorRow = `
+                        <tr>
+                            <td><strong>Error:</strong></td>
+                            <td><span class="text-danger"><small>${speciesModel.error}</small></span></td>
+                        </tr>`;
+                }
+                
                 speciesModelDiv.innerHTML = `
                     <table class="table table-sm">
                         <tr>
@@ -1065,6 +1074,7 @@
                             <td><strong>Backend:</strong></td>
                             <td>${speciesModel.backend || 'N/A'}</td>
                         </tr>
+                        ${errorRow}
                         <tr>
                             <td><strong>Input Size:</strong></td>
                             <td>${Array.isArray(speciesModel.input_size) ? speciesModel.input_size.join('x') : 'N/A'}</td>

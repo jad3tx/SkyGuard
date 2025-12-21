@@ -472,23 +472,42 @@ class SkyGuardWebPortal:
                 
                 # Species model information
                 species_model_loaded = False
+                species_model_path = ai_config.get('species_model_path')
+                species_model_error = None
+                
                 if self.detector:
                     try:
+                        # YOLO models are callable directly, not via .predict() method
+                        # Check if model exists and is callable (or has predict method for compatibility)
                         species_model_loaded = (
                             self.detector.species_model is not None 
                             and self.detector.species_model != "dummy"
-                            and hasattr(self.detector.species_model, 'predict')
+                            and (callable(self.detector.species_model) or hasattr(self.detector.species_model, 'predict'))
                         )
-                    except Exception:
-                        pass
+                        # If path is configured but model not loaded, try to diagnose
+                        if species_model_path and not species_model_loaded:
+                            # Check if the model file exists
+                            try:
+                                from pathlib import Path
+                                resolved_path = self.detector._resolve_model_path(species_model_path)
+                                if not resolved_path.exists():
+                                    species_model_error = f"Model file not found: {resolved_path}"
+                                    self.logger.warning(f"Species model path configured but file not found: {resolved_path}")
+                            except Exception as path_err:
+                                species_model_error = f"Path resolution error: {path_err}"
+                                self.logger.warning(f"Failed to resolve species model path: {path_err}")
+                    except Exception as e:
+                        species_model_error = f"Error checking species model: {e}"
+                        self.logger.error(f"Error checking species model status: {e}")
                 
                 species_model_info = {
-                    'enabled': bool(ai_config.get('species_model_path')),
+                    'enabled': bool(species_model_path),
                     'model_loaded': species_model_loaded,
-                    'model_path': ai_config.get('species_model_path', 'Not configured'),
+                    'model_path': species_model_path or 'Not configured',
                     'backend': ai_config.get('species_backend', 'ultralytics'),
                     'input_size': ai_config.get('species_input_size', [224, 224]),
                     'confidence_threshold': ai_config.get('species_confidence_threshold', 0.3),
+                    'error': species_model_error,
                 }
                 
                 return jsonify({
@@ -614,6 +633,32 @@ class SkyGuardWebPortal:
             # Load the model
             if self.detector.load_model():
                 print("✅ Detector initialized and model loaded successfully")
+                # Check species model status
+                species_path = ai_config.get('species_model_path')
+                if species_path:
+                    if self.detector.species_model is not None:
+                        print(f"✅ Species model loaded: {species_path}")
+                    else:
+                        print(f"⚠️ Species model path configured ({species_path}) but model not loaded")
+                        # Try to diagnose the issue
+                        try:
+                            from pathlib import Path
+                            resolved = self.detector._resolve_model_path(species_path)
+                            if resolved.exists():
+                                print(f"   Model file exists at: {resolved}")
+                                print(f"   Attempting to reload species model...")
+                                self.detector._init_species_backend()
+                                if self.detector.species_model is not None:
+                                    print(f"   ✅ Species model reloaded successfully")
+                                else:
+                                    print(f"   ❌ Species model still not loaded - check logs for errors")
+                            else:
+                                print(f"   ❌ Model file not found at: {resolved}")
+                                print(f"   Please verify the path in config/skyguard.yaml")
+                        except Exception as e:
+                            print(f"   ❌ Error checking species model: {e}")
+                else:
+                    print("ℹ️ Species model not configured (species_model_path not set)")
             else:
                 print("⚠️ Detector initialized but model loading failed")
             
@@ -787,10 +832,11 @@ class SkyGuardWebPortal:
         try:
             if self.detector:
                 # Check if species model is loaded and functional
+                # YOLO models are callable directly, not via .predict() method
                 is_loaded = (
                     self.detector.species_model is not None 
                     and self.detector.species_model != "dummy"
-                    and hasattr(self.detector.species_model, 'predict')
+                    and (callable(self.detector.species_model) or hasattr(self.detector.species_model, 'predict'))
                 )
                 
                 # If species model is not loaded but detector exists, try to reload it (with rate limiting)
@@ -803,7 +849,7 @@ class SkyGuardWebPortal:
                             is_loaded = (
                                 self.detector.species_model is not None 
                                 and self.detector.species_model != "dummy"
-                                and hasattr(self.detector.species_model, 'predict')
+                                and (callable(self.detector.species_model) or hasattr(self.detector.species_model, 'predict'))
                             )
                             if is_loaded:
                                 self.logger.info("Species model reloaded successfully")
@@ -827,7 +873,7 @@ class SkyGuardWebPortal:
                     return (
                         self.detector.species_model is not None 
                         and self.detector.species_model != "dummy"
-                        and hasattr(self.detector.species_model, 'predict')
+                        and (callable(self.detector.species_model) or hasattr(self.detector.species_model, 'predict'))
                     )
             return False
         except Exception as e:
