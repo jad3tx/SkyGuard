@@ -26,7 +26,7 @@ def setup_logging():
 
 def train_model(
     data_path: str = "data/training/dataset.yaml",
-    epochs: int = 100,
+    epochs: int = 50,
     batch_size: int = 16,
     img_size: int = 640,
     model_size: str = "n",  # n, s, m, l, x
@@ -36,7 +36,7 @@ def train_model(
     Train a YOLO model for raptor detection.
     
     Args:
-        data_path: Path to dataset.yaml file
+        data_path: Path to dataset.yaml file (relative to project root or absolute)
         epochs: Number of training epochs
         batch_size: Batch size for training
         img_size: Image size for training
@@ -55,14 +55,65 @@ def train_model(
         logger.error("❌ YOLO library not available. Please install: pip install ultralytics")
         return False
     
+    # Resolve dataset path relative to project root
+    dataset_path = Path(data_path)
+    if not dataset_path.is_absolute():
+        # Try relative to project root
+        dataset_path = project_root / data_path
+    
     # Check if dataset exists
-    if not Path(data_path).exists():
-        logger.error(f"❌ Dataset not found: {data_path}")
-        logger.info("Please prepare your dataset in YOLO format")
+    if not dataset_path.exists():
+        logger.error(f"❌ Dataset not found: {dataset_path}")
+        logger.error(f"   Resolved from: {data_path}")
+        logger.error(f"   Project root: {project_root}")
+        
+        # Try to find common dataset locations
+        logger.info("\n🔍 Searching for datasets in common locations...")
+        common_locations = [
+            project_root / "data" / "training" / "dataset.yaml",
+            project_root / "data" / "custom" / "dataset.yaml",
+            project_root / "data" / "dataset.yaml",
+        ]
+        
+        found_datasets = []
+        for loc in common_locations:
+            if loc.exists():
+                found_datasets.append(str(loc.relative_to(project_root)))
+        
+        if found_datasets:
+            logger.info("   Found potential datasets:")
+            for ds in found_datasets:
+                logger.info(f"     - {ds}")
+            logger.info(f"\n   Try using: --data-path {found_datasets[0]}")
+        else:
+            logger.info("   No datasets found in common locations")
+            logger.info("\n   To create a YOLO detection dataset:")
+            logger.info("   1. Organize images in YOLO format:")
+            logger.info("      data/training/")
+            logger.info("      ├── images/")
+            logger.info("      │   ├── train/")
+            logger.info("      │   └── val/")
+            logger.info("      └── labels/")
+            logger.info("          ├── train/")
+            logger.info("          └── val/")
+            logger.info("   2. Create dataset.yaml automatically:")
+            logger.info(f"      python scripts/create_dataset_yaml.py --dataset-dir data/training")
+            logger.info("   3. Or create dataset.yaml manually:")
+            logger.info("      path: data/training")
+            logger.info("      train: images/train")
+            logger.info("      val: images/val")
+            logger.info("      nc: 1")
+            logger.info("      names: ['bird']")
+        
         return False
     
-    # Create output directory
+    # Use resolved path
+    data_path = str(dataset_path.resolve())
+    
+    # Create output directory (resolve relative to project root)
     output_path = Path(output_dir)
+    if not output_path.is_absolute():
+        output_path = project_root / output_dir
     output_path.mkdir(parents=True, exist_ok=True)
     
     logger.info("🦅 Starting SkyGuard model training")
@@ -71,15 +122,21 @@ def train_model(
     logger.info(f"🔄 Epochs: {epochs}")
     logger.info(f"📦 Batch size: {batch_size}")
     logger.info(f"🖼️  Image size: {img_size}")
-    logger.info(f"🏗️  Model size: YOLOv8{model_size}")
+    logger.info(f"🏗️  Model size: YOLO11{model_size} (or YOLOv8{model_size} if YOLO11 not available)")
     logger.info(f"💾 Output: {output_path}")
     logger.info("=" * 60)
     
     try:
-        # Load pre-trained YOLO model
-        model_name = f"yolov8{model_size}.pt"
-        logger.info(f"📥 Loading pre-trained model: {model_name}")
-        model = YOLO(model_name)
+        # Load pre-trained YOLO model (try YOLO11 first, fallback to YOLOv8)
+        model_name = f"yolo11{model_size}.pt"
+        try:
+            logger.info(f"📥 Loading pre-trained model: {model_name}")
+            model = YOLO(model_name)
+        except Exception:
+            # Fallback to YOLOv8 if YOLO11 not available
+            model_name = f"yolov8{model_size}.pt"
+            logger.info(f"📥 Loading pre-trained model (fallback): {model_name}")
+            model = YOLO(model_name)
         
         # Train the model
         logger.info("🚀 Starting training...")
@@ -92,10 +149,10 @@ def train_model(
             name="skyguard_raptor_detector",
             exist_ok=True,
             save=True,
-            save_period=10,  # Save checkpoint every 10 epochs
+            save_period=5,  # Save checkpoint every 5 epochs
             device='cpu',  # Use CPU for compatibility, change to 'cuda' if GPU available
             workers=4,
-            patience=20,  # Early stopping patience
+            patience=10,  # Early stopping patience (stops if no improvement for 10 epochs)
             verbose=True
         )
         
@@ -134,7 +191,7 @@ def update_skyguard_config(model_path: Path):
     try:
         import yaml
         
-        config_path = Path("config/skyguard.yaml")
+        config_path = project_root / "config" / "skyguard.yaml"
         if not config_path.exists():
             logger.warning("⚠️  SkyGuard config not found, creating default")
             return
@@ -187,8 +244,8 @@ def main():
     parser = argparse.ArgumentParser(description="Train SkyGuard raptor detection model")
     parser.add_argument("--data-path", default="data/training/dataset.yaml",
                        help="Path to dataset.yaml file")
-    parser.add_argument("--epochs", type=int, default=100,
-                       help="Number of training epochs")
+    parser.add_argument("--epochs", type=int, default=50,
+                       help="Number of training epochs (default: 50, based on experience that improvements plateau around 40)")
     parser.add_argument("--batch-size", type=int, default=16,
                        help="Batch size for training")
     parser.add_argument("--img-size", type=int, default=640,

@@ -12,7 +12,7 @@ ai:
   species_input_size:
   - 448
   - 448
-  species_model_path: models/bird_species_classifier.pt
+  species_model_path: models\bird_species_classifier.pt
 camera:
   brightness: 0
   contrast: 0
@@ -85,7 +85,7 @@ training:
     saturation: 0.2
   batch_size: 16
   data_path: data/training
-  epochs: 100
+  epochs: 50
   image_size:
   - 1080
   - 1080

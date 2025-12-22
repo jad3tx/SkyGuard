@@ -53,7 +53,39 @@ def train_classifier(
     
     if not train_dir.exists():
         print(f"❌ Training data not found: {train_dir}")
-        print("   Please run: python scripts/prepare_nabirds_dataset.py or download_bird_species_dataset.py")
+        print(f"   Resolved from: {data_dir}")
+        print(f"   Project root: {PROJECT_ROOT}")
+        
+        # Search for common dataset locations
+        print("\n🔍 Searching for datasets in common locations...")
+        common_locations = [
+            PROJECT_ROOT / "data" / "bird_species",
+            PROJECT_ROOT / "data" / "bird_species_merged",
+            PROJECT_ROOT / "data" / "video_training",
+            PROJECT_ROOT / "data" / "nabirds_prepared",
+        ]
+        
+        found_datasets = []
+        for loc in common_locations:
+            train_check = loc / "train"
+            if train_check.exists():
+                found_datasets.append(str(loc.relative_to(PROJECT_ROOT)))
+        
+        if found_datasets:
+            print("   Found potential datasets:")
+            for ds in found_datasets:
+                print(f"     - {ds}")
+            print(f"\n   Try using: --data-dir {found_datasets[0]}")
+        else:
+            print("   No datasets found in common locations")
+            print("\n   To prepare a dataset:")
+            print("   1. Extract frames from videos:")
+            print("      python scripts/prepare_training_from_videos.py --input-dir training_videos --output-dir data/bird_species")
+            print("   2. Or prepare NABirds dataset:")
+            print("      python scripts/prepare_nabirds_dataset.py --nabirds-root <path> --output-dir data/nabirds_prepared")
+            print("   3. Or merge existing datasets:")
+            print("      python scripts/merge_training_datasets.py --datasets data/bird_species data/nabirds_prepared --output-dir data/bird_species_merged")
+        
         return False
     
     # If val is empty but test exists, copy test to val for validation
@@ -340,8 +372,8 @@ def main():
     parser.add_argument(
         "--epochs",
         type=int,
-        default=100,
-        help="Number of training epochs",
+        default=50,
+        help="Number of training epochs (default: 50, based on experience that improvements plateau around 40)",
     )
     parser.add_argument(
         "--imgsz",
@@ -372,7 +404,11 @@ def main():
     
     args = parser.parse_args()
     
+    # Resolve data_dir relative to project root if not absolute
     data_dir = Path(args.data_dir)
+    if not data_dir.is_absolute():
+        data_dir = PROJECT_ROOT / args.data_dir
+    
     output_dir = Path(args.output_dir) if args.output_dir else None
     
     print("=" * 60)

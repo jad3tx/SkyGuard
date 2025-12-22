@@ -27,7 +27,7 @@ wget https://github.com/jad3tx/SkyGuard/releases/download/v0.1.0/raptor_detector
 ### Option 2: Train Your Own Model
 ```bash
 # Use the training pipeline
-python -m skyguard.training.train_model --data-path data/training --epochs 100
+python -m skyguard.training.train_model --data-path data/training --epochs 50
 ```
 
 ### Option 3: Use Dummy Model (Testing Only)

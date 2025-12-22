@@ -1,8 +1,8 @@
 task: classify
 mode: train
-model: yolo11s-cls.pt
+model: yolo11n-cls.pt
 data: data\bird_species
-epochs: 100
+epochs: 50
 time: null
 patience: 15
 batch: 16
