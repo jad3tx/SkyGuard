@@ -5,7 +5,6 @@ Handles AI-based detection and classification of raptors using
 YOLO computer vision models.
 """
 
-import cv2
 import numpy as np
 import logging
 import time
@@ -13,6 +12,24 @@ import sys
 import importlib
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Tuple
+
+# Try to import OpenCV with helpful error handling
+try:
+    import cv2
+except ImportError as e:
+    error_msg = str(e)
+    if "libGL.so.1" in error_msg or "libGL" in error_msg:
+        raise ImportError(
+            "OpenCV failed to import due to missing OpenGL libraries. "
+            "This typically happens when 'opencv-python' (GUI version) is installed "
+            "instead of 'opencv-python-headless' on a headless system.\n\n"
+            "To fix this issue:\n"
+            "1. Uninstall the GUI version: pip uninstall opencv-python\n"
+            "2. Install the headless version: pip install opencv-python-headless\n"
+            "3. Alternatively, install system libraries: sudo apt-get install libgl1-mesa-glx\n\n"
+            f"Original error: {error_msg}"
+        ) from e
+    raise
 
 # Try to import PyTorch and YOLO, but don't fail if not available
 PYTORCH_AVAILABLE = False

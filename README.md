@@ -299,6 +299,40 @@ This will check:
    - Check if another application is using the camera
    - Verify the camera works on another computer
 
+### OpenCV Import Error (libGL.so.1)
+
+If you see an error like:
+```
+ImportError: libGL.so.1: cannot open shared object file: No such file or directory
+```
+
+This happens when `opencv-python` (GUI version) is installed instead of `opencv-python-headless` (headless version) on a Raspberry Pi without a display.
+
+**Quick fix:**
+```bash
+source venv/bin/activate
+./scripts/fix_opencv.sh
+```
+
+**Manual fix:**
+```bash
+source venv/bin/activate
+pip uninstall opencv-python opencv-contrib-python
+pip install opencv-python-headless
+```
+
+**Alternative (if you need system libraries):**
+```bash
+sudo apt-get update
+sudo apt-get install -y libgl1-mesa-glx libglib2.0-0
+```
+
+**Verify the fix:**
+```bash
+source venv/bin/activate
+python -c "import cv2; print(f'OpenCV version: {cv2.__version__}')"
+```
+
 ## ⚙️ Configuration
 
 SkyGuard is configured through the `config/skyguard.yaml` file. Key settings include:
