@@ -21,12 +21,12 @@ except ImportError as e:
     if "libGL.so.1" in error_msg or "libGL" in error_msg:
         raise ImportError(
             "OpenCV failed to import due to missing OpenGL libraries. "
-            "This typically happens when 'opencv-python' (GUI version) is installed "
-            "instead of 'opencv-python-headless' on a headless system.\n\n"
+            "This system requires Raspbian with Desktop/UI and the full opencv-python package.\n\n"
             "To fix this issue:\n"
-            "1. Uninstall the GUI version: pip uninstall opencv-python\n"
-            "2. Install the headless version: pip install opencv-python-headless\n"
-            "3. Alternatively, install system libraries: sudo apt-get install libgl1-mesa-glx\n\n"
+            "1. Ensure you are running Raspbian with Desktop (not Lite/headless)\n"
+            "2. Install system libraries: sudo apt-get install libgl1-mesa-glx libglib2.0-0 libsm6 libxext6 libxrender-dev libgomp1\n"
+            "3. Install opencv-python: pip install opencv-python\n"
+            "4. Or run the fix script: ./scripts/fix_opencv.sh\n\n"
             f"Original error: {error_msg}"
         ) from e
     raise

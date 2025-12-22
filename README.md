@@ -54,7 +54,7 @@ SkyGuard provides a low-cost, AI-driven alert system that:
 
 ### Software
 - **OS**: 
-  - Raspberry Pi: Raspberry Pi 64-bit OS (recommended) or Ubuntu 20.04+
+  - Raspberry Pi: **Raspberry Pi OS with Desktop/UI** (required - not Lite/headless version)
   - Jetson: JetPack 5.x (recommended) or JetPack 4.x
 - **Python**: 3.8 or higher
 - **RAM**: 
@@ -306,7 +306,7 @@ If you see an error like:
 ImportError: libGL.so.1: cannot open shared object file: No such file or directory
 ```
 
-This happens when `opencv-python` (GUI version) is installed instead of `opencv-python-headless` (headless version) on a Raspberry Pi without a display.
+**Important:** This system requires **Raspberry Pi OS with Desktop/UI** (not the Lite/headless version). The full `opencv-python` package is used, which requires OpenGL libraries that are available in the Desktop version.
 
 **Quick fix:**
 ```bash
@@ -314,17 +314,11 @@ source venv/bin/activate
 ./scripts/fix_opencv.sh
 ```
 
-**Manual fix:**
+**Or install system libraries manually:**
 ```bash
+sudo ./scripts/install_opencv_libs.sh
 source venv/bin/activate
-pip uninstall opencv-python opencv-contrib-python
-pip install opencv-python-headless
-```
-
-**Alternative (if you need system libraries):**
-```bash
-sudo apt-get update
-sudo apt-get install -y libgl1-mesa-glx libglib2.0-0
+pip install opencv-python
 ```
 
 **Verify the fix:**
@@ -332,6 +326,8 @@ sudo apt-get install -y libgl1-mesa-glx libglib2.0-0
 source venv/bin/activate
 python -c "import cv2; print(f'OpenCV version: {cv2.__version__}')"
 ```
+
+**Note:** If you're running Raspberry Pi OS Lite (headless), you'll need to install the Desktop version or use a different approach. The system is configured to use the full OpenCV package for better library compatibility.
 
 ## ⚙️ Configuration
 

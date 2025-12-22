@@ -1,8 +1,9 @@
 # SkyGuard - Raspberry Pi Optimized Dependencies
 # Optimized for Raspberry Pi 5 with hardware acceleration
+# NOTE: Requires Raspbian with Desktop/UI for full OpenCV support
 
 # Core Computer Vision
-opencv-python-headless>=4.8.0  # Use headless version (no OpenGL/GUI dependencies)
+opencv-python>=4.8.0  # Full version with GUI/OpenGL support (requires Raspbian with Desktop)
 numpy>=1.24.0
 pillow>=10.0.0
 

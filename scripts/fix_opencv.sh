@@ -1,6 +1,7 @@
 #!/bin/bash
 # Fix OpenCV installation on Raspberry Pi
-# Replaces opencv-python (GUI version) with opencv-python-headless (headless version)
+# Ensures opencv-python (full version) is installed with required system libraries
+# NOTE: Requires Raspbian with Desktop/UI
 
 set -e
 
@@ -13,6 +14,7 @@ NC='\033[0m' # No Color
 
 echo -e "${CYAN}========================================${NC}"
 echo -e "${CYAN}OpenCV Installation Fix for Raspberry Pi${NC}"
+echo -e "${CYAN}Requires Raspbian with Desktop/UI${NC}"
 echo -e "${CYAN}========================================${NC}"
 echo ""
 
@@ -39,47 +41,61 @@ OPENCV_PACKAGE=$(pip list | grep -i opencv | head -n 1 | awk '{print $1}' || ech
 
 if [ -z "$OPENCV_PACKAGE" ]; then
     echo -e "${YELLOW}⚠️  No OpenCV package found.${NC}"
-    echo -e "${CYAN}   Installing opencv-python-headless...${NC}"
-    pip install --no-cache-dir opencv-python-headless
-    echo -e "${GREEN}✅ opencv-python-headless installed${NC}"
+    echo -e "${CYAN}   Installing required system libraries first...${NC}"
+    sudo apt-get update
+    sudo apt-get install -y libgl1-mesa-glx libglib2.0-0 libsm6 libxext6 libxrender-dev libgomp1
+    echo -e "${CYAN}   Installing opencv-python (full version)...${NC}"
+    pip install --no-cache-dir opencv-python
+    echo -e "${GREEN}✅ opencv-python installed${NC}"
     exit 0
 fi
 
 echo -e "${CYAN}   Found: $OPENCV_PACKAGE${NC}"
 
-if [ "$OPENCV_PACKAGE" = "opencv-python-headless" ]; then
-    echo -e "${GREEN}✅ Correct package (opencv-python-headless) is already installed${NC}"
+if [ "$OPENCV_PACKAGE" = "opencv-python" ]; then
+    echo -e "${GREEN}✅ Correct package (opencv-python) is installed${NC}"
     echo ""
     echo -e "${CYAN}Testing OpenCV import...${NC}"
     if python3 -c "import cv2; print(f'OpenCV version: {cv2.__version__}')" 2>/dev/null; then
         echo -e "${GREEN}✅ OpenCV imports successfully${NC}"
         exit 0
     else
-        echo -e "${YELLOW}⚠️  OpenCV import failed. This may be a system library issue.${NC}"
-        echo -e "${CYAN}   Installing system libraries...${NC}"
+        echo -e "${YELLOW}⚠️  OpenCV import failed. Installing required system libraries...${NC}"
         sudo apt-get update
-        sudo apt-get install -y libgl1-mesa-glx libglib2.0-0
+        sudo apt-get install -y libgl1-mesa-glx libglib2.0-0 libsm6 libxext6 libxrender-dev libgomp1
         echo -e "${GREEN}✅ System libraries installed${NC}"
-        echo -e "${CYAN}   Please try importing OpenCV again${NC}"
+        echo -e "${CYAN}   Testing OpenCV import again...${NC}"
+        if python3 -c "import cv2; print(f'OpenCV version: {cv2.__version__}')" 2>/dev/null; then
+            echo -e "${GREEN}✅ OpenCV imports successfully after installing libraries${NC}"
+        else
+            echo -e "${RED}❌ OpenCV still fails to import${NC}"
+            echo -e "${YELLOW}   Please ensure you are running Raspbian with Desktop/UI${NC}"
+            echo -e "${YELLOW}   Check logs/main.log for detailed error messages${NC}"
+        fi
         exit 0
     fi
 fi
 
-if [ "$OPENCV_PACKAGE" = "opencv-python" ]; then
-    echo -e "${YELLOW}⚠️  Found opencv-python (GUI version) - this requires OpenGL libraries${NC}"
-    echo -e "${CYAN}   Replacing with opencv-python-headless (headless version)...${NC}"
+if [ "$OPENCV_PACKAGE" = "opencv-python-headless" ]; then
+    echo -e "${YELLOW}⚠️  Found opencv-python-headless (headless version)${NC}"
+    echo -e "${CYAN}   Replacing with opencv-python (full version) for Raspbian with UI...${NC}"
     echo ""
     
-    # Uninstall opencv-python and related packages
-    echo -e "${CYAN}   Step 1: Uninstalling opencv-python...${NC}"
-    pip uninstall -y opencv-python opencv-contrib-python 2>/dev/null || true
+    # Uninstall opencv-python-headless
+    echo -e "${CYAN}   Step 1: Uninstalling opencv-python-headless...${NC}"
+    pip uninstall -y opencv-python-headless 2>/dev/null || true
     
-    # Install opencv-python-headless
-    echo -e "${CYAN}   Step 2: Installing opencv-python-headless...${NC}"
-    pip install --no-cache-dir opencv-python-headless
+    # Install required system libraries
+    echo -e "${CYAN}   Step 2: Installing required system libraries...${NC}"
+    sudo apt-get update
+    sudo apt-get install -y libgl1-mesa-glx libglib2.0-0 libsm6 libxext6 libxrender-dev libgomp1
+    
+    # Install opencv-python
+    echo -e "${CYAN}   Step 3: Installing opencv-python (full version)...${NC}"
+    pip install --no-cache-dir opencv-python
     
     echo ""
-    echo -e "${GREEN}✅ Successfully replaced opencv-python with opencv-python-headless${NC}"
+    echo -e "${GREEN}✅ Successfully replaced opencv-python-headless with opencv-python${NC}"
     
     # Test the installation
     echo ""
@@ -89,20 +105,19 @@ if [ "$OPENCV_PACKAGE" = "opencv-python" ]; then
         echo -e "${GREEN}✅ Fix completed successfully${NC}"
     else
         echo -e "${RED}❌ OpenCV still fails to import${NC}"
-        echo -e "${YELLOW}   This may require system libraries. Installing...${NC}"
-        sudo apt-get update
-        sudo apt-get install -y libgl1-mesa-glx libglib2.0-0
-        echo -e "${CYAN}   Please try importing OpenCV again${NC}"
+        echo -e "${YELLOW}   Please ensure you are running Raspbian with Desktop/UI${NC}"
+        echo -e "${YELLOW}   Check logs/main.log for detailed error messages${NC}"
     fi
 else
     echo -e "${YELLOW}⚠️  Unknown OpenCV package: $OPENCV_PACKAGE${NC}"
-    echo -e "${CYAN}   Attempting to install opencv-python-headless...${NC}"
-    pip install --no-cache-dir opencv-python-headless
-    echo -e "${GREEN}✅ opencv-python-headless installed${NC}"
+    echo -e "${CYAN}   Installing opencv-python (full version) and system libraries...${NC}"
+    sudo apt-get update
+    sudo apt-get install -y libgl1-mesa-glx libglib2.0-0 libsm6 libxext6 libxrender-dev libgomp1
+    pip install --no-cache-dir opencv-python
+    echo -e "${GREEN}✅ opencv-python installed${NC}"
 fi
 
 echo ""
 echo -e "${CYAN}========================================${NC}"
 echo -e "${GREEN}Fix script completed${NC}"
 echo -e "${CYAN}========================================${NC}"
-
