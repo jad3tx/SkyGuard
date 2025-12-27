@@ -6,6 +6,44 @@
 
 SkyGuard is an open-source artificial intelligence solution that alerts small flock owners when raptors are circling above their coops. Built for affordability and accessibility, it uses low-cost hardware and modern computer vision to protect your poultry from airborne predators.
 
+## 📸 See It In Action
+
+<div align="center">
+
+### 🖥️ Web Portal Dashboard
+*Real-time monitoring and system management at your fingertips*
+
+![Web Portal Dashboard](docs/screenshots/web_portal_dashboard.png)
+*The SkyGuard web portal provides a comprehensive dashboard showing real-time system status, detection history, and easy configuration management.*
+
+---
+
+### 🦅 Live Detection in Action
+*AI-powered detection with instant alerts*
+
+![Live Detection](docs/screenshots/live_detection.png)
+*Watch as SkyGuard detects raptors in real-time with bounding boxes and confidence scores. Get instant alerts via SMS, email, or push notifications.*
+
+---
+
+### 📊 Detection History & Analytics
+*Review and analyze all detected events*
+
+![Detection History](docs/screenshots/detection_history.png)
+*Browse through your detection history with detailed information including timestamps, confidence scores, species identification, and captured images.*
+
+---
+
+### ⚙️ Easy Configuration
+*Intuitive web interface for system settings*
+
+![System Configuration](docs/screenshots/system_config.png)
+*Configure camera settings, AI model parameters, notification preferences, and more through an easy-to-use web interface - no command line required.*
+
+</div>
+
+> **💡 Tip:** All screenshots shown are from a live SkyGuard installation. The system runs 24/7, providing continuous protection for your poultry.
+
 ## 🎯 Project Overview
 
 **Author:** John Daughtridge  github:jad3tx
