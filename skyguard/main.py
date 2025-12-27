@@ -69,7 +69,11 @@ class SkyGuardSystem:
             self.detector.load_model()
             
             # Initialize alert system
-            self.alert_system = AlertSystem(self.config['notifications'])
+            rate_limiting_config = self.config.get('rate_limiting', {})
+            self.alert_system = AlertSystem(
+                self.config['notifications'],
+                rate_limiting_config=rate_limiting_config
+            )
             self.alert_system.initialize()
             
             # Initialize event logger
@@ -120,7 +124,11 @@ class SkyGuardSystem:
             
             # Update alert system if notifications config changed
             if self.alert_system and 'notifications' in self.config:
-                self.alert_system.update_config(self.config['notifications'])
+                rate_limiting_config = self.config.get('rate_limiting', {})
+                self.alert_system.update_config(
+                    self.config['notifications'],
+                    rate_limiting_config=rate_limiting_config
+                )
             
             self.logger.info("✅ Configuration reloaded and components updated")
             return True

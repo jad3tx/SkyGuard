@@ -668,7 +668,11 @@ class SkyGuardWebPortal:
             print("ℹ️ Web portal configured to read camera snapshots (no direct camera access)")
             
             # Initialize alert system
-            self.alert_system = AlertSystem(self.config.get('notifications', {}))
+            rate_limiting_config = self.config.get('rate_limiting', {})
+            self.alert_system = AlertSystem(
+                self.config.get('notifications', {}),
+                rate_limiting_config=rate_limiting_config
+            )
             print("✅ Alert system initialized successfully")
             
         except Exception as e:

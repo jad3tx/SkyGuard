@@ -20,6 +20,14 @@ except ImportError:
     MimeText = None
     MimeMultipart = None
 
+# Try to import numpy, but don't fail if not available
+try:
+    import numpy as np
+    NUMPY_AVAILABLE = True
+except ImportError:
+    NUMPY_AVAILABLE = False
+    np = None
+
 # Try to import pygame, but don't fail if not available
 try:
     import pygame
@@ -40,26 +48,33 @@ except ImportError:
 class AlertSystem:
     """Manages alert notifications for raptor detections."""
     
-    def __init__(self, config: dict):
+    def __init__(self, config: Dict[str, Any], rate_limiting_config: Optional[Dict[str, Any]] = None) -> None:
         """Initialize the alert system.
         
         Args:
             config: Notification configuration dictionary
+            rate_limiting_config: Optional rate limiting configuration dictionary
         """
-        self.config = config
-        self.logger = logging.getLogger(__name__)
-        self.alert_count = 0
-        self.last_alert_time = 0
+        self.config: Dict[str, Any] = config
+        self.logger: logging.Logger = logging.getLogger(__name__)
+        self.alert_count: int = 0
+        self.last_alert_time: float = 0.0
         
         # Initialize components
-        self.audio_enabled = False
-        self.push_enabled = False
-        self.sms_enabled = False
-        self.email_enabled = False
+        self.audio_enabled: bool = False
+        self.push_enabled: bool = False
+        self.sms_enabled: bool = False
+        self.email_enabled: bool = False
         
-        # Rate limiting
-        self.min_alert_interval = 30  # seconds between alerts
-        self.last_alert_times = {}
+        # SMS client (initialized if SMS is enabled)
+        self.sms_client: Optional[Any] = None
+        
+        # Rate limiting - use provided config or default
+        if rate_limiting_config:
+            self.min_alert_interval: float = float(rate_limiting_config.get('min_alert_interval', 30))
+        else:
+            self.min_alert_interval: float = 30.0  # seconds between alerts
+        self.last_alert_times: Dict[str, float] = {}
         
     def initialize(self) -> bool:
         """Initialize the alert system.
@@ -91,59 +106,84 @@ class AlertSystem:
             self.logger.error(f"Failed to initialize alert system: {e}")
             return False
     
-    def _initialize_audio(self):
+    def _initialize_audio(self) -> None:
         """Initialize audio alert system."""
         try:
+            if not PYGAME_AVAILABLE or pygame is None:
+                self.logger.warning("Audio alerts disabled - pygame not available")
+                return
+                
             pygame.mixer.init()
             self.audio_enabled = True
             self.logger.info("Audio alerts enabled")
         except Exception as e:
             self.logger.warning(f"Failed to initialize audio: {e}")
+            self.audio_enabled = False
     
-    def _initialize_push(self):
+    def _initialize_push(self) -> None:
         """Initialize push notification system."""
         try:
-            api_key = self.config['push'].get('api_key')
-            if api_key:
+            push_config = self.config.get('push', {})
+            api_key = push_config.get('api_key', '')
+            device_id = push_config.get('device_id', '')
+            
+            if api_key and device_id:
                 self.push_enabled = True
                 self.logger.info("Push notifications enabled")
-            else:
+            elif not api_key:
                 self.logger.warning("Push notifications disabled - no API key")
+            elif not device_id:
+                self.logger.warning("Push notifications disabled - no device ID")
         except Exception as e:
             self.logger.warning(f"Failed to initialize push notifications: {e}")
+            self.push_enabled = False
     
-    def _initialize_sms(self):
+    def _initialize_sms(self) -> None:
         """Initialize SMS notification system."""
         try:
-            if not TWILIO_AVAILABLE:
+            if not TWILIO_AVAILABLE or TwilioClient is None:
                 self.logger.warning("SMS notifications disabled - Twilio not available")
                 return
                 
-            sms_config = self.config['sms']
-            if all(sms_config.get(key) for key in ['account_sid', 'auth_token', 'from_number']):
-                self.sms_client = TwilioClient(sms_config['account_sid'], sms_config['auth_token'])
+            sms_config = self.config.get('sms', {})
+            required_keys = ['account_sid', 'auth_token', 'from_number']
+            if all(sms_config.get(key) for key in required_keys):
+                self.sms_client = TwilioClient(
+                    sms_config['account_sid'],
+                    sms_config['auth_token']
+                )
                 self.sms_enabled = True
                 self.logger.info("SMS notifications enabled")
             else:
-                self.logger.warning("SMS notifications disabled - missing credentials")
+                missing = [key for key in required_keys if not sms_config.get(key)]
+                self.logger.warning(f"SMS notifications disabled - missing credentials: {', '.join(missing)}")
         except Exception as e:
             self.logger.warning(f"Failed to initialize SMS: {e}")
+            self.sms_enabled = False
+            self.sms_client = None
     
-    def _initialize_email(self):
+    def _initialize_email(self) -> None:
         """Initialize email notification system."""
         try:
             if not EMAIL_AVAILABLE:
                 self.logger.warning("Email notifications disabled - email modules not available")
                 return
                 
-            email_config = self.config['email']
-            if all(email_config.get(key) for key in ['smtp_server', 'username', 'password']):
-                self.email_enabled = True
-                self.logger.info("Email notifications enabled")
+            email_config = self.config.get('email', {})
+            required_keys = ['smtp_server', 'username', 'password', 'from_email']
+            if all(email_config.get(key) for key in required_keys):
+                to_emails = email_config.get('to_emails', [])
+                if to_emails:
+                    self.email_enabled = True
+                    self.logger.info("Email notifications enabled")
+                else:
+                    self.logger.warning("Email notifications disabled - no recipient emails configured")
             else:
-                self.logger.warning("Email notifications disabled - missing credentials")
+                missing = [key for key in required_keys if not email_config.get(key)]
+                self.logger.warning(f"Email notifications disabled - missing credentials: {', '.join(missing)}")
         except Exception as e:
             self.logger.warning(f"Failed to initialize email: {e}")
+            self.email_enabled = False
     
     def send_raptor_alert(self, detection: Dict[str, Any]) -> bool:
         """Send raptor detection alert.
@@ -199,7 +239,7 @@ class AlertSystem:
             return True
             
         except Exception as e:
-            self.logger.error(f"Failed to send raptor alert: {e}")
+            self.logger.error(f"Failed to send raptor alert: {e}", exc_info=True)
             return False
     
     def _check_rate_limit(self, alert_type: str) -> bool:
@@ -253,39 +293,62 @@ class AlertSystem:
         """
         return self._create_alert_message(detection)
     
-    def _send_audio_alert(self):
+    def _send_audio_alert(self) -> None:
         """Send audio alert."""
         try:
-            audio_config = self.config['audio']
+            if not PYGAME_AVAILABLE or pygame is None:
+                self.logger.warning("Cannot send audio alert - pygame not available")
+                return
+                
+            audio_config = self.config.get('audio', {})
             sound_file = audio_config.get('sound_file', 'sounds/raptor_alert.wav')
-            volume = audio_config.get('volume', 0.8)
+            volume = float(audio_config.get('volume', 0.8))
+            repeat_count = int(audio_config.get('repeat_count', 1))
+            repeat_interval = float(audio_config.get('repeat_interval', 2.0))
             
             # Check if sound file exists
-            if not Path(sound_file).exists():
+            sound_path = Path(sound_file)
+            if not sound_path.exists():
                 # Generate a simple beep sound
+                self.logger.debug(f"Sound file not found: {sound_file}, generating beep")
                 self._generate_beep_sound()
                 return
             
-            # Play sound file
+            # Play sound file with optional repeats
             pygame.mixer.music.set_volume(volume)
-            pygame.mixer.music.load(sound_file)
-            pygame.mixer.music.play()
+            pygame.mixer.music.load(str(sound_path))
+            
+            for _ in range(repeat_count):
+                pygame.mixer.music.play()
+                # Wait for the sound to finish playing
+                while pygame.mixer.music.get_busy():
+                    time.sleep(0.1)
+                if repeat_count > 1:
+                    time.sleep(repeat_interval)
             
             self.logger.debug("Audio alert sent")
             
         except Exception as e:
-            self.logger.error(f"Failed to send audio alert: {e}")
+            self.logger.error(f"Failed to send audio alert: {e}", exc_info=True)
     
-    def _generate_beep_sound(self):
+    def _generate_beep_sound(self) -> None:
         """Generate a simple beep sound."""
         try:
+            if not PYGAME_AVAILABLE or pygame is None:
+                self.logger.warning("Cannot generate beep sound - pygame not available")
+                return
+                
+            if not NUMPY_AVAILABLE or np is None:
+                self.logger.warning("Cannot generate beep sound - numpy not available")
+                return
+            
             # Create a simple beep using pygame
             sample_rate = 22050
             duration = 0.5
             frequency = 800
             
             frames = int(duration * sample_rate)
-            arr = np.zeros((frames, 2))
+            arr = np.zeros((frames, 2), dtype=np.float32)
             
             for i in range(frames):
                 arr[i][0] = 32767 * np.sin(2 * np.pi * frequency * i / sample_rate)
@@ -295,14 +358,26 @@ class AlertSystem:
             sound.play()
             
         except Exception as e:
-            self.logger.error(f"Failed to generate beep sound: {e}")
+            self.logger.error(f"Failed to generate beep sound: {e}", exc_info=True)
     
-    def _send_push_alert(self, message: str):
-        """Send push notification."""
+    def _send_push_alert(self, message: str) -> None:
+        """Send push notification.
+        
+        Args:
+            message: Alert message to send
+        """
         try:
-            push_config = self.config['push']
-            api_key = push_config['api_key']
-            device_id = push_config['device_id']
+            push_config = self.config.get('push', {})
+            api_key = push_config.get('api_key', '')
+            device_id = push_config.get('device_id', '')
+            
+            if not api_key:
+                self.logger.warning("Push notification skipped - no API key")
+                return
+                
+            if not device_id:
+                self.logger.warning("Push notification skipped - no device ID")
+                return
             
             url = "https://api.pushbullet.com/v2/pushes"
             headers = {
@@ -321,38 +396,62 @@ class AlertSystem:
             
             self.logger.debug("Push notification sent")
             
+        except requests.exceptions.RequestException as e:
+            self.logger.error(f"Failed to send push notification (network error): {e}", exc_info=True)
         except Exception as e:
-            self.logger.error(f"Failed to send push notification: {e}")
+            self.logger.error(f"Failed to send push notification: {e}", exc_info=True)
     
-    def _send_sms_alert(self, message: str):
-        """Send SMS alert."""
+    def _send_sms_alert(self, message: str) -> None:
+        """Send SMS alert.
+        
+        Args:
+            message: Alert message to send
+        """
         try:
-            sms_config = self.config['sms']
+            if self.sms_client is None:
+                self.logger.warning("SMS alert skipped - SMS client not initialized")
+                return
+                
+            sms_config = self.config.get('sms', {})
             to_numbers = sms_config.get('to_numbers', [])
             
+            if not to_numbers:
+                self.logger.warning("SMS alert skipped - no recipient numbers configured")
+                return
+            
             for to_number in to_numbers:
-                self.sms_client.messages.create(
-                    body=message,
-                    from_=sms_config['from_number'],
-                    to=to_number
-                )
+                try:
+                    self.sms_client.messages.create(
+                        body=message,
+                        from_=sms_config['from_number'],
+                        to=to_number
+                    )
+                    self.logger.debug(f"SMS alert sent to {to_number}")
+                except Exception as e:
+                    self.logger.error(f"Failed to send SMS to {to_number}: {e}", exc_info=True)
             
             self.logger.debug(f"SMS alert sent to {len(to_numbers)} numbers")
             
         except Exception as e:
-            self.logger.error(f"Failed to send SMS alert: {e}")
+            self.logger.error(f"Failed to send SMS alert: {e}", exc_info=True)
     
-    def _send_email_alert(self, message: str, detection: Dict[str, Any]):
-        """Send email alert."""
+    def _send_email_alert(self, message: str, detection: Dict[str, Any]) -> None:
+        """Send email alert.
+        
+        Args:
+            message: Alert message to send
+            detection: Detection information dictionary
+        """
         try:
-            if not EMAIL_AVAILABLE:
+            if not EMAIL_AVAILABLE or MimeMultipart is None or MimeText is None:
                 self.logger.warning("Email not available - skipping email alert")
                 return
                 
-            email_config = self.config['email']
+            email_config = self.config.get('email', {})
             to_emails = email_config.get('to_emails', [])
             
             if not to_emails:
+                self.logger.warning("Email alert skipped - no recipient emails configured")
                 return
             
             # Create email
@@ -365,7 +464,10 @@ class AlertSystem:
             msg.attach(MimeText(message, 'plain'))
             
             # Send email
-            server = smtplib.SMTP(email_config['smtp_server'], email_config['smtp_port'])
+            smtp_server = email_config['smtp_server']
+            smtp_port = int(email_config.get('smtp_port', 587))
+            
+            server = smtplib.SMTP(smtp_server, smtp_port)
             server.starttls()
             server.login(email_config['username'], email_config['password'])
             server.send_message(msg)
@@ -373,8 +475,10 @@ class AlertSystem:
             
             self.logger.debug(f"Email alert sent to {len(to_emails)} addresses")
             
+        except smtplib.SMTPException as e:
+            self.logger.error(f"Failed to send email alert (SMTP error): {e}", exc_info=True)
         except Exception as e:
-            self.logger.error(f"Failed to send email alert: {e}")
+            self.logger.error(f"Failed to send email alert: {e}", exc_info=True)
     
     def test_alert(self, alert_type: str = "all") -> bool:
         """Send a test alert.
@@ -418,6 +522,68 @@ class AlertSystem:
         except Exception as e:
             self.logger.error(f"Failed to send test alert: {e}")
             return False
+    
+    def update_config(self, new_config: Dict[str, Any], rate_limiting_config: Optional[Dict[str, Any]] = None) -> bool:
+        """Update notification configuration dynamically.
+        
+        Args:
+            new_config: New notification configuration dictionary
+            rate_limiting_config: Optional rate limiting configuration dictionary
+            
+        Returns:
+            True if update successful, False otherwise
+        """
+        try:
+            # Merge new configuration with existing
+            self._merge_config(self.config, new_config)
+            
+            # Update rate limiting if provided
+            if rate_limiting_config:
+                if 'min_alert_interval' in rate_limiting_config:
+                    self.min_alert_interval = float(rate_limiting_config['min_alert_interval'])
+            
+            # Re-initialize components that may have changed
+            # Disable all first
+            self.audio_enabled = False
+            self.push_enabled = False
+            self.sms_enabled = False
+            self.email_enabled = False
+            self.sms_client = None
+            
+            # Re-initialize based on new config
+            if self.config.get('audio', {}).get('enabled', False):
+                self._initialize_audio()
+            
+            if self.config.get('push', {}).get('enabled', False):
+                self._initialize_push()
+            
+            if self.config.get('sms', {}).get('enabled', False):
+                self._initialize_sms()
+            
+            if self.config.get('email', {}).get('enabled', False):
+                self._initialize_email()
+            
+            self.logger.info("Alert system configuration updated successfully")
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"Failed to update alert system configuration: {e}", exc_info=True)
+            return False
+    
+    def _merge_config(self, base_config: Dict[str, Any], new_config: Dict[str, Any]) -> None:
+        """Recursively merge new configuration into base configuration.
+        
+        Args:
+            base_config: Base configuration dictionary
+            new_config: New configuration values to merge
+        """
+        for key, value in new_config.items():
+            if key in base_config and isinstance(base_config[key], dict) and isinstance(value, dict):
+                # Recursively merge nested dictionaries
+                self._merge_config(base_config[key], value)
+            else:
+                # Update or add the value
+                base_config[key] = value
     
     def get_alert_stats(self) -> Dict[str, Any]:
         """Get alert system statistics.
