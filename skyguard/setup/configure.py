@@ -237,6 +237,27 @@ class SkyGuardConfigurator:
             print("Email configuration requires SMTP server setup.")
             print("Please edit config/skyguard.yaml manually for email settings.")
         
+        # Discord notifications
+        current = config['notifications']['discord']['enabled']
+        config['notifications']['discord']['enabled'] = self._ask_yes_no(
+            f"Enable Discord notifications? [{'Y' if current else 'N'}]: ",
+            default=current
+        )
+        
+        if config['notifications']['discord']['enabled']:
+            print("\nDiscord webhook setup:")
+            print("1. Go to your Discord server settings")
+            print("2. Navigate to Integrations > Webhooks")
+            print("3. Create a new webhook or use an existing one")
+            print("4. Copy the webhook URL")
+            webhook_url = self._ask_string("Discord webhook URL: ")
+            if webhook_url:
+                config['notifications']['discord']['webhook_url'] = webhook_url
+            
+            username = self._ask_string("Discord bot username (optional, press Enter for 'SkyGuard'): ")
+            if username:
+                config['notifications']['discord']['username'] = username
+        
         print()
     
     def _configure_storage(self, config: Dict[str, Any]):

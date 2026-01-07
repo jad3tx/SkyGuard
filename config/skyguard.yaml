@@ -60,6 +60,11 @@ notifications:
     enabled: false
     from_number: ''
     to_numbers: []
+  discord:
+    enabled: false
+    webhook_url: ''
+    username: SkyGuard
+    avatar_url: ''
 rate_limiting:
   cooldown_period: 300
   max_alerts_per_hour: 10

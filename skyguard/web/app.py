@@ -117,6 +117,7 @@ class SkyGuardWebPortal:
                         'audio_enabled': self.config.get('notifications', {}).get('audio', {}).get('enabled', False),
                         'sms_enabled': self.config.get('notifications', {}).get('sms', {}).get('enabled', False),
                         'email_enabled': self.config.get('notifications', {}).get('email', {}).get('enabled', False),
+                        'discord_enabled': self.config.get('notifications', {}).get('discord', {}).get('enabled', False),
                     }
                 }
                 return jsonify(status)
@@ -532,7 +533,8 @@ class SkyGuardWebPortal:
                         'message': 'Alert system test successful',
                         'audio_enabled': self.config.get('notifications', {}).get('audio', {}).get('enabled', False),
                         'sms_enabled': self.config.get('notifications', {}).get('sms', {}).get('enabled', False),
-                        'email_enabled': self.config.get('notifications', {}).get('email', {}).get('enabled', False)
+                        'email_enabled': self.config.get('notifications', {}).get('email', {}).get('enabled', False),
+                        'discord_enabled': self.config.get('notifications', {}).get('discord', {}).get('enabled', False)
                     })
                 else:
                     return jsonify({'error': 'Alert system test failed'}), 500
@@ -773,16 +775,21 @@ class SkyGuardWebPortal:
             return False
     
     def _is_model_loaded(self) -> bool:
-        """Check if AI model is loaded in the web portal's detector."""
+        """Check if AI model is loaded in the web portal's detector.
+        
+        YOLO models from ultralytics are callable directly, not via .predict() method.
+        This method checks if the model is callable or has a predict method for compatibility.
+        """
         try:
             # Directly check if the detector's model is loaded
             if self.detector:
                 # Check if the detector has a loaded model
-                # Also verify the model is actually functional (has predict method)
+                # YOLO models are callable directly, not via .predict() method
+                # Check if model is callable OR has predict method (for compatibility)
                 is_loaded = (
                     self.detector.model is not None 
                     and self.detector.model != "dummy"
-                    and hasattr(self.detector.model, 'predict')
+                    and (callable(self.detector.model) or hasattr(self.detector.model, 'predict'))
                 )
                 
                 # If model is not loaded but detector exists, try to reload it (with rate limiting)
@@ -795,7 +802,7 @@ class SkyGuardWebPortal:
                             is_loaded = (
                                 self.detector.model is not None 
                                 and self.detector.model != "dummy"
-                                and hasattr(self.detector.model, 'predict')
+                                and (callable(self.detector.model) or hasattr(self.detector.model, 'predict'))
                             )
                             if is_loaded:
                                 self.logger.info("Detection model reloaded successfully")
@@ -819,7 +826,7 @@ class SkyGuardWebPortal:
                     return (
                         self.detector.model is not None 
                         and self.detector.model != "dummy"
-                        and hasattr(self.detector.model, 'predict')
+                        and (callable(self.detector.model) or hasattr(self.detector.model, 'predict'))
                     )
             return False
         except Exception as e:
