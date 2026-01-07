@@ -23,7 +23,7 @@ A comprehensive web-based interface for managing and monitoring your SkyGuard ra
 - **System Settings**: Detection interval, history limits, debug mode
 - **Camera Configuration**: Resolution, FPS, rotation, flip settings
 - **AI Model Settings**: Confidence thresholds, NMS settings, model selection
-- **Notification Settings**: Audio, SMS, email alert configuration
+- **Notification Settings**: Audio, SMS, email, Discord webhook alert configuration
 - **Real-time Updates**: Changes take effect immediately
 
 ### **System Monitoring**
@@ -151,9 +151,21 @@ Configure all aspects of your SkyGuard system:
    - Model selection
 
 4. **Notification Settings**:
-   - Audio alerts (enabled/disabled)
-   - SMS alerts (enabled/disabled)
-   - Email alerts (enabled/disabled)
+   - Audio alerts (enabled/disabled, volume control)
+   - SMS alerts (enabled/disabled, requires Twilio account)
+   - Email alerts (enabled/disabled, requires SMTP server)
+   - Discord webhook alerts (enabled/disabled, free webhook setup)
+   
+   **Discord Webhook Setup:**
+   1. Open your Discord server
+   2. Go to **Server Settings** → **Integrations** → **Webhooks**
+   3. Click **New Webhook** or **Create Webhook**
+   4. Choose a channel for alerts
+   5. Name the webhook (e.g., "SkyGuard Alerts")
+   6. Click **Copy Webhook URL**
+   7. Paste the URL into the Discord Webhook URL field in the web portal
+   8. Optionally set a custom bot username
+   9. Enable Discord alerts and save
 
 ### **System Monitoring**
 

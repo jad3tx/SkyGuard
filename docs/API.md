@@ -48,7 +48,8 @@ Get current system status and component information.
   "notifications": {
     "audio_enabled": true,
     "sms_enabled": false,
-    "email_enabled": false
+    "email_enabled": false,
+    "discord_enabled": false
   }
 }
 ```
@@ -133,6 +134,11 @@ Get current system configuration.
     },
     "email": {
       "enabled": false
+    },
+    "discord": {
+      "enabled": false,
+      "webhook_url": "",
+      "username": "SkyGuard"
     }
   }
 }
@@ -156,6 +162,13 @@ Update system configuration.
   },
   "ai": {
     "confidence_threshold": 0.6
+  },
+  "notifications": {
+    "discord": {
+      "enabled": true,
+      "webhook_url": "https://discord.com/api/webhooks/...",
+      "username": "SkyGuard"
+    }
   }
 }
 ```
@@ -163,9 +176,12 @@ Update system configuration.
 **Response:**
 ```json
 {
+  "success": true,
   "message": "Configuration updated successfully"
 }
 ```
+
+**Note:** Discord webhook URLs can be obtained from Discord Server Settings → Integrations → Webhooks. Discord webhooks are free and provide instant notifications with rich embeds.
 
 ### System Testing
 
@@ -198,7 +214,12 @@ Test alert system functionality.
 **Response:**
 ```json
 {
-  "message": "Alert system test successful"
+  "success": true,
+  "message": "Alert system test successful",
+  "audio_enabled": true,
+  "sms_enabled": false,
+  "email_enabled": false,
+  "discord_enabled": false
 }
 ```
 
@@ -340,7 +361,7 @@ The web portal automatically refreshes data every 5 seconds. For real-time updat
 
 1. **Poll the API**: Make regular requests to `/api/status` and `/api/detections`
 2. **Use WebSocket**: Future enhancement for real-time updates
-3. **Webhook Integration**: Future enhancement for external notifications
+3. **Discord Webhooks**: Configure Discord webhooks for instant notifications (see Notification Settings)
 
 ## 🛡️ Security Considerations
 
