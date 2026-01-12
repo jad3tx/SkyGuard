@@ -70,7 +70,7 @@ Options:
   --port PORT          Port to bind to (default: 8080)
   --debug              Enable debug mode
   --config CONFIG      Configuration file path
-```
+
 
 ### **Environment Variables**
 
