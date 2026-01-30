@@ -84,6 +84,11 @@ class_stats:
     - bird_species
     train: 0
     val: 0
+  American_Robin:
+    sources:
+    - bird_species
+    train: 8
+    val: 2
   American_Robin_(Adult):
     sources:
     - bird_species
@@ -139,6 +144,11 @@ class_stats:
     - bird_species
     train: 0
     val: 0
+  Bald_Eagle:
+    sources:
+    - bird_species
+    train: 118
+    val: 30
   Bald_Eagle_(Adult,_subadult):
     sources:
     - bird_species
@@ -439,6 +449,11 @@ class_stats:
     - bird_species
     train: 0
     val: 0
+  Bluejay:
+    sources:
+    - bird_species
+    train: 11
+    val: 3
   Boat-tailed_Grackle:
     sources:
     - bird_species
@@ -661,9 +676,10 @@ class_stats:
     val: 0
   Canadian_Goose:
     sources:
+    - bird_species
     - video_training
-    train: 96
-    val: 36
+    train: 131
+    val: 33
   Canvasback_(Breeding_male):
     sources:
     - bird_species
@@ -689,11 +705,16 @@ class_stats:
     - bird_species
     train: 0
     val: 0
+  Cardinal:
+    sources:
+    - bird_species
+    train: 8
+    val: 2
   Carolina_Chickadee:
     sources:
     - bird_species
-    train: 0
-    val: 0
+    train: 12
+    val: 4
   Carolina_Wren:
     sources:
     - bird_species
@@ -916,9 +937,10 @@ class_stats:
     val: 0
   Cormorant:
     sources:
+    - bird_species
     - video_training
-    train: 96
-    val: 36
+    train: 142
+    val: 37
   Costa's_Hummingbird_(Adult_Male):
     sources:
     - bird_species
@@ -982,13 +1004,14 @@ class_stats:
   Downy_Woodpecker:
     sources:
     - bird_species
-    train: 0
-    val: 0
+    train: 11
+    val: 3
   Duck:
     sources:
+    - bird_species
     - video_training
-    train: 191
-    val: 71
+    train: 262
+    val: 66
   Dunlin_(Breeding):
     sources:
     - bird_species
@@ -1399,6 +1422,11 @@ class_stats:
     - bird_species
     train: 0
     val: 0
+  House_Sparrow:
+    sources:
+    - bird_species
+    train: 4
+    val: 2
   House_Sparrow_(Female_Juvenile):
     sources:
     - bird_species
@@ -1679,6 +1707,11 @@ class_stats:
     - bird_species
     train: 0
     val: 0
+  Northern_Flicker:
+    sources:
+    - bird_species
+    train: 11
+    val: 3
   Northern_Flicker_(Red-shafted):
     sources:
     - bird_species
@@ -1699,6 +1732,11 @@ class_stats:
     - bird_species
     train: 0
     val: 0
+  Northern_Harrier:
+    sources:
+    - bird_species
+    train: 160
+    val: 40
   Northern_Harrier_(Adult_male):
     sources:
     - bird_species
@@ -2081,9 +2119,10 @@ class_stats:
     val: 0
   Red_Tailed_Hawk:
     sources:
+    - bird_species
     - video_training
-    train: 1052
-    val: 392
+    train: 1070
+    val: 294
   Reddish_Egret_(Dark_morph):
     sources:
     - bird_species
@@ -2359,6 +2398,11 @@ class_stats:
     - bird_species
     train: 0
     val: 0
+  Starling:
+    sources:
+    - bird_species
+    train: 17
+    val: 5
   Steller's_Jay:
     sources:
     - bird_species
@@ -2416,9 +2460,10 @@ class_stats:
     val: 0
   Swainsons_Hawk:
     sources:
+    - bird_species
     - video_training
-    train: 479
-    val: 179
+    train: 716
+    val: 183
   Swallow-tailed_Kite:
     sources:
     - bird_species
@@ -2516,9 +2561,10 @@ class_stats:
     val: 0
   Vulture:
     sources:
+    - bird_species
     - video_training
-    train: 98
-    val: 38
+    train: 148
+    val: 36
   Warbling_Vireo:
     sources:
     - bird_species
@@ -2822,6 +2868,7 @@ classes:
 - American_Pipit
 - American_Redstart_(Adult_Male)
 - American_Redstart_(Female_juvenile)
+- American_Robin
 - American_Robin_(Adult)
 - American_Robin_(Juvenile)
 - American_Tree_Sparrow
@@ -2833,6 +2880,7 @@ classes:
 - Anna's_Hummingbird_(Adult_Male)
 - Anna's_Hummingbird_(Female,_immature)
 - Ash-throated_Flycatcher
+- Bald_Eagle
 - Bald_Eagle_(Adult,_subadult)
 - Bald_Eagle_(Immature,_juvenile)
 - Baltimore_Oriole_(Adult_male)
@@ -2893,6 +2941,7 @@ classes:
 - Blue_Grosbeak_(Adult_Male)
 - Blue_Grosbeak_(Female_juvenile)
 - Blue_Jay
+- Bluejay
 - Boat-tailed_Grackle
 - Bobolink_(Breeding_male)
 - Bobolink_(Female_juvenile_nonbreeding_male)
@@ -2943,6 +2992,7 @@ classes:
 - Canyon_Towhee
 - Canyon_Wren
 - Cape_May_Warbler
+- Cardinal
 - Carolina_Chickadee
 - Carolina_Wren
 - Caspian_Tern
@@ -3085,6 +3135,7 @@ classes:
 - Horned_Lark
 - House_Finch_(Adult_Male)
 - House_Finch_(Female_immature)
+- House_Sparrow
 - House_Sparrow_(Female_Juvenile)
 - House_Sparrow_(Male)
 - House_Wren
@@ -3141,10 +3192,12 @@ classes:
 - Northern_Bobwhite
 - Northern_Cardinal_(Adult_Male)
 - Northern_Cardinal_(Female_Juvenile)
+- Northern_Flicker
 - Northern_Flicker_(Red-shafted)
 - Northern_Flicker_(Yellow-shafted)
 - Northern_Gannet_(Adult,_Subadult)
 - Northern_Gannet_(Immature_Juvenile)
+- Northern_Harrier
 - Northern_Harrier_(Adult_male)
 - Northern_Harrier_(Female,_immature)
 - Northern_Mockingbird
@@ -3277,6 +3330,7 @@ classes:
 - Spotted_Sandpiper_(Breeding)
 - Spotted_Sandpiper_(Nonbreeding_juvenile)
 - Spotted_Towhee
+- Starling
 - Steller's_Jay
 - Summer_Tanager_(Adult_Male)
 - Summer_Tanager_(Female)
@@ -3368,19 +3422,19 @@ classes:
 - Yellow_Warbler
 dataset_name: Merged Bird Species Dataset
 format: YOLO Classification
-num_classes: 561
+num_classes: 569
 path: C:\Users\johnd\source\SkyGuard\data\bird_species_merged
 source: Multiple sources (merged)
 sources:
   bird_species:
-    classes: 555
-    total_samples: 97124
+    classes: 569
+    total_samples: 105480
   nabirds_prepared:
     classes: 0
     total_samples: 0
   video_training:
     classes: 6
-    total_samples: 5528
-total_samples: 2764
-train_samples: 2012
-val_samples: 752
+    total_samples: 12976
+total_samples: 3572
+train_samples: 2829
+val_samples: 743

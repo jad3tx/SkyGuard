@@ -24,6 +24,7 @@ def train_classifier(
     batch_size: int = 16,
     device: str = "auto",
     output_dir: Optional[Path] = None,
+    yolo_version: str = "26",  # YOLO version: "8", "11", "26", etc.
 ) -> bool:
     """Train a YOLO classification model on bird species.
     
@@ -35,6 +36,7 @@ def train_classifier(
         batch_size: Batch size for training
         device: Device to use ('auto', 'cpu', 'cuda', '0', etc.)
         output_dir: Output directory for trained model
+        yolo_version: YOLO version to use ('8', '11', '26', etc.)
         
     Returns:
         True if training successful, False otherwise
@@ -152,16 +154,45 @@ def train_classifier(
     else:
         print("   ⚠️  No validation split found (YOLO will auto-split)")
     
-    # Load base model
-    model_name = f"yolo11{model_size}-cls.pt"
+    # Load base model - support multiple YOLO versions
+    # YOLO26 uses different naming: yolo26n-cls.pt, yolo26s-cls.pt, etc.
+    # YOLO11 uses: yolo11n-cls.pt, yolo11s-cls.pt, etc.
+    # YOLO8 uses: yolo8n-cls.pt, yolo8s-cls.pt, etc.
+    if yolo_version == "26":
+        model_name = f"yolo26{model_size}-cls.pt"
+    elif yolo_version == "11":
+        model_name = f"yolo11{model_size}-cls.pt"
+    elif yolo_version == "8":
+        model_name = f"yolo8{model_size}-cls.pt"
+    else:
+        # Try the version as-is (for future versions)
+        model_name = f"yolo{yolo_version}{model_size}-cls.pt"
+    
     print(f"\n📥 Loading base model: {model_name}")
+    print(f"   YOLO Version: {yolo_version}")
     
     try:
         model = YOLO(model_name)
+        print(f"✅ Model loaded successfully")
     except Exception as e:
         print(f"❌ Failed to load model {model_name}: {e}")
-        print("   Trying to download automatically...")
-        return False
+        print(f"   This might mean:")
+        print(f"   1. YOLO{yolo_version} is not available in your Ultralytics version")
+        print(f"   2. The model name format has changed")
+        print(f"   3. You need to update ultralytics: pip install --upgrade ultralytics")
+        print(f"\n   Trying alternative: yolo{yolo_version}{model_size}-cls.pt")
+        try:
+            # Try alternative naming
+            alt_name = f"yolo{yolo_version}{model_size}-cls.pt"
+            model = YOLO(alt_name)
+            print(f"✅ Model loaded with alternative name: {alt_name}")
+        except Exception as alt_e:
+            print(f"❌ Alternative also failed: {alt_e}")
+            print(f"\n   Available YOLO versions in Ultralytics:")
+            print(f"   - YOLO8: yolo8n-cls.pt, yolo8s-cls.pt, etc.")
+            print(f"   - YOLO11: yolo11n-cls.pt, yolo11s-cls.pt, etc.")
+            print(f"   - YOLO26: yolo26n-cls.pt, yolo26s-cls.pt, etc. (if available)")
+            return False
     
     # Set output directory
     if output_dir is None:
@@ -202,7 +233,7 @@ def train_classifier(
     print("\n🚀 Starting training...")
     print("=" * 60)
     print(f"Dataset: {data_dir}")
-    print(f"Model: YOLO11{model_size}-cls")
+    print(f"Model: YOLO{yolo_version}{model_size}-cls")
     print(f"Classes: {num_classes}")
     print(f"Epochs: {epochs}")
     print(f"Image size: {imgsz}")
@@ -370,6 +401,12 @@ def main():
         help="YOLO model size (n=nano, s=small, m=medium, l=large, x=xlarge)",
     )
     parser.add_argument(
+        "--yolo-version",
+        default="26",
+        choices=['8', '11', '26'],
+        help="YOLO version to use (8=YOLOv8, 11=YOLO11, 26=YOLO26). Default: 26",
+    )
+    parser.add_argument(
         "--epochs",
         type=int,
         default=50,
@@ -415,7 +452,7 @@ def main():
     print("Bird Species Classification Model Training")
     print("=" * 60)
     print(f"Dataset: {data_dir}")
-    print(f"Model: YOLO11{args.model_size}-cls")
+    print(f"Model: YOLO{args.yolo_version}{args.model_size}-cls")
     print(f"Epochs: {args.epochs}")
     print(f"Image size: {args.imgsz}")
     print(f"Batch size: {args.batch_size}")
@@ -439,6 +476,7 @@ def main():
         batch_size=args.batch_size,
         device=args.device,
         output_dir=output_dir,
+        yolo_version=args.yolo_version,
     )
     
     if success:
