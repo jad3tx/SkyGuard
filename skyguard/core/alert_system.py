@@ -1,7 +1,7 @@
 """
 Alert System for SkyGuard
 
-Handles various types of alerts including audio, push notifications, SMS, and email.
+Handles various types of alerts including audio, push notifications, SMS, email, and Discord webhooks.
 """
 
 import logging
@@ -65,6 +65,7 @@ class AlertSystem:
         self.push_enabled: bool = False
         self.sms_enabled: bool = False
         self.email_enabled: bool = False
+        self.discord_enabled: bool = False
         
         # SMS client (initialized if SMS is enabled)
         self.sms_client: Optional[Any] = None
@@ -98,6 +99,10 @@ class AlertSystem:
             # Initialize email
             if self.config.get('email', {}).get('enabled', False):
                 self._initialize_email()
+            
+            # Initialize Discord
+            if self.config.get('discord', {}).get('enabled', False):
+                self._initialize_discord()
             
             self.logger.info("Alert system initialized successfully")
             return True
@@ -185,6 +190,29 @@ class AlertSystem:
             self.logger.warning(f"Failed to initialize email: {e}")
             self.email_enabled = False
     
+    def _initialize_discord(self) -> None:
+        """Initialize Discord webhook notification system."""
+        try:
+            discord_config = self.config.get('discord', {})
+            webhook_url = discord_config.get('webhook_url', '')
+            
+            if webhook_url:
+                # Validate webhook URL format
+                if not webhook_url.startswith('https://discord.com/api/webhooks/') and \
+                   not webhook_url.startswith('https://discordapp.com/api/webhooks/'):
+                    self.logger.warning("Discord webhook URL format invalid")
+                    self.discord_enabled = False
+                    return
+                
+                self.discord_enabled = True
+                self.logger.info("Discord notifications enabled")
+            else:
+                self.logger.warning("Discord notifications disabled - no webhook URL configured")
+                self.discord_enabled = False
+        except Exception as e:
+            self.logger.warning(f"Failed to initialize Discord: {e}")
+            self.discord_enabled = False
+    
     def send_raptor_alert(self, detection: Dict[str, Any]) -> bool:
         """Send raptor detection alert.
         
@@ -224,6 +252,11 @@ class AlertSystem:
             
             if self.email_enabled:
                 thread = threading.Thread(target=self._send_email_alert, args=(message, detection))
+                threads.append(thread)
+                thread.start()
+            
+            if self.discord_enabled:
+                thread = threading.Thread(target=self._send_discord_alert, args=(message, detection))
                 threads.append(thread)
                 thread.start()
             
@@ -480,6 +513,82 @@ class AlertSystem:
         except Exception as e:
             self.logger.error(f"Failed to send email alert: {e}", exc_info=True)
     
+    def _send_discord_alert(self, message: str, detection: Dict[str, Any]) -> None:
+        """Send Discord webhook alert.
+        
+        Args:
+            message: Alert message to send
+            detection: Detection information dictionary
+        """
+        try:
+            discord_config = self.config.get('discord', {})
+            webhook_url = discord_config.get('webhook_url', '')
+            
+            if not webhook_url:
+                self.logger.warning("Discord alert skipped - no webhook URL configured")
+                return
+            
+            # Create Discord embed for rich formatting
+            from datetime import datetime
+            timestamp_iso = datetime.utcnow().isoformat()
+            timestamp_display = time.strftime("%Y-%m-%d %H:%M:%S")
+            confidence = detection.get('confidence', 0.0)
+            class_name = detection.get('class_name', 'Unknown')
+            
+            # Discord embed color: Red for alerts
+            embed = {
+                "title": "🚨 SkyGuard Raptor Alert",
+                "description": f"**{class_name.upper()}** detected with {confidence:.1%} confidence",
+                "color": 15158332,  # Red color
+                "fields": [
+                    {
+                        "name": "Confidence",
+                        "value": f"{confidence:.1%}",
+                        "inline": True
+                    },
+                    {
+                        "name": "Time",
+                        "value": timestamp_display,
+                        "inline": True
+                    },
+                    {
+                        "name": "Location",
+                        "value": "Your poultry area",
+                        "inline": False
+                    }
+                ],
+                "footer": {
+                    "text": "SkyGuard Detection System"
+                },
+                "timestamp": timestamp_iso
+            }
+            
+            # Build payload
+            payload = {
+                "embeds": [embed]
+            }
+            
+            # Add username if configured
+            username = discord_config.get('username', 'SkyGuard')
+            if username:
+                payload["username"] = username
+            
+            # Add avatar URL if configured
+            avatar_url = discord_config.get('avatar_url', '')
+            if avatar_url:
+                payload["avatar_url"] = avatar_url
+            
+            # Send webhook
+            response = requests.post(webhook_url, json=payload, timeout=10)
+            response.raise_for_status()
+            
+            self.logger.debug("Discord alert sent successfully")
+            
+        except requests.exceptions.RequestException as e:
+            self.logger.error(f"Failed to send Discord alert (network error): {e}", exc_info=True)
+        except Exception as e:
+            self.logger.error(f"Failed to send Discord alert: {e}", exc_info=True)
+    
     def test_alert(self, alert_type: str = "all") -> bool:
         """Send a test alert.
         
@@ -513,6 +622,8 @@ class AlertSystem:
                     self._send_sms_alert(message)
                 elif alert_type == "email" and self.email_enabled:
                     self._send_email_alert(message, test_detection)
+                elif alert_type == "discord" and self.discord_enabled:
+                    self._send_discord_alert(message, test_detection)
                 else:
                     self.logger.warning(f"Unknown alert type or not enabled: {alert_type}")
                     return False
@@ -548,6 +659,7 @@ class AlertSystem:
             self.push_enabled = False
             self.sms_enabled = False
             self.email_enabled = False
+            self.discord_enabled = False
             self.sms_client = None
             
             # Re-initialize based on new config
@@ -562,6 +674,9 @@ class AlertSystem:
             
             if self.config.get('email', {}).get('enabled', False):
                 self._initialize_email()
+            
+            if self.config.get('discord', {}).get('enabled', False):
+                self._initialize_discord()
             
             self.logger.info("Alert system configuration updated successfully")
             return True
@@ -598,5 +713,6 @@ class AlertSystem:
             'push_enabled': self.push_enabled,
             'sms_enabled': self.sms_enabled,
             'email_enabled': self.email_enabled,
+            'discord_enabled': self.discord_enabled,
             'min_alert_interval': self.min_alert_interval,
         }

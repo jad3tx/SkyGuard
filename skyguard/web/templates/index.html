@@ -367,6 +367,29 @@
                                 </label>
                             </div>
                         </div>
+                        <div class="col-md-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="discord-enabled">
+                                <label class="form-check-label" for="discord-enabled">
+                                    Discord Alerts
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-3" id="discord-config" style="display: none;">
+                        <div class="col-md-12">
+                            <label for="discord-webhook-url" class="form-label">Discord Webhook URL</label>
+                            <input type="text" class="form-control" id="discord-webhook-url" 
+                                   placeholder="https://discord.com/api/webhooks/...">
+                            <small class="form-text text-muted">
+                                Get your webhook URL from Discord: Server Settings → Integrations → Webhooks
+                            </small>
+                        </div>
+                        <div class="col-md-6 mt-2">
+                            <label for="discord-username" class="form-label">Bot Username (optional)</label>
+                            <input type="text" class="form-control" id="discord-username" 
+                                   placeholder="SkyGuard">
+                        </div>
                     </div>
                 </div>
                 
@@ -844,6 +867,15 @@
             document.getElementById('sms-enabled').checked = config.notifications.sms.enabled;
             document.getElementById('email-enabled').checked = config.notifications.email.enabled;
             
+            // Discord configuration
+            const discordEnabled = config.notifications.discord?.enabled || false;
+            document.getElementById('discord-enabled').checked = discordEnabled;
+            if (config.notifications.discord) {
+                document.getElementById('discord-webhook-url').value = config.notifications.discord.webhook_url || '';
+                document.getElementById('discord-username').value = config.notifications.discord.username || 'SkyGuard';
+            }
+            toggleDiscordConfig();
+            
             // Update range value displays
             updateRangeValue('confidence-threshold', 'confidence-value');
             updateRangeValue('nms-threshold', 'nms-value');
@@ -901,6 +933,11 @@
                     },
                     email: {
                         enabled: document.getElementById('email-enabled').checked
+                    },
+                    discord: {
+                        enabled: document.getElementById('discord-enabled').checked,
+                        webhook_url: document.getElementById('discord-webhook-url').value,
+                        username: document.getElementById('discord-username').value || 'SkyGuard'
                     }
                 }
             };
@@ -1560,6 +1597,21 @@
         function updateFocusValueEnabled() {
             focusValueSlider.disabled = focusModeSelect.value !== 'manual';
         }
+        
+        // Toggle Discord configuration visibility
+        function toggleDiscordConfig() {
+            const discordEnabled = document.getElementById('discord-enabled');
+            const discordConfig = document.getElementById('discord-config');
+            if (discordConfig) {
+                discordConfig.style.display = discordEnabled.checked ? 'block' : 'none';
+            }
+        }
+        
+        // Add event listener for Discord checkbox
+        const discordCheckbox = document.getElementById('discord-enabled');
+        if (discordCheckbox) {
+            discordCheckbox.addEventListener('change', toggleDiscordConfig);
+        }
         focusModeSelect.addEventListener('change', updateFocusValueEnabled);
         updateFocusValueEnabled(); // Initial state
         updateRangeValue('live-brightness', 'live-brightness-value');
@@ -1571,7 +1623,7 @@
             'camera-height', 'camera-fps', 'camera-rotation', 'camera-flip-horizontal',
             'camera-flip-vertical', 'camera-brightness', 'camera-contrast', 'camera-focus-mode', 'camera-focus-value',
             'camera-live-view', 'confidence-threshold', 'nms-threshold', 'species-confidence-threshold', 'detection-log-level',
-            'audio-enabled', 'sms-enabled', 'email-enabled'
+            'audio-enabled', 'sms-enabled', 'email-enabled', 'discord-enabled', 'discord-webhook-url', 'discord-username'
         ];
         
         configInputs.forEach(inputId => {

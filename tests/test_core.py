@@ -233,12 +233,14 @@ class TestAlertSystem:
             'audio': {'enabled': False},
             'push': {'enabled': False},
             'sms': {'enabled': False},
-            'email': {'enabled': False}
+            'email': {'enabled': False},
+            'discord': {'enabled': False}
         }
         
         alert_system = AlertSystem(config)
         assert alert_system.config == config
         assert alert_system.alert_count == 0
+        assert hasattr(alert_system, 'discord_enabled')
     
     def test_create_alert_message(self):
         """Test alert message creation."""
@@ -278,7 +280,50 @@ class TestAlertSystem:
         assert 'total_alerts' in stats
         assert 'last_alert_time' in stats
         assert 'audio_enabled' in stats
+        assert 'discord_enabled' in stats
         assert stats['total_alerts'] == 0
+    
+    def test_discord_initialization(self):
+        """Test Discord webhook initialization."""
+        config = {
+            'discord': {
+                'enabled': True,
+                'webhook_url': 'https://discord.com/api/webhooks/123456789/abcdefgh'
+            }
+        }
+        
+        alert_system = AlertSystem(config)
+        alert_system.initialize()
+        
+        assert alert_system.discord_enabled is True
+    
+    def test_discord_initialization_invalid_url(self):
+        """Test Discord initialization with invalid webhook URL."""
+        config = {
+            'discord': {
+                'enabled': True,
+                'webhook_url': 'invalid-url'
+            }
+        }
+        
+        alert_system = AlertSystem(config)
+        alert_system.initialize()
+        
+        assert alert_system.discord_enabled is False
+    
+    def test_discord_initialization_no_url(self):
+        """Test Discord initialization without webhook URL."""
+        config = {
+            'discord': {
+                'enabled': True,
+                'webhook_url': ''
+            }
+        }
+        
+        alert_system = AlertSystem(config)
+        alert_system.initialize()
+        
+        assert alert_system.discord_enabled is False
 
 
 if __name__ == "__main__":

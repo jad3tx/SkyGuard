@@ -179,6 +179,12 @@ class ConfigManager:
                     'from_email': '',
                     'to_emails': [],
                 },
+                'discord': {
+                    'enabled': False,
+                    'webhook_url': '',
+                    'username': 'SkyGuard',
+                    'avatar_url': '',
+                },
             },
             'storage': {
                 'database_path': 'data/skyguard.db',

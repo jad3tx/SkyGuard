@@ -1,7 +1,7 @@
 # SkyGuard Hardware Guide
 
 ![SkyGuard Logo](../skyGuardShield.png)
-
+Hi guys
 This guide covers the hardware requirements, recommendations, and setup for the SkyGuard raptor alert system.
 
 ## Hardware Requirements

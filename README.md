@@ -22,7 +22,7 @@ SkyGuard is an open-source artificial intelligence solution that alerts small fl
 *AI-powered detection with instant alerts*
 
 ![Live Detection](docs/screenshots/live_detection.png)
-*Watch as SkyGuard detects raptors in real-time with bounding boxes and confidence scores. Get instant alerts via SMS, email, or push notifications.*
+*Watch as SkyGuard detects raptors in real-time with bounding boxes and confidence scores. Get instant alerts via SMS, email, Discord webhooks, or push notifications.*
 
 ---
 
@@ -61,14 +61,14 @@ SkyGuard is an open-source artificial intelligence solution that alerts small fl
 SkyGuard provides a low-cost, AI-driven alert system that:
 - Uses generic webcams and inexpensive microcontrollers (Raspberry Pi)
 - Runs real-time computer vision models to detect raptors
-- Sends immediate alerts via audio, push notifications, or SMS
+- Sends immediate alerts via audio, push notifications, SMS, email, or Discord webhooks
 - Logs detection events for analysis and improvement
 - Is completely open-source and self-contained
 
 ## 🚀 Features
 
 - **Real-time Detection**: AI-powered computer vision using YOLO models
-- **Multiple Alert Types**: Audio, push notifications, SMS, and email alerts
+- **Multiple Alert Types**: Audio, push notifications, SMS, email, and Discord webhooks
 - **Event Logging**: Comprehensive detection history and statistics
 - **Web Portal**: Full-featured web interface for system management
 - **REST API**: Complete API for integration and automation
@@ -373,7 +373,7 @@ SkyGuard is configured through the `config/skyguard.yaml` file. Key settings inc
 
 - **Camera settings**: Resolution, FPS, rotation
 - **AI model parameters**: Confidence thresholds, detection classes
-- **Notification preferences**: Audio, SMS, email, push notifications
+- **Notification preferences**: Audio, SMS, email, Discord webhooks, push notifications
 - **Storage options**: Database location, image retention
 - **Hardware configuration**: GPIO pins, platform-specific settings
 
