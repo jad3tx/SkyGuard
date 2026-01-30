@@ -6,7 +6,7 @@ epochs: 50
 time: null
 patience: 15
 batch: 16
-imgsz: 448
+imgsz: 640
 save: true
 save_period: 10
 cache: false
@@ -105,4 +105,4 @@ auto_augment: randaugment
 erasing: 0.4
 cfg: null
 tracker: botsort.yaml
-save_dir: runs\classify\models\training\bird_species_classifier
+save_dir: C:\Users\johnd\source\SkyGuard\runs\classify\models\training\bird_species_classifier

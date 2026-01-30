@@ -10,8 +10,8 @@ ai:
   species_backend: ultralytics
   species_confidence_threshold: 0.6
   species_input_size:
-  - 448
-  - 448
+  - 640
+  - 640
   species_model_path: models\bird_species_classifier.pt
 camera:
   brightness: 0
@@ -42,6 +42,11 @@ notifications:
     repeat_interval: 2.0
     sound_file: sounds/raptor_alert.wav
     volume: 0.5
+  discord:
+    avatar_url: ''
+    enabled: false
+    username: SkyGuard
+    webhook_url: ''
   email:
     enabled: false
     from_email: ''
@@ -60,11 +65,6 @@ notifications:
     enabled: false
     from_number: ''
     to_numbers: []
-  discord:
-    enabled: false
-    webhook_url: ''
-    username: SkyGuard
-    avatar_url: ''
 rate_limiting:
   cooldown_period: 300
   max_alerts_per_hour: 10
