@@ -150,6 +150,10 @@ class BirdSegmentationDetector:
             self.config.get('species_input_size', (224, 224))
         )
         self.species_confidence_threshold = self.config.get('species_confidence_threshold', 0.3)
+        # Padding around bounding box for crop extraction (as fraction of bbox size)
+        self.species_crop_padding = self.config.get('species_crop_padding', 0.15)
+        # Whether to preserve aspect ratio when resizing (letterbox)
+        self.species_preserve_aspect = self.config.get('species_preserve_aspect', True)
         # External repo backend (optional)
         self.species_backend = self.config.get('species_backend', 'ultralytics')
         # Detection logging detail level: 'minimal', 'standard', 'detailed'
@@ -799,18 +803,45 @@ class BirdSegmentationDetector:
         """Extract an RGB crop of the detected bird for classification.
 
         Uses polygon mask if available to reduce background; otherwise uses
-        the bounding box.
+        the bounding box. Adds padding around the bbox and preserves aspect ratio
+        when resizing to match the model's training resolution.
+
+        Args:
+            frame: Input frame (BGR format)
+            polygon_points: Optional polygon points for masking
+            x1, y1, x2, y2: Bounding box coordinates
+
+        Returns:
+            Resized RGB crop ready for classification, or None if extraction fails
         """
         h, w = frame.shape[:2]
-        x1i = max(0, int(x1))
-        y1i = max(0, int(y1))
-        x2i = min(w, int(x2))
-        y2i = min(h, int(y2))
+        
+        # Calculate bounding box dimensions
+        bbox_w = x2 - x1
+        bbox_h = y2 - y1
+        
+        if bbox_w <= 0 or bbox_h <= 0:
+            return None
+        
+        # Add padding around bounding box (as fraction of bbox size)
+        padding_w = bbox_w * self.species_crop_padding
+        padding_h = bbox_h * self.species_crop_padding
+        
+        # Expand bounding box with padding, clamped to frame boundaries
+        x1i = max(0, int(x1 - padding_w))
+        y1i = max(0, int(y1 - padding_h))
+        x2i = min(w, int(x2 + padding_w))
+        y2i = min(h, int(y2 + padding_h))
+        
         if x2i <= x1i or y2i <= y1i:
             return None
+        
+        # Extract crop
         crop = frame[y1i:y2i, x1i:x2i]
         if crop.size == 0:
             return None
+        
+        # Apply polygon mask if available (to reduce background)
         if polygon_points is not None:
             pts = np.array(polygon_points, dtype=np.int32)
             pts[:, 0] -= x1i
@@ -818,10 +849,38 @@ class BirdSegmentationDetector:
             mask = np.zeros(crop.shape[:2], dtype=np.uint8)
             cv2.fillPoly(mask, [pts], 255)
             crop = cv2.bitwise_and(crop, crop, mask=mask)
-        # BGR to RGB and resize to classifier input size
+        
+        # Convert BGR to RGB
         rgb = cv2.cvtColor(crop, cv2.COLOR_BGR2RGB)
-        resized = cv2.resize(rgb, self.species_input_size)
-        return resized
+        
+        # Resize to model input size
+        if self.species_preserve_aspect:
+            # Preserve aspect ratio with letterbox (add padding to maintain aspect ratio)
+            target_w, target_h = self.species_input_size
+            crop_h, crop_w = rgb.shape[:2]
+            
+            # Calculate scaling factor to fit within target size
+            scale = min(target_w / crop_w, target_h / crop_h)
+            new_w = int(crop_w * scale)
+            new_h = int(crop_h * scale)
+            
+            # Resize with high-quality interpolation
+            resized = cv2.resize(rgb, (new_w, new_h), interpolation=cv2.INTER_LINEAR)
+            
+            # Create letterbox (add padding to reach target size)
+            # Use gray padding (128) or black (0) - gray is often better for classification
+            padded = np.full((target_h, target_w, 3), 128, dtype=np.uint8)
+            
+            # Center the resized image
+            y_offset = (target_h - new_h) // 2
+            x_offset = (target_w - new_w) // 2
+            padded[y_offset:y_offset + new_h, x_offset:x_offset + new_w] = resized
+            
+            return padded
+        else:
+            # Direct resize (may distort aspect ratio)
+            resized = cv2.resize(rgb, self.species_input_size, interpolation=cv2.INTER_LINEAR)
+            return resized
 
     def _classify_species(
         self, crop_rgb_resized: np.ndarray
