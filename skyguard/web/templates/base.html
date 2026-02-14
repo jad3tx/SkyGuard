@@ -190,11 +190,6 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="#" onclick="showSection('ai')">
-                                <i class="fas fa-brain"></i> AI Model
-                            </a>
-                        </li>
-                        <li class="nav-item">
                             <a class="nav-link" href="#" onclick="showSection('alerts')">
                                 <i class="fas fa-bell"></i> Alerts
                             </a>
@@ -202,11 +197,6 @@
                         <li class="nav-item">
                             <a class="nav-link" href="#" onclick="showSection('logs')">
                                 <i class="fas fa-file-alt"></i> Logs
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#" onclick="showSection('stats')">
-                                <i class="fas fa-chart-bar"></i> Statistics
                             </a>
                         </li>
                     </ul>
@@ -221,9 +211,6 @@
                         <div class="btn-group me-2">
                             <button type="button" class="btn btn-sm btn-outline-secondary" onclick="refreshData()">
                                 <i class="fas fa-sync-alt"></i> Refresh
-                            </button>
-                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="exportData()">
-                                <i class="fas fa-download"></i> Export
                             </button>
                         </div>
                         <div class="btn-group">
@@ -339,9 +326,6 @@
                 case 'recent-captures':
                     await loadRecentCaptures();
                     break;
-                case 'ai':
-                    await loadAIStatus();
-                    break;
                 case 'alerts':
                     await loadAlertsStatus();
                     break;
@@ -352,9 +336,6 @@
                     } else {
                         await loadLogs();
                     }
-                    break;
-                case 'stats':
-                    await loadStats();
                     break;
             }
         }
@@ -375,12 +356,6 @@
             if (currentSection !== 'dashboard') {
                 loadSectionData(currentSection);
             }
-        }
-        
-        // Export data
-        function exportData() {
-            // Implementation for data export
-            alert('Export functionality coming soon!');
         }
         
         // Restart system
@@ -427,12 +402,28 @@
         }
         
         // Utility functions
-        function formatTimestamp(timestamp) {
-            return new Date(timestamp).toLocaleString();
+        // Robust timestamp formatter that accepts seconds or milliseconds
+        function formatTimestamp(ts) {
+            const num = Number(ts);
+            if (!isFinite(num) || num <= 0) {
+                return 'Unknown';
+            }
+            // Heuristic: values > 1e12 are already in ms, else seconds -> ms
+            const ms = num > 1e12 ? num : num * 1000;
+            const d = new Date(ms);
+            if (isNaN(d.getTime())) {
+                return 'Unknown';
+            }
+            return d.toLocaleString();
         }
         
+        // Format confidence as percentage
         function formatConfidence(confidence) {
-            return (confidence * 100).toFixed(1) + '%';
+            const num = Number(confidence);
+            if (!isFinite(num) || num < 0 || num > 1) {
+                return 'Unknown';
+            }
+            return `${(num * 100).toFixed(1)}%`;
         }
         
         function formatDuration(seconds) {

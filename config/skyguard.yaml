@@ -4,18 +4,16 @@ ai:
   confidence_threshold: 0.6
   detection_log_level: detailed
   input_size: 1080
-  model_path: models/yolo26n-seg.pt
+  model_path: models/yolo11n-seg.pt
   model_type: yolo
   nms_threshold: 0.5
   species_backend: ultralytics
   species_confidence_threshold: 0.6
+  species_crop_padding: 0.15
   species_input_size:
   - 640
   - 640
   species_model_path: models\bird_species_classifier.pt
-  # Padding around bounding box for crop extraction (0.15 = 15% padding on each side)
-  species_crop_padding: 0.15
-  # Preserve aspect ratio when resizing crops (letterbox with padding)
   species_preserve_aspect: true
 camera:
   brightness: 0

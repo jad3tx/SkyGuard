@@ -26,6 +26,23 @@ if ! id "$PLATFORM_USER" &>/dev/null; then
 fi
 echo -e "${CYAN}   Platform user: $PLATFORM_USER${NC}"
 
+# Check if Desktop version is installed (required for OpenCV)
+echo -e "${BLUE}📦 Step 1: Verifying Raspberry Pi OS Desktop installation...${NC}"
+if [ -d "/usr/share/desktop-base" ] || [ -d "/usr/share/xsessions" ] || command -v startx &>/dev/null; then
+    echo -e "${GREEN}✅ Raspberry Pi OS Desktop detected${NC}"
+else
+    echo -e "${YELLOW}⚠️  Desktop environment not detected${NC}"
+    echo -e "${YELLOW}   SkyGuard requires Raspberry Pi OS with Desktop (not Lite) for OpenCV support${NC}"
+    echo -e "${CYAN}   Please install the Desktop version:${NC}"
+    echo -e "${CYAN}   sudo apt update && sudo apt install -y raspberrypi-ui-mods${NC}"
+    echo -e "${CYAN}   Or reinstall with Raspberry Pi OS Desktop from Raspberry Pi Imager${NC}"
+    read -p "Continue anyway? (y/N): " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        exit 1
+    fi
+fi
+
 # Install system dependencies
 install_system_dependencies
 

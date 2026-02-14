@@ -2,7 +2,8 @@
 # SkyGuard System Startup Script
 # Starts both the main detection system and web portal
 
-set -e
+# Don't use set -e - we want to handle errors gracefully
+set -o pipefail  # Only fail on pipe errors, not individual commands
 
 # Platform detection function
 detect_platform_username() {
@@ -36,18 +37,33 @@ detect_platform_username() {
 # Try to find SkyGuard in common locations with platform-specific paths
 PLATFORM_USER=$(detect_platform_username)
 
-if [ -d "$(pwd)/SkyGuard" ]; then
-    SKYGUARD_DIR="$(pwd)/SkyGuard"
-elif [ -d "$HOME/SkyGuard" ]; then
-    SKYGUARD_DIR="$HOME/SkyGuard"
-elif [ -d "/home/$PLATFORM_USER/SkyGuard" ]; then
-    SKYGUARD_DIR="/home/$PLATFORM_USER/SkyGuard"
-elif [ -d "/home/$(whoami)/SkyGuard" ]; then
-    SKYGUARD_DIR="/home/$(whoami)/SkyGuard"
-else
-    # Default to current directory if script is in SkyGuard repo
-    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-    SKYGUARD_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+# Get script directory first
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+# Try multiple detection methods
+SKYGUARD_DIR=""
+
+# Method 1: Check if script is in SkyGuard repo (most reliable)
+if [ -f "$PROJECT_ROOT/skyguard/main.py" ] || [ -f "$PROJECT_ROOT/config/skyguard.yaml" ]; then
+    SKYGUARD_DIR="$PROJECT_ROOT"
+fi
+
+# Method 2: Check common locations (case-insensitive)
+if [ -z "$SKYGUARD_DIR" ]; then
+    for dir in "$(pwd)/SkyGuard" "$(pwd)/skyguard" "$HOME/SkyGuard" "$HOME/skyguard" \
+               "/home/$PLATFORM_USER/SkyGuard" "/home/$PLATFORM_USER/skyguard" \
+               "/home/$(whoami)/SkyGuard" "/home/$(whoami)/skyguard"; do
+        if [ -d "$dir" ] && ([ -f "$dir/skyguard/main.py" ] || [ -f "$dir/config/skyguard.yaml" ]); then
+            SKYGUARD_DIR="$dir"
+            break
+        fi
+    done
+fi
+
+# Method 3: Use script location as fallback
+if [ -z "$SKYGUARD_DIR" ]; then
+    SKYGUARD_DIR="$PROJECT_ROOT"
 fi
 VENV_DIR="$SKYGUARD_DIR/venv"
 LOG_FILE="$SKYGUARD_DIR/logs/startup.log"
@@ -132,9 +148,13 @@ check_running_services() {
         return 1
     elif [ "$main_running" = true ]; then
         echo -e "${YELLOW}⚠️ Main detection system is already running${NC}"
+        return 0  # Not a fatal error, just a warning
     elif [ "$web_running" = true ]; then
         echo -e "${YELLOW}⚠️ Web portal is already running${NC}"
+        return 0  # Not a fatal error, just a warning
     fi
+    
+    return 0
 }
 
 # Start main detection system
@@ -171,20 +191,45 @@ start_main_system() {
         fi
     else
         # Running as regular user - proceed normally
-        cd "$SKYGUARD_DIR"
+        cd "$SKYGUARD_DIR" || {
+            echo -e "${RED}   ❌ Failed to change to SkyGuard directory: $SKYGUARD_DIR${NC}"
+            return 1
+        }
         
         # Activate virtual environment
-        source "$VENV_DIR/bin/activate"
+        if [ ! -f "$VENV_DIR/bin/activate" ]; then
+            echo -e "${RED}   ❌ Virtual environment not found: $VENV_DIR${NC}"
+            return 1
+        fi
+        source "$VENV_DIR/bin/activate" || {
+            echo -e "${RED}   ❌ Failed to activate virtual environment${NC}"
+            return 1
+        }
+        
+        # Check if main module exists
+        if ! python -c "import skyguard.main" 2>/dev/null; then
+            echo -e "${RED}   ❌ SkyGuard main module not found. Is the package installed?${NC}"
+            echo -e "${CYAN}   Try: pip install -e .${NC}"
+            return 1
+        fi
         
         # Start main system
         if [ "$BACKGROUND" = true ]; then
             nohup python -m skyguard.main --config config/skyguard.yaml > logs/main.log 2>&1 &
             local main_pid=$!
-            echo "Main system started in background (PID: $main_pid)"
-            log "Main system started in background (PID: $main_pid)"
+            if [ -n "$main_pid" ]; then
+                echo "Main system started in background (PID: $main_pid)"
+                log "Main system started in background (PID: $main_pid)"
+            else
+                echo -e "${RED}   ❌ Failed to start main system${NC}"
+                return 1
+            fi
         else
             echo "Starting main system in foreground (Ctrl+C to stop)..."
-            python -m skyguard.main --config config/skyguard.yaml
+            python -m skyguard.main --config config/skyguard.yaml || {
+                echo -e "${RED}   ❌ Main system failed to start${NC}"
+                return 1
+            }
         fi
     fi
 }
@@ -223,10 +268,26 @@ start_web_portal() {
         fi
     else
         # Running as regular user - proceed normally
-        cd "$SKYGUARD_DIR"
+        cd "$SKYGUARD_DIR" || {
+            echo -e "${RED}   ❌ Failed to change to SkyGuard directory: $SKYGUARD_DIR${NC}"
+            return 1
+        }
         
         # Activate virtual environment
-        source "$VENV_DIR/bin/activate"
+        if [ ! -f "$VENV_DIR/bin/activate" ]; then
+            echo -e "${RED}   ❌ Virtual environment not found: $VENV_DIR${NC}"
+            return 1
+        fi
+        source "$VENV_DIR/bin/activate" || {
+            echo -e "${RED}   ❌ Failed to activate virtual environment${NC}"
+            return 1
+        }
+        
+        # Check if web portal script exists
+        if [ ! -f "$SKYGUARD_DIR/scripts/start_web_portal.py" ]; then
+            echo -e "${RED}   ❌ Web portal script not found: $SKYGUARD_DIR/scripts/start_web_portal.py${NC}"
+            return 1
+        fi
         
         # Start web portal
         if [ "$BACKGROUND" = true ]; then

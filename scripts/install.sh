@@ -79,5 +79,19 @@ fi
 # Make sure the script is executable
 chmod +x "$INSTALL_SCRIPT" 2>/dev/null || true
 
+# Check if common functions file exists (required by platform scripts)
+if [ ! -f "$SCRIPT_DIR/install-common.sh" ]; then
+    echo -e "${RED}❌ Common installation functions not found: $SCRIPT_DIR/install-common.sh${NC}"
+    echo -e "${YELLOW}Please ensure install-common.sh exists in the scripts directory${NC}"
+    exit 1
+fi
+
 # Execute the platform-specific install script
-exec "$INSTALL_SCRIPT"
+# Use bash explicitly to ensure proper execution
+bash "$INSTALL_SCRIPT"
+exit_code=$?
+
+if [ $exit_code -ne 0 ]; then
+    echo -e "${RED}❌ Installation failed with exit code: $exit_code${NC}"
+    exit $exit_code
+fi

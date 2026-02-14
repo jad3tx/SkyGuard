@@ -2,10 +2,10 @@ task: classify
 mode: train
 model: yolo11n-cls.pt
 data: data\bird_species_merged
-epochs: 50
+epochs: 80
 time: null
 patience: 15
-batch: 16
+batch: 32
 imgsz: 448
 save: true
 save_period: 10

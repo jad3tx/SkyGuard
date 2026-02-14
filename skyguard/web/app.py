@@ -10,17 +10,14 @@ import sys
 import json
 import time
 import yaml
-import base64
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, List, Any, Optional
 
-from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, send_file
+from flask import Flask, render_template, request, jsonify, send_file
 from flask_cors import CORS
 import cv2
 import numpy as np
-from PIL import Image
-import io
 
 # Add the project root to the Python path
 project_root = Path(__file__).parent.parent.parent
@@ -271,8 +268,6 @@ class SkyGuardWebPortal:
             """Get camera status."""
             try:
                 # Check if camera snapshot file exists and is recent
-                import os
-                import time
                 snapshot_file = "data/camera_snapshot.jpg"
                 
                 if os.path.exists(snapshot_file):

@@ -69,7 +69,8 @@ install_system_dependencies() {
     echo -e "${CYAN}   Installing core dependencies...${NC}"
     
     # Build base package list
-    BASE_PACKAGES="python3 python3-pip python3-venv git wget curl build-essential cmake pkg-config libjpeg-dev libtiff5-dev libpng-dev libavcodec-dev libavformat-dev libswscale-dev libv4l-dev libxvidcore-dev libx264-dev"
+    # Include OpenGL libraries required for opencv-python (Desktop version)
+    BASE_PACKAGES="python3 python3-pip python3-venv git wget curl build-essential cmake pkg-config libjpeg-dev libtiff5-dev libpng-dev libavcodec-dev libavformat-dev libswscale-dev libv4l-dev libxvidcore-dev libx264-dev libgl1-mesa-glx libglib2.0-0 libsm6 libxext6 libxrender-dev libgomp1"
     
     # Try to install version-specific Python dev package first
     PYTHON_DEV_PKG=""

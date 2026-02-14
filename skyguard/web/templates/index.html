@@ -33,7 +33,7 @@
             <div class="card">
                 <div class="card-header">
                     <h5 class="mb-0">
-                        <i class="fas fa-chart-pie"></i> Detection Statistics
+                        <i class="fas fa-chart-bar"></i> Top 5 Species Detected
                     </h5>
                 </div>
                 <div class="card-body">
@@ -84,9 +84,6 @@
                     <div class="d-grid gap-2">
                         <button class="btn btn-skyguard" onclick="testCamera()">
                             <i class="fas fa-video"></i> Test Camera
-                        </button>
-                        <button class="btn btn-skyguard" onclick="testAI()">
-                            <i class="fas fa-brain"></i> Test AI Model
                         </button>
                         <button class="btn btn-skyguard" onclick="testAlerts()">
                             <i class="fas fa-bell"></i> Test Alerts
@@ -193,210 +190,206 @@
 <!-- Configuration Section -->
 <div id="configuration-section" class="section" style="display: none;">
     <div class="card">
-        <div class="card-header">
+        <div class="card-header d-flex justify-content-between align-items-center">
             <h5 class="mb-0">
                 <i class="fas fa-cog"></i> System Configuration
             </h5>
+            <button type="button" class="btn btn-sm btn-skyguard" onclick="saveConfiguration()">
+                <i class="fas fa-save"></i> Save All
+            </button>
         </div>
         <div class="card-body">
             <form id="config-form">
-                <!-- System Configuration -->
-                <div class="config-section">
-                    <h5>System Settings</h5>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <label for="detection-interval" class="form-label">Detection Interval (seconds)</label>
-                            <input type="number" class="form-control" id="detection-interval" min="0.1" max="10" step="0.1">
+                <!-- Accordion for Configuration Sections -->
+                <div class="accordion" id="configAccordion">
+                    <!-- System Settings -->
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#systemSettings">
+                                <i class="fas fa-server me-2"></i> System Settings
+                            </button>
+                        </h2>
+                        <div id="systemSettings" class="accordion-collapse collapse show" data-bs-parent="#configAccordion">
+                            <div class="accordion-body">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label for="detection-interval" class="form-label">
+                                            Detection Interval <small class="text-muted">(seconds)</small>
+                                        </label>
+                                        <input type="number" class="form-control" id="detection-interval" min="0.1" max="10" step="0.1">
+                                        <small class="form-text text-muted">Time between detection cycles</small>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="max-history" class="form-label">
+                                            Max Detection History
+                                        </label>
+                                        <input type="number" class="form-control" id="max-history" min="100" max="10000">
+                                        <small class="form-text text-muted">Maximum detections to keep in memory</small>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="col-md-6">
-                            <label for="max-history" class="form-label">Max Detection History</label>
-                            <input type="number" class="form-control" id="max-history" min="100" max="10000">
+                    </div>
+                    
+                    <!-- Camera Configuration -->
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#cameraSettings">
+                                <i class="fas fa-video me-2"></i> Camera Settings
+                            </button>
+                        </h2>
+                        <div id="cameraSettings" class="accordion-collapse collapse" data-bs-parent="#configAccordion">
+                            <div class="accordion-body">
+                                <div class="row g-3">
+                                    <div class="col-md-3">
+                                        <label for="camera-source" class="form-label">Camera Source</label>
+                                        <select class="form-select" id="camera-source">
+                                            <option value="0">Camera 0 (Default)</option>
+                                            <option value="1">Camera 1</option>
+                                            <option value="2">Camera 2</option>
+                                            <option value="3">Camera 3</option>
+                                            <option value="4">Camera 4</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="camera-width" class="form-label">Width</label>
+                                        <input type="number" class="form-control" id="camera-width" min="320" max="1920">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="camera-height" class="form-label">Height</label>
+                                        <input type="number" class="form-control" id="camera-height" min="240" max="1080">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="camera-fps" class="form-label">FPS</label>
+                                        <input type="number" class="form-control" id="camera-fps" min="1" max="60">
+                                    </div>
+                                </div>
+                                <div class="row g-3 mt-2">
+                                    <div class="col-md-3">
+                                        <label for="camera-rotation" class="form-label">Rotation</label>
+                                        <select class="form-select" id="camera-rotation">
+                                            <option value="0">0°</option>
+                                            <option value="90">90°</option>
+                                            <option value="180">180°</option>
+                                            <option value="270">270°</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="camera-brightness" class="form-label">Brightness: <span id="brightness-value">0</span></label>
+                                        <input type="range" class="form-range" id="camera-brightness" min="-100" max="100" value="0">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="camera-contrast" class="form-label">Contrast: <span id="contrast-value">0</span></label>
+                                        <input type="range" class="form-range" id="camera-contrast" min="-100" max="100" value="0">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="camera-focus-mode" class="form-label">Focus Mode</label>
+                                        <select class="form-select" id="camera-focus-mode">
+                                            <option value="auto">Auto Focus</option>
+                                            <option value="manual">Manual</option>
+                                            <option value="infinity">Infinity</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="row g-3 mt-2">
+                                    <div class="col-md-4">
+                                        <label for="camera-focus-value" class="form-label">Focus Value: <span id="focus-value">0</span></label>
+                                        <input type="range" class="form-range" id="camera-focus-value" min="0" max="255" step="1" value="0">
+                                        <small class="form-text text-muted">Only used in manual mode</small>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-check mt-4">
+                                            <input class="form-check-input" type="checkbox" id="camera-live-view">
+                                            <label class="form-check-label" for="camera-live-view">
+                                                Enable Live View
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- AI Configuration -->
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#aiSettings">
+                                <i class="fas fa-brain me-2"></i> AI Model Settings
+                            </button>
+                        </h2>
+                        <div id="aiSettings" class="accordion-collapse collapse" data-bs-parent="#configAccordion">
+                            <div class="accordion-body">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label for="confidence-threshold" class="form-label">
+                                            Detection Confidence: <span id="confidence-value">0.5</span>
+                                        </label>
+                                        <input type="range" class="form-range" id="confidence-threshold" min="0" max="1" step="0.01">
+                                        <small class="form-text text-muted">Minimum confidence to trigger detection</small>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="nms-threshold" class="form-label">
+                                            NMS Threshold: <span id="nms-value">0.4</span>
+                                        </label>
+                                        <input type="range" class="form-range" id="nms-threshold" min="0" max="1" step="0.01">
+                                        <small class="form-text text-muted">Non-maximum suppression threshold</small>
+                                    </div>
+                                </div>
+                                <div class="row g-3 mt-2">
+                                    <div class="col-md-6">
+                                        <label for="species-confidence-threshold" class="form-label">
+                                            Species Confidence: <span id="species-confidence-value">0.6</span>
+                                        </label>
+                                        <input type="range" class="form-range" id="species-confidence-threshold" min="0" max="1" step="0.01">
+                                        <small class="form-text text-muted">Minimum confidence for species classification</small>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="detection-log-level" class="form-label">Detection Log Level</label>
+                                        <select class="form-select" id="detection-log-level">
+                                            <option value="minimal">Minimal - No detection logging</option>
+                                            <option value="standard">Standard - Log detections and species</option>
+                                            <option value="detailed">Detailed - Include all candidate species</option>
+                                        </select>
+                                        <small class="form-text text-muted">Controls detail level in detection logs</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Notifications Configuration -->
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#notificationSettings">
+                                <i class="fas fa-bell me-2"></i> Notification Settings
+                            </button>
+                        </h2>
+                        <div id="notificationSettings" class="accordion-collapse collapse" data-bs-parent="#configAccordion">
+                            <div class="accordion-body">
+                                <div class="row g-3" id="discord-config">
+                                    <div class="col-md-8">
+                                        <label for="discord-webhook-url" class="form-label">Discord Webhook URL</label>
+                                        <input type="text" class="form-control" id="discord-webhook-url" 
+                                               placeholder="https://discord.com/api/webhooks/...">
+                                        <small class="form-text text-muted">
+                                            Server Settings → Integrations → Webhooks
+                                        </small>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="discord-username" class="form-label">Bot Username (optional)</label>
+                                        <input type="text" class="form-control" id="discord-username" 
+                                               placeholder="SkyGuard">
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
                 
-                <!-- Camera Configuration -->
-                <div class="config-section">
-                    <h5>Camera Settings</h5>
-                    <div class="row">
-                        <div class="col-md-3">
-                            <label for="camera-source" class="form-label">Camera Source</label>
-                            <select class="form-select" id="camera-source">
-                                <option value="0">Camera 0 (Default)</option>
-                                <option value="1">Camera 1</option>
-                                <option value="2">Camera 2</option>
-                                <option value="3">Camera 3</option>
-                                <option value="4">Camera 4</option>
-                            </select>
-                        </div>
-                        <div class="col-md-3">
-                            <label for="camera-width" class="form-label">Width</label>
-                            <input type="number" class="form-control" id="camera-width" min="320" max="1920">
-                        </div>
-                        <div class="col-md-3">
-                            <label for="camera-height" class="form-label">Height</label>
-                            <input type="number" class="form-control" id="camera-height" min="240" max="1080">
-                        </div>
-                        <div class="col-md-3">
-                            <label for="camera-fps" class="form-label">FPS</label>
-                            <input type="number" class="form-control" id="camera-fps" min="1" max="60">
-                        </div>
-                    </div>
-                    <div class="row mt-3">
-                        <div class="col-md-3">
-                            <label for="camera-rotation" class="form-label">Rotation</label>
-                            <select class="form-select" id="camera-rotation">
-                                <option value="0">0°</option>
-                                <option value="90">90°</option>
-                                <option value="180">180°</option>
-                                <option value="270">270°</option>
-                            </select>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="form-check mt-4">
-                                <input class="form-check-input" type="checkbox" id="camera-flip-horizontal">
-                                <label class="form-check-label" for="camera-flip-horizontal">
-                                    Flip Horizontal
-                                </label>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="form-check mt-4">
-                                <input class="form-check-input" type="checkbox" id="camera-flip-vertical">
-                                <label class="form-check-label" for="camera-flip-vertical">
-                                    Flip Vertical
-                                </label>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <label for="camera-brightness" class="form-label">Brightness</label>
-                            <input type="range" class="form-range" id="camera-brightness" min="-100" max="100" value="0">
-                            <div class="form-text">Current value: <span id="brightness-value">0</span></div>
-                        </div>
-                    </div>
-                    <div class="row mt-3">
-                        <div class="col-md-3">
-                            <label for="camera-contrast" class="form-label">Contrast</label>
-                            <input type="range" class="form-range" id="camera-contrast" min="-100" max="100" value="0">
-                            <div class="form-text">Current value: <span id="contrast-value">0</span></div>
-                        </div>
-                        <div class="col-md-3">
-                            <label for="camera-focus-mode" class="form-label">Focus Mode</label>
-                            <select class="form-select" id="camera-focus-mode">
-                                <option value="auto">Auto Focus</option>
-                                <option value="manual">Manual</option>
-                                <option value="infinity">Infinity</option>
-                            </select>
-                        </div>
-                        <div class="col-md-3">
-                            <label for="camera-focus-value" class="form-label">Focus Value</label>
-                            <input type="range" class="form-range" id="camera-focus-value" min="0" max="255" step="1" value="0">
-                            <div class="form-text">Current value: <span id="focus-value">0</span></div>
-                            <div class="form-text">(Only used in manual mode)</div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="form-check mt-4">
-                                <input class="form-check-input" type="checkbox" id="camera-live-view">
-                                <label class="form-check-label" for="camera-live-view">
-                                    Enable Live Camera View
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- AI Configuration -->
-                <div class="config-section">
-                    <h5>AI Model Settings</h5>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <label for="confidence-threshold" class="form-label">Confidence Threshold</label>
-                            <input type="range" class="form-range" id="confidence-threshold" min="0" max="1" step="0.01">
-                            <div class="form-text">Current value: <span id="confidence-value">0.5</span></div>
-                        </div>
-                        <div class="col-md-6">
-                            <label for="nms-threshold" class="form-label">NMS Threshold</label>
-                            <input type="range" class="form-range" id="nms-threshold" min="0" max="1" step="0.01">
-                            <div class="form-text">Current value: <span id="nms-value">0.4</span></div>
-                        </div>
-                    </div>
-                    <div class="row mt-3">
-                        <div class="col-md-6">
-                            <label for="species-confidence-threshold" class="form-label">Species Confidence Threshold</label>
-                            <input type="range" class="form-range" id="species-confidence-threshold" min="0" max="1" step="0.01">
-                            <div class="form-text">Current value: <span id="species-confidence-value">0.6</span></div>
-                            <div class="form-text">Minimum confidence required for species classification</div>
-                        </div>
-                        <div class="col-md-6">
-                            <label for="detection-log-level" class="form-label">Detection Log Level</label>
-                            <select class="form-select" id="detection-log-level">
-                                <option value="minimal">Minimal - No detection logging</option>
-                                <option value="standard">Standard - Log detections and species (default)</option>
-                                <option value="detailed">Detailed - Include all candidate species</option>
-                            </select>
-                            <div class="form-text">Controls the level of detail in detection logs</div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Notifications Configuration -->
-                <div class="config-section">
-                    <h5>Notification Settings</h5>
-                    <div class="row">
-                        <div class="col-md-4">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="audio-enabled">
-                                <label class="form-check-label" for="audio-enabled">
-                                    Audio Alerts
-                                </label>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="sms-enabled">
-                                <label class="form-check-label" for="sms-enabled">
-                                    SMS Alerts
-                                </label>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="email-enabled">
-                                <label class="form-check-label" for="email-enabled">
-                                    Email Alerts
-                                </label>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="discord-enabled">
-                                <label class="form-check-label" for="discord-enabled">
-                                    Discord Alerts
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row mt-3" id="discord-config" style="display: none;">
-                        <div class="col-md-12">
-                            <label for="discord-webhook-url" class="form-label">Discord Webhook URL</label>
-                            <input type="text" class="form-control" id="discord-webhook-url" 
-                                   placeholder="https://discord.com/api/webhooks/...">
-                            <small class="form-text text-muted">
-                                Get your webhook URL from Discord: Server Settings → Integrations → Webhooks
-                            </small>
-                        </div>
-                        <div class="col-md-6 mt-2">
-                            <label for="discord-username" class="form-label">Bot Username (optional)</label>
-                            <input type="text" class="form-control" id="discord-username" 
-                                   placeholder="SkyGuard">
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Save Button -->
-                <div class="text-end">
-                    <button type="button" class="btn btn-skyguard" onclick="saveConfiguration()">
-                        <i class="fas fa-save"></i> Save Configuration
+                <!-- Save Button at bottom -->
+                <div class="text-end mt-4">
+                    <button type="button" class="btn btn-skyguard btn-lg" onclick="saveConfiguration()">
+                        <i class="fas fa-save"></i> Save All Configuration
                     </button>
                 </div>
             </form>
@@ -435,112 +428,6 @@
                         </button>
                     </div>
                 </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- AI Section -->
-<div id="ai-section" class="section" style="display: none;">
-    <div class="row">
-        <!-- Detection Model -->
-        <div class="col-md-6">
-            <div class="card mb-3">
-                <div class="card-header">
-                    <h5 class="mb-0">
-                        <i class="fas fa-brain"></i> Detection Model
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div id="detection-model-info">
-                        <div class="text-center">
-                            <div class="spinner-border" role="status">
-                                <span class="visually-hidden">Loading...</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Species Classification Model -->
-        <div class="col-md-6">
-            <div class="card mb-3">
-                <div class="card-header">
-                    <h5 class="mb-0">
-                        <i class="fas fa-feather-alt"></i> Species Classification Model
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div id="species-model-info">
-                        <div class="text-center">
-                            <div class="spinner-border" role="status">
-                                <span class="visually-hidden">Loading...</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Detection Statistics -->
-    <div class="row">
-        <div class="col-md-6">
-            <div class="card mb-3">
-                <div class="card-header">
-                    <h5 class="mb-0">
-                        <i class="fas fa-chart-line"></i> Detection Statistics
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div id="detection-stats">
-                        <div class="text-center">
-                            <div class="spinner-border" role="status">
-                                <span class="visually-hidden">Loading...</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Species Statistics -->
-        <div class="col-md-6">
-            <div class="card mb-3">
-                <div class="card-header">
-                    <h5 class="mb-0">
-                        <i class="fas fa-list"></i> Species Statistics
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div id="species-stats">
-                        <div class="text-center">
-                            <div class="spinner-border" role="status">
-                                <span class="visually-hidden">Loading...</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Model Actions -->
-    <div class="card">
-        <div class="card-header">
-            <h5 class="mb-0">
-                <i class="fas fa-cogs"></i> Model Actions
-            </h5>
-        </div>
-        <div class="card-body">
-            <div class="d-grid gap-2 d-md-flex">
-                <button class="btn btn-skyguard" onclick="testAI()">
-                    <i class="fas fa-brain"></i> Test AI Model
-                </button>
-                <button class="btn btn-outline-primary" onclick="refreshAIStats()">
-                    <i class="fas fa-sync"></i> Refresh Stats
-                </button>
             </div>
         </div>
     </div>
@@ -610,25 +497,6 @@
     </div>
 </div>
 
-<!-- Statistics Section -->
-<div id="stats-section" class="section" style="display: none;">
-    <div class="card">
-        <div class="card-header">
-            <h5 class="mb-0">
-                <i class="fas fa-chart-bar"></i> System Statistics
-            </h5>
-        </div>
-        <div class="card-body">
-            <div id="stats-content">
-                <div class="text-center">
-                    <div class="spinner-border" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 {% endblock %}
 
 {% block extra_js %}
@@ -653,30 +521,6 @@
         parts.push(`${secs} s`);
         return parts.join(' ');
     }
-    // Robust timestamp formatter that accepts seconds or milliseconds
-    function formatTimestamp(ts) {
-        const num = Number(ts);
-        if (!isFinite(num) || num <= 0) {
-            return 'Unknown';
-        }
-        // Heuristic: values > 1e12 are already in ms, else seconds -> ms
-        const ms = num > 1e12 ? num : num * 1000;
-        const d = new Date(ms);
-        if (isNaN(d.getTime())) {
-            return 'Unknown';
-        }
-        return d.toLocaleString();
-    }
-
-    // Format confidence as percentage
-    function formatConfidence(confidence) {
-        const num = Number(confidence);
-        if (!isFinite(num) || num < 0 || num > 1) {
-            return 'Unknown';
-        }
-        return `${(num * 100).toFixed(1)}%`;
-    }
-
     // Load dashboard data
     async function loadDashboardData() {
         try {
@@ -759,19 +603,102 @@
         }
     }
     
-    // Load detection chart
+    // Load detection chart - Top 5 Species
     async function loadDetectionChart() {
         try {
             const ctx = document.getElementById('detection-chart').getContext('2d');
             
-            // This would load actual chart data
+            // Fetch species statistics from API
+            const response = await fetch('/api/ai/stats');
+            const data = await response.json();
+            
+            // Get species breakdown
+            const speciesBreakdown = data.species_stats?.species_breakdown || {};
+            
+            // Sort species by count and get top 5
+            const speciesArray = Object.entries(speciesBreakdown)
+                .map(([species, stats]) => ({
+                    species: species,
+                    count: stats.count || 0
+                }))
+                .sort((a, b) => b.count - a.count)
+                .slice(0, 5);
+            
+            // If no data, show empty chart
+            if (speciesArray.length === 0) {
+                speciesArray.push({ species: 'No detections', count: 0 });
+            }
+            
+            // Prepare chart data
+            const labels = speciesArray.map(item => item.species);
+            const counts = speciesArray.map(item => item.count);
+            
+            // Color palette for bars
+            const colors = [
+                '#3498db', // Blue
+                '#2ecc71', // Green
+                '#e74c3c', // Red
+                '#f39c12', // Orange
+                '#9b59b6'  // Purple
+            ];
+            
             const chart = new Chart(ctx, {
-                type: 'doughnut',
+                type: 'bar',
                 data: {
-                    labels: ['Birds', 'Other'],
+                    labels: labels,
                     datasets: [{
-                        data: [85, 15],
-                        backgroundColor: ['#3498db', '#e74c3c']
+                        label: 'Detections',
+                        data: counts,
+                        backgroundColor: colors.slice(0, labels.length),
+                        borderColor: colors.slice(0, labels.length).map(c => c),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `Detections: ${context.parsed.y}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1,
+                                precision: 0
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                maxRotation: 45,
+                                minRotation: 45
+                            }
+                        }
+                    }
+                }
+            });
+            
+        } catch (error) {
+            console.error('Failed to load detection chart:', error);
+            // Show error state
+            const ctx = document.getElementById('detection-chart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Error'],
+                    datasets: [{
+                        label: 'Failed to load',
+                        data: [0],
+                        backgroundColor: ['#e74c3c']
                     }]
                 },
                 options: {
@@ -779,9 +706,6 @@
                     maintainAspectRatio: false
                 }
             });
-            
-        } catch (error) {
-            console.error('Failed to load detection chart:', error);
         }
     }
     
@@ -852,8 +776,6 @@
             document.getElementById('camera-height').value = config.camera.height;
             document.getElementById('camera-fps').value = config.camera.fps;
             document.getElementById('camera-rotation').value = config.camera.rotation || 0;
-            document.getElementById('camera-flip-horizontal').checked = config.camera.flip_horizontal || false;
-            document.getElementById('camera-flip-vertical').checked = config.camera.flip_vertical || false;
             document.getElementById('camera-brightness').value = config.camera.brightness || 0;
             document.getElementById('camera-contrast').value = config.camera.contrast || 0;
             document.getElementById('camera-focus-mode').value = config.camera.focus_mode || 'infinity';
@@ -863,18 +785,13 @@
             document.getElementById('nms-threshold').value = config.ai.nms_threshold;
             document.getElementById('species-confidence-threshold').value = config.ai.species_confidence_threshold || 0.6;
             document.getElementById('detection-log-level').value = config.ai.detection_log_level || 'standard';
-            document.getElementById('audio-enabled').checked = config.notifications.audio.enabled;
-            document.getElementById('sms-enabled').checked = config.notifications.sms.enabled;
-            document.getElementById('email-enabled').checked = config.notifications.email.enabled;
             
-            // Discord configuration
-            const discordEnabled = config.notifications.discord?.enabled || false;
-            document.getElementById('discord-enabled').checked = discordEnabled;
+            // Discord configuration (always show, no checkbox)
+            if (config.notifications.discord) {
             if (config.notifications.discord) {
                 document.getElementById('discord-webhook-url').value = config.notifications.discord.webhook_url || '';
                 document.getElementById('discord-username').value = config.notifications.discord.username || 'SkyGuard';
             }
-            toggleDiscordConfig();
             
             // Update range value displays
             updateRangeValue('confidence-threshold', 'confidence-value');
@@ -910,8 +827,6 @@
                     height: parseInt(document.getElementById('camera-height').value),
                     fps: parseInt(document.getElementById('camera-fps').value),
                     rotation: parseInt(document.getElementById('camera-rotation').value),
-                    flip_horizontal: document.getElementById('camera-flip-horizontal').checked,
-                    flip_vertical: document.getElementById('camera-flip-vertical').checked,
                     brightness: parseInt(document.getElementById('camera-brightness').value),
                     contrast: parseInt(document.getElementById('camera-contrast').value),
                     focus_mode: document.getElementById('camera-focus-mode').value,
@@ -925,17 +840,8 @@
                     detection_log_level: document.getElementById('detection-log-level').value
                 },
                 notifications: {
-                    audio: {
-                        enabled: document.getElementById('audio-enabled').checked
-                    },
-                    sms: {
-                        enabled: document.getElementById('sms-enabled').checked
-                    },
-                    email: {
-                        enabled: document.getElementById('email-enabled').checked
-                    },
                     discord: {
-                        enabled: document.getElementById('discord-enabled').checked,
+                        enabled: document.getElementById('discord-webhook-url').value.trim().length > 0,
                         webhook_url: document.getElementById('discord-webhook-url').value,
                         username: document.getElementById('discord-username').value || 'SkyGuard'
                     }
@@ -980,21 +886,6 @@
     }
     
     // Test AI
-    async function testAI() {
-        try {
-            const response = await fetch('/api/ai/test');
-            const result = await response.json();
-            
-            if (response.ok) {
-                alert('AI model test successful!');
-            } else {
-                alert('AI model test failed: ' + result.error);
-            }
-        } catch (error) {
-            alert('AI model test failed: ' + error.message);
-        }
-    }
-    
     // Test alerts
     async function testAlerts() {
         try {
@@ -1015,177 +906,6 @@
     async function loadCameraStatus() {
         // Implementation for camera status
         document.getElementById('camera-info').innerHTML = '<div class="text-muted">Camera status loading...</div>';
-    }
-    
-    async function loadAIStatus() {
-        await loadAIStats();
-    }
-    
-    async function loadAIStats() {
-        try {
-            const response = await fetch('/api/ai/stats');
-            const data = await response.json();
-            
-            if (data.error) {
-                console.error('Failed to load AI stats:', data.error);
-                return;
-            }
-            
-            // Display detection model info
-            const detectionModelDiv = document.getElementById('detection-model-info');
-            if (detectionModelDiv) {
-                const model = data.model || {};
-                const statusBadge = model.model_loaded 
-                    ? '<span class="badge bg-success">Loaded</span>' 
-                    : '<span class="badge bg-danger">Not Loaded</span>';
-                
-                detectionModelDiv.innerHTML = `
-                    <table class="table table-sm">
-                        <tr>
-                            <td><strong>Status:</strong></td>
-                            <td>${statusBadge}</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Model Path:</strong></td>
-                            <td><code>${model.model_path || 'N/A'}</code></td>
-                        </tr>
-                        <tr>
-                            <td><strong>Model Type:</strong></td>
-                            <td>${model.model_type || 'N/A'}</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Input Size:</strong></td>
-                            <td>${model.input_size || 'N/A'}</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Confidence Threshold:</strong></td>
-                            <td>${(model.confidence_threshold || 0).toFixed(2)}</td>
-                        </tr>
-                        <tr>
-                            <td><strong>NMS Threshold:</strong></td>
-                            <td>${(model.nms_threshold || 0).toFixed(2)}</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Log Level:</strong></td>
-                            <td><span class="badge bg-info">${model.detection_log_level || 'standard'}</span></td>
-                        </tr>
-                    </table>
-                `;
-            }
-            
-            // Display species model info
-            const speciesModelDiv = document.getElementById('species-model-info');
-            if (speciesModelDiv) {
-                const speciesModel = data.species_model || {};
-                const enabledBadge = speciesModel.enabled 
-                    ? '<span class="badge bg-success">Enabled</span>' 
-                    : '<span class="badge bg-secondary">Disabled</span>';
-                const loadedBadge = speciesModel.model_loaded 
-                    ? '<span class="badge bg-success">Loaded</span>' 
-                    : '<span class="badge bg-danger">Not Loaded</span>';
-                
-                let errorRow = '';
-                if (speciesModel.error) {
-                    errorRow = `
-                        <tr>
-                            <td><strong>Error:</strong></td>
-                            <td><span class="text-danger"><small>${speciesModel.error}</small></span></td>
-                        </tr>`;
-                }
-                
-                speciesModelDiv.innerHTML = `
-                    <table class="table table-sm">
-                        <tr>
-                            <td><strong>Enabled:</strong></td>
-                            <td>${enabledBadge}</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Loaded:</strong></td>
-                            <td>${loadedBadge}</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Model Path:</strong></td>
-                            <td><code>${speciesModel.model_path || 'N/A'}</code></td>
-                        </tr>
-                        <tr>
-                            <td><strong>Backend:</strong></td>
-                            <td>${speciesModel.backend || 'N/A'}</td>
-                        </tr>
-                        ${errorRow}
-                        <tr>
-                            <td><strong>Input Size:</strong></td>
-                            <td>${Array.isArray(speciesModel.input_size) ? speciesModel.input_size.join('x') : 'N/A'}</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Confidence Threshold:</strong></td>
-                            <td>${(speciesModel.confidence_threshold || 0).toFixed(2)}</td>
-                        </tr>
-                    </table>
-                `;
-            }
-            
-            // Display detection statistics
-            const detectionStatsDiv = document.getElementById('detection-stats');
-            if (detectionStatsDiv) {
-                const detectorStats = data.detector_stats || {};
-                const detectionStats = data.detection_stats || {};
-                const confidenceStats = data.confidence_stats || {};
-                
-                let statsHtml = '<table class="table table-sm">';
-                
-                if (detectorStats.total_detections !== undefined) {
-                    statsHtml += `<tr><td><strong>Session Detections:</strong></td><td>${detectorStats.total_detections || 0}</td></tr>`;
-                }
-                
-                if (detectionStats.total_detections !== undefined) {
-                    statsHtml += `<tr><td><strong>Last 7 Days:</strong></td><td>${detectionStats.total_detections || 0}</td></tr>`;
-                }
-                
-                if (detectorStats.last_detection_time) {
-                    const lastDetTime = new Date(detectorStats.last_detection_time * 1000);
-                    statsHtml += `<tr><td><strong>Last Detection:</strong></td><td>${formatTimestamp(detectorStats.last_detection_time)}</td></tr>`;
-                }
-                
-                if (confidenceStats.count > 0) {
-                    statsHtml += `<tr><td><strong>Avg Confidence:</strong></td><td>${(confidenceStats.avg * 100).toFixed(1)}%</td></tr>`;
-                    statsHtml += `<tr><td><strong>Min Confidence:</strong></td><td>${(confidenceStats.min * 100).toFixed(1)}%</td></tr>`;
-                    statsHtml += `<tr><td><strong>Max Confidence:</strong></td><td>${(confidenceStats.max * 100).toFixed(1)}%</td></tr>`;
-                    statsHtml += `<tr><td><strong>Recent Samples:</strong></td><td>${confidenceStats.count}</td></tr>`;
-                }
-                
-                statsHtml += '</table>';
-                detectionStatsDiv.innerHTML = statsHtml;
-            }
-            
-            // Display species statistics
-            const speciesStatsDiv = document.getElementById('species-stats');
-            if (speciesStatsDiv) {
-                const speciesStats = data.species_stats || {};
-                const breakdown = speciesStats.species_breakdown || {};
-                
-                let statsHtml = '<table class="table table-sm">';
-                statsHtml += `<tr><td><strong>Total Classifications:</strong></td><td>${speciesStats.total_classifications || 0}</td></tr>`;
-                statsHtml += `<tr><td><strong>Successful IDs:</strong></td><td>${speciesStats.successful_identifications || 0}</td></tr>`;
-                
-                if (Object.keys(breakdown).length > 0) {
-                    statsHtml += '<tr><td colspan="2"><strong>Species Breakdown:</strong></td></tr>';
-                    const sortedSpecies = Object.entries(breakdown).sort((a, b) => b[1].count - a[1].count);
-                    sortedSpecies.slice(0, 5).forEach(([species, stats]) => {
-                        statsHtml += `<tr><td style="padding-left: 20px;">${species}</td><td>${stats.count} (avg: ${(stats.avg_confidence * 100).toFixed(1)}%)</td></tr>`;
-                    });
-                }
-                
-                statsHtml += '</table>';
-                speciesStatsDiv.innerHTML = statsHtml;
-            }
-            
-        } catch (error) {
-            console.error('Failed to load AI stats:', error);
-        }
-    }
-    
-    function refreshAIStats() {
-        loadAIStats();
     }
     
     async function loadAlertsStatus() {
@@ -1372,24 +1092,6 @@
         }
     }
     
-    async function loadStats() {
-        try {
-            const response = await fetch('/api/stats');
-            const stats = await response.json();
-            
-            const container = document.getElementById('stats-content');
-            let html = '<div class="row">';
-            html += `<div class="col-md-6"><h6>System Resources</h6><p>CPU: ${stats.cpu_percent}%<br>Memory: ${stats.memory_percent}%<br>Disk: ${stats.disk_percent}%</p></div>`;
-            html += `<div class="col-md-6"><h6>Detection Statistics</h6><p>Today: ${stats.detections_today}<br>This Week: ${stats.detections_this_week}<br>This Month: ${stats.detections_this_month}</p></div>`;
-            html += '</div>';
-            
-            container.innerHTML = html;
-            
-        } catch (error) {
-            console.error('Failed to load stats:', error);
-        }
-    }
-    
     // Recent Captures Functions
     let recentCaptureInterval = null;
     
@@ -1506,8 +1208,6 @@
                     height: getValue('camera-height', 1080),
                     fps: getValue('camera-fps', 30),
                     rotation: getValue('camera-rotation', 0),
-                    flip_horizontal: getValue('camera-flip-horizontal', false),
-                    flip_vertical: getValue('camera-flip-vertical', false),
                     brightness: getValue('camera-brightness', 0),
                     contrast: getValue('camera-contrast', 0),
                     focus_mode: getValue('camera-focus-mode', 'infinity'),
@@ -1521,14 +1221,10 @@
                     detection_log_level: getValue('detection-log-level', 'standard')
                 },
                 notifications: {
-                    audio: {
-                        enabled: getValue('audio-enabled', true)
-                    },
-                    sms: {
-                        enabled: getValue('sms-enabled', false)
-                    },
-                    email: {
-                        enabled: getValue('email-enabled', false)
+                    discord: {
+                        enabled: getValue('discord-webhook-url', '').trim().length > 0,
+                        webhook_url: getValue('discord-webhook-url', ''),
+                        username: getValue('discord-username', 'SkyGuard')
                     }
                 }
             };
@@ -1598,20 +1294,7 @@
             focusValueSlider.disabled = focusModeSelect.value !== 'manual';
         }
         
-        // Toggle Discord configuration visibility
-        function toggleDiscordConfig() {
-            const discordEnabled = document.getElementById('discord-enabled');
-            const discordConfig = document.getElementById('discord-config');
-            if (discordConfig) {
-                discordConfig.style.display = discordEnabled.checked ? 'block' : 'none';
-            }
-        }
-        
-        // Add event listener for Discord checkbox
-        const discordCheckbox = document.getElementById('discord-enabled');
-        if (discordCheckbox) {
-            discordCheckbox.addEventListener('change', toggleDiscordConfig);
-        }
+        // Discord config is always visible now (no toggle needed)
         focusModeSelect.addEventListener('change', updateFocusValueEnabled);
         updateFocusValueEnabled(); // Initial state
         updateRangeValue('live-brightness', 'live-brightness-value');
@@ -1620,10 +1303,10 @@
         // Add event listeners for real-time configuration updates
         const configInputs = [
             'detection-interval', 'max-history', 'camera-source', 'camera-width', 
-            'camera-height', 'camera-fps', 'camera-rotation', 'camera-flip-horizontal',
-            'camera-flip-vertical', 'camera-brightness', 'camera-contrast', 'camera-focus-mode', 'camera-focus-value',
-            'camera-live-view', 'confidence-threshold', 'nms-threshold', 'species-confidence-threshold', 'detection-log-level',
-            'audio-enabled', 'sms-enabled', 'email-enabled', 'discord-enabled', 'discord-webhook-url', 'discord-username'
+            'camera-height', 'camera-fps', 'camera-rotation', 'camera-brightness', 'camera-contrast', 
+            'camera-focus-mode', 'camera-focus-value', 'camera-live-view', 'confidence-threshold', 
+            'nms-threshold', 'species-confidence-threshold', 'detection-log-level',
+            'discord-webhook-url', 'discord-username'
         ];
         
         configInputs.forEach(inputId => {

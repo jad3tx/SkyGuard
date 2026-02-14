@@ -117,7 +117,7 @@ SkyGuard provides a low-cost, AI-driven alert system that:
    - Insert your microSD card (32GB+ recommended)
    - Open Raspberry Pi Imager
    - Click "Choose OS" and select:
-     - **Raspberry Pi OS (64-bit)** → **Raspberry Pi OS Lite (64-bit)**
+     - **Raspberry Pi OS (64-bit)** → **Raspberry Pi OS with desktop** (NOT Lite - Desktop is required for OpenCV)
    - Click "Choose Storage" and select your microSD card
    - Click the gear icon (⚙️) to configure advanced options:
      - **Enable SSH**: Check this box
