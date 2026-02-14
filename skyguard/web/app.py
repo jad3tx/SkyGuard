@@ -212,8 +212,53 @@ class SkyGuardWebPortal:
         def api_get_config():
             """Get current configuration."""
             try:
-                return jsonify(self.config)
+                # Ensure config is loaded and has all required sections
+                if not self.config:
+                    self.config = self.config_manager.get_config()
+                
+                # Ensure all required sections exist with defaults
+                default_config = {
+                    'system': {
+                        'detection_interval': 1.0,
+                        'max_detection_history': 1000,
+                    },
+                    'camera': {
+                        'source': 0,
+                        'width': 1920,
+                        'height': 1080,
+                        'fps': 30,
+                        'rotation': 0,
+                        'brightness': 0,
+                        'contrast': 0,
+                        'focus_mode': 'infinity',
+                        'focus_value': 0,
+                        'live_view': False,
+                    },
+                    'ai': {
+                        'confidence_threshold': 0.3,
+                        'nms_threshold': 0.4,
+                        'species_confidence_threshold': 0.6,
+                        'detection_log_level': 'standard',
+                    },
+                    'notifications': {
+                        'discord': {
+                            'webhook_url': '',
+                            'username': 'SkyGuard',
+                        }
+                    }
+                }
+                
+                # Merge defaults with actual config
+                merged_config = default_config.copy()
+                for key, value in self.config.items():
+                    if isinstance(value, dict) and key in merged_config and isinstance(merged_config[key], dict):
+                        merged_config[key] = {**merged_config[key], **value}
+                    else:
+                        merged_config[key] = value
+                
+                return jsonify(merged_config)
             except Exception as e:
+                self.logger.error(f"Failed to get config: {e}")
                 return jsonify({'error': str(e)}), 500
         
         @self.app.route('/api/config', methods=['POST'])
@@ -678,15 +723,42 @@ class SkyGuardWebPortal:
             traceback.print_exc()
     
     def _is_system_running(self) -> bool:
-        """Check if SkyGuard system is running."""
+        """Check if SkyGuard system is running.
+        
+        Uses multiple methods to detect if the main system is running:
+        1. Check for process with 'skyguard.main' in command line
+        2. Check for recent camera snapshot file (indicates active system)
+        """
         try:
-            # Check if main process is running
-            import psutil
-            for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
-                if 'skyguard' in ' '.join(proc.info['cmdline'] or []):
-                    return True
+            # Method 1: Check for process
+            try:
+                import psutil
+                for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
+                    cmdline = ' '.join(proc.info['cmdline'] or [])
+                    # Check for main system process
+                    if 'skyguard.main' in cmdline or 'skyguard/main.py' in cmdline:
+                        return True
+            except ImportError:
+                # psutil not available, fall back to other methods
+                pass
+            except Exception:
+                # Process check failed, try other methods
+                pass
+            
+            # Method 2: Check for recent camera snapshot (indicates active system)
+            snapshot_file = Path("data/camera_snapshot.jpg")
+            if snapshot_file.exists():
+                # Check if file is recent (within last 30 seconds)
+                file_time = snapshot_file.stat().st_mtime
+                current_time = time.time()
+                if (current_time - file_time) < 30:
+                    # Also check file size - real camera images are typically > 50KB
+                    if snapshot_file.stat().st_size > 50000:
+                        return True
+            
             return False
-        except:
+        except Exception as e:
+            self.logger.debug(f"Error checking if system is running: {e}")
             return False
     
     def _get_uptime(self) -> float:

@@ -526,14 +526,32 @@
         try {
             // Load system status
             const statusResponse = await fetch('/api/status');
+            if (!statusResponse.ok) {
+                console.error('Failed to load system status: HTTP', statusResponse.status);
+                return;
+            }
             const status = await statusResponse.json();
             
+            if (status.error) {
+                console.error('Error loading system status:', status.error);
+                return;
+            }
+            
             // Update system information (statistics cards removed)
-            document.getElementById('system-uptime').textContent = formatUptime(status.system.uptime);
-            document.getElementById('last-detection').textContent = 
-                status.system.last_detection ? formatTimestamp(status.system.last_detection.timestamp) : 'None';
-            document.getElementById('ai-confidence').textContent = 
-                formatConfidence(status.ai.confidence_threshold);
+            const uptimeEl = document.getElementById('system-uptime');
+            const lastDetectionEl = document.getElementById('last-detection');
+            const aiConfidenceEl = document.getElementById('ai-confidence');
+            
+            if (uptimeEl && status.system) {
+                uptimeEl.textContent = formatUptime(status.system.uptime || 0);
+            }
+            if (lastDetectionEl && status.system) {
+                lastDetectionEl.textContent = 
+                    status.system.last_detection ? formatTimestamp(status.system.last_detection.timestamp) : 'None';
+            }
+            if (aiConfidenceEl && status.ai) {
+                aiConfidenceEl.textContent = formatConfidence(status.ai.confidence_threshold || 0);
+            }
             
             // Load recent detections
             await loadRecentDetections();
@@ -766,32 +784,51 @@
     async function loadConfiguration() {
         try {
             const response = await fetch('/api/config');
+            if (!response.ok) {
+                console.error('Failed to load configuration: HTTP', response.status);
+                return;
+            }
             const config = await response.json();
             
-            // Populate form fields
-            document.getElementById('detection-interval').value = config.system.detection_interval;
-            document.getElementById('max-history').value = config.system.max_detection_history;
-            document.getElementById('camera-source').value = config.camera.source || 0;
-            document.getElementById('camera-width').value = config.camera.width;
-            document.getElementById('camera-height').value = config.camera.height;
-            document.getElementById('camera-fps').value = config.camera.fps;
-            document.getElementById('camera-rotation').value = config.camera.rotation || 0;
-            document.getElementById('camera-brightness').value = config.camera.brightness || 0;
-            document.getElementById('camera-contrast').value = config.camera.contrast || 0;
-            document.getElementById('camera-focus-mode').value = config.camera.focus_mode || 'infinity';
-            document.getElementById('camera-focus-value').value = config.camera.focus_value || 0;
-            document.getElementById('camera-live-view').checked = config.camera.live_view || false;
-            document.getElementById('confidence-threshold').value = config.ai.confidence_threshold;
-            document.getElementById('nms-threshold').value = config.ai.nms_threshold;
-            document.getElementById('species-confidence-threshold').value = config.ai.species_confidence_threshold || 0.6;
-            document.getElementById('detection-log-level').value = config.ai.detection_log_level || 'standard';
+            // Helper function to safely set element value
+            function setValue(id, value, defaultValue = '') {
+                const element = document.getElementById(id);
+                if (element) {
+                    if (element.type === 'checkbox') {
+                        element.checked = value || false;
+                    } else {
+                        element.value = value !== undefined && value !== null ? value : defaultValue;
+                    }
+                }
+            }
+            
+            // Populate form fields with null-safe access
+            const system = config.system || {};
+            const camera = config.camera || {};
+            const ai = config.ai || {};
+            const notifications = config.notifications || {};
+            const discord = notifications.discord || {};
+            
+            setValue('detection-interval', system.detection_interval, 1.0);
+            setValue('max-history', system.max_detection_history, 1000);
+            setValue('camera-source', camera.source, 0);
+            setValue('camera-width', camera.width, 1920);
+            setValue('camera-height', camera.height, 1080);
+            setValue('camera-fps', camera.fps, 30);
+            setValue('camera-rotation', camera.rotation, 0);
+            setValue('camera-brightness', camera.brightness, 0);
+            setValue('camera-contrast', camera.contrast, 0);
+            setValue('camera-focus-mode', camera.focus_mode, 'infinity');
+            setValue('camera-focus-value', camera.focus_value, 0);
+            setValue('camera-live-view', camera.live_view, false);
+            setValue('confidence-threshold', ai.confidence_threshold, 0.3);
+            setValue('nms-threshold', ai.nms_threshold, 0.4);
+            setValue('species-confidence-threshold', ai.species_confidence_threshold, 0.6);
+            setValue('detection-log-level', ai.detection_log_level, 'standard');
             
             // Discord configuration (always show, no checkbox)
-            if (config.notifications.discord) {
-            if (config.notifications.discord) {
-                document.getElementById('discord-webhook-url').value = config.notifications.discord.webhook_url || '';
-                document.getElementById('discord-username').value = config.notifications.discord.username || 'SkyGuard';
-            }
+            setValue('discord-webhook-url', discord.webhook_url, '');
+            setValue('discord-username', discord.username, 'SkyGuard');
             
             // Update range value displays
             updateRangeValue('confidence-threshold', 'confidence-value');
@@ -1000,10 +1037,22 @@
                 : '/api/logs?limit=500';
             
             const response = await fetch(url);
+            if (!response.ok) {
+                console.error('Failed to load logs: HTTP', response.status);
+                const logsContainer = document.getElementById('logs-container');
+                if (logsContainer && !append) {
+                    logsContainer.innerHTML = '<div class="alert alert-warning">Failed to load logs. Check if the log file exists.</div>';
+                }
+                return;
+            }
             const data = await response.json();
             
             if (data.error) {
-                console.error('Failed to load logs:', data.error);
+                console.error('Error loading logs:', data.error);
+                const logsContainer = document.getElementById('logs-content');
+                if (logsContainer && !append) {
+                    logsContainer.innerHTML = `<div class="alert alert-warning">Error loading logs: ${data.error}</div>`;
+                }
                 return;
             }
             
