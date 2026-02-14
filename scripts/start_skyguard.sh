@@ -441,7 +441,12 @@ main() {
     
     # Check for running services (unless force is specified)
     if [ "$FORCE" = false ]; then
-        check_running_services
+        if ! check_running_services; then
+            # check_running_services returns 1 when both services are running (fatal error)
+            echo -e "${RED}❌ Cannot start services - both are already running${NC}"
+            echo "Use 'stop_skyguard.sh' to stop them first, or use '--force' to restart"
+            exit 1
+        fi
     fi
     
     # Create logs directory if it doesn't exist
