@@ -65,6 +65,9 @@ SkyGuard provides a low-cost, AI-driven alert system that:
 - Logs detection events for analysis and improvement
 - Is completely open-source and self-contained
 
+This project is provided for research and educational purposes only. It is not a commercial safety product and carries no performance guarantees. Further details on legal limitations of SkyGuard can be seen in the DISCLAIMER.md
+
+
 ## 🚀 Features
 
 - **Real-time Detection**: AI-powered computer vision using YOLO models
