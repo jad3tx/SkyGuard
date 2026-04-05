@@ -25,6 +25,7 @@ def train_classifier(
     device: str = "auto",
     output_dir: Optional[Path] = None,
     yolo_version: str = "26",  # YOLO version: "8", "11", "26", etc.
+    patience: int = 15,
 ) -> bool:
     """Train a YOLO classification model on bird species.
     
@@ -37,6 +38,7 @@ def train_classifier(
         device: Device to use ('auto', 'cpu', 'cuda', '0', etc.)
         output_dir: Output directory for trained model
         yolo_version: YOLO version to use ('8', '11', '26', etc.)
+        patience: Early stopping patience (epochs without improvement)
         
     Returns:
         True if training successful, False otherwise
@@ -236,6 +238,7 @@ def train_classifier(
     print(f"Model: YOLO{yolo_version}{model_size}-cls")
     print(f"Classes: {num_classes}")
     print(f"Epochs: {epochs}")
+    print(f"Early stopping patience: {patience}")
     print(f"Image size: {imgsz}")
     print(f"Batch size: {batch_size}")
     print(f"Device: {device}")
@@ -255,7 +258,7 @@ def train_classifier(
             exist_ok=True,
             save=True,
             save_period=10,  # Save checkpoint every 10 epochs
-            patience=15,  # Early stopping patience
+            patience=patience,
             workers=4,
             verbose=True,
         )
@@ -413,6 +416,12 @@ def main():
         help="Number of training epochs (default: 50, based on experience that improvements plateau around 40)",
     )
     parser.add_argument(
+        "--patience",
+        type=int,
+        default=15,
+        help="Early stopping patience in epochs (default: 15)",
+    )
+    parser.add_argument(
         "--imgsz",
         type=int,
         default=448,
@@ -454,6 +463,7 @@ def main():
     print(f"Dataset: {data_dir}")
     print(f"Model: YOLO{args.yolo_version}{args.model_size}-cls")
     print(f"Epochs: {args.epochs}")
+    print(f"Patience: {args.patience}")
     print(f"Image size: {args.imgsz}")
     print(f"Batch size: {args.batch_size}")
     print()
@@ -477,6 +487,7 @@ def main():
         device=args.device,
         output_dir=output_dir,
         yolo_version=args.yolo_version,
+        patience=args.patience,
     )
     
     if success:

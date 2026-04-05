@@ -1,12 +1,12 @@
 task: classify
 mode: train
-model: yolo11n-cls.pt
-data: data\bird_species_merged
-epochs: 80
+model: yolo26n-cls.pt
+data: data\bird_species_aligned
+epochs: 65
 time: null
 patience: 15
-batch: 32
-imgsz: 640
+batch: 96
+imgsz: 448
 save: true
 save_period: 10
 cache: false
@@ -43,6 +43,7 @@ max_det: 300
 half: false
 dnn: false
 plots: true
+end2end: null
 source: null
 vid_stride: 1
 stream_buffer: false

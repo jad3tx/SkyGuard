@@ -11,8 +11,8 @@ ai:
   species_confidence_threshold: 0.6
   species_crop_padding: 0.15
   species_input_size:
-  - 640
-  - 640
+  - 448
+  - 448
   species_model_path: models\bird_species_classifier.pt
   species_preserve_aspect: true
 camera:
@@ -90,9 +90,9 @@ training:
     enabled: true
     rotation: 15
     saturation: 0.2
-  batch_size: 16
+  batch_size: 32
   data_path: data/training
-  epochs: 50
+  epochs: 80
   image_size:
   - 1080
   - 1080
