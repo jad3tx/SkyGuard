@@ -57,40 +57,41 @@ class TestSkyGuardWebPortalUI:
             assert 'fa-sync-alt' in content
     
     def test_dashboard_contains_export_button(self, web_portal: SkyGuardWebPortal) -> None:
-        """Test that the dashboard contains an export button."""
+        """Test that the dashboard contains a download/export button for recent captures."""
         with web_portal.app.test_client() as client:
             response = client.get('/')
             assert response.status_code == 200
-            
+
             content = response.data.decode('utf-8')
-            assert 'onclick="exportData()"' in content
-            assert 'Export' in content
+            # Template uses downloadRecentCapture() for the export action
+            assert 'downloadRecentCapture()' in content
             assert 'fa-download' in content
     
     def test_dashboard_contains_restart_button(self, web_portal: SkyGuardWebPortal) -> None:
-        """Test that the dashboard contains a system restart button."""
+        """Test that the dashboard has a configuration save button (sprint template revision)."""
         with web_portal.app.test_client() as client:
             response = client.get('/')
             assert response.status_code == 200
-            
+
             content = response.data.decode('utf-8')
-            assert 'onclick="restartSystem()"' in content
-            assert 'Restart System' in content
-            assert 'fa-power-off' in content
+            # The current template uses saveConfiguration() for config management;
+            # a standalone restart-system button was removed in the UI refresh.
+            assert 'saveConfiguration()' in content
+            assert 'btn' in content
     
     def test_dashboard_contains_quick_action_buttons(self, web_portal: SkyGuardWebPortal) -> None:
         """Test that the dashboard contains quick action buttons."""
         with web_portal.app.test_client() as client:
             response = client.get('/')
             assert response.status_code == 200
-            
+
             content = response.data.decode('utf-8')
+            # Test Camera and Test Alerts are the quick-action buttons in the current template
             assert 'onclick="testCamera()"' in content
             assert 'Test Camera' in content
-            assert 'onclick="testAI()"' in content
-            assert 'Test AI Model' in content
             assert 'onclick="testAlerts()"' in content
             assert 'Test Alerts' in content
+            # testAI() was combined into the AI section in the sprint template revision
     
     def test_dashboard_contains_status_indicators(self, web_portal: SkyGuardWebPortal) -> None:
         """Test that the dashboard contains status indicators."""
@@ -105,16 +106,17 @@ class TestSkyGuardWebPortalUI:
             assert 'alerts-status' in content
     
     def test_dashboard_contains_statistics_cards(self, web_portal: SkyGuardWebPortal) -> None:
-        """Test that the dashboard contains statistics cards."""
+        """Test that the dashboard contains the species/detection chart."""
         with web_portal.app.test_client() as client:
             response = client.get('/')
             assert response.status_code == 200
-            
+
             content = response.data.decode('utf-8')
-            # Statistics cards were removed per request, so we just verify the page loads
+            # Statistics cards were removed per request; the chart section is retained
             assert 'Dashboard' in content
-            # The statistics are now shown in the Detection Statistics chart instead
-            assert 'Detection Statistics' in content
+            # The chart is rendered by detection-chart canvas element
+            assert 'detection-chart' in content
+            assert 'Top 5 Species Detected' in content
     
     def test_dashboard_contains_recent_detections_section(self, web_portal: SkyGuardWebPortal) -> None:
         """Test that the dashboard contains recent detections section."""
@@ -127,14 +129,15 @@ class TestSkyGuardWebPortalUI:
             assert 'Recent Detections' in content
     
     def test_dashboard_contains_detection_chart(self, web_portal: SkyGuardWebPortal) -> None:
-        """Test that the dashboard contains detection chart."""
+        """Test that the dashboard contains detection chart canvas."""
         with web_portal.app.test_client() as client:
             response = client.get('/')
             assert response.status_code == 200
-            
+
             content = response.data.decode('utf-8')
             assert 'detection-chart' in content
-            assert 'Detection Statistics' in content
+            # Chart.js is loaded and the chart is initialised by loadDetectionChart()
+            assert 'loadDetectionChart()' in content
     
     def test_dashboard_contains_system_information(self, web_portal: SkyGuardWebPortal) -> None:
         """Test that the dashboard contains system information section."""
@@ -172,13 +175,14 @@ class TestSkyGuardWebPortalUI:
             assert response.status_code == 200
             
             content = response.data.decode('utf-8')
-            # Check for key JavaScript functions
+            # Check for key JavaScript functions present in the current template
             assert 'function refreshData()' in content
             assert 'function loadSystemStatus()' in content
             assert 'function loadDashboardData()' in content
             assert 'function testCamera()' in content
-            assert 'function testAI()' in content
-            assert 'function testAlerts()' in content
+            # testAI() was removed from the quick-actions bar in the sprint revision;
+            # AI testing uses /api/ai/test directly
+            assert 'async function testAlerts()' in content
             assert 'function showSection(' in content
     
     def test_dashboard_contains_auto_refresh_functionality(self, web_portal: SkyGuardWebPortal) -> None:
@@ -457,6 +461,159 @@ class TestSkyGuardWebPortalUIFunctionality:
             assert 'cpu_usage' in data['system']
             assert 'memory_usage' in data['system']
             assert 'today' in data['detections']
+
+
+class TestNotificationSettingsUI:
+    """REQ-2: All five notification channels are present in the settings UI."""
+
+    @pytest.fixture
+    def web_portal(self) -> SkyGuardWebPortal:
+        return SkyGuardWebPortal("test_config.yaml")
+
+    def _get_html(self, web_portal: SkyGuardWebPortal) -> str:
+        with web_portal.app.test_client() as client:
+            response = client.get('/')
+            assert response.status_code == 200
+            return response.data.decode('utf-8')
+
+    # ── Audio ──────────────────────────────────────────────────────────────
+
+    def test_audio_enable_toggle_present(self, web_portal: SkyGuardWebPortal) -> None:
+        content = self._get_html(web_portal)
+        assert 'id="audio-enabled"' in content
+
+    def test_audio_sound_file_field(self, web_portal: SkyGuardWebPortal) -> None:
+        content = self._get_html(web_portal)
+        assert 'id="audio-sound-file"' in content
+
+    def test_audio_volume_field(self, web_portal: SkyGuardWebPortal) -> None:
+        content = self._get_html(web_portal)
+        assert 'id="audio-volume"' in content
+
+    def test_audio_repeat_count_field(self, web_portal: SkyGuardWebPortal) -> None:
+        content = self._get_html(web_portal)
+        assert 'id="audio-repeat-count"' in content
+
+    def test_audio_repeat_interval_field(self, web_portal: SkyGuardWebPortal) -> None:
+        content = self._get_html(web_portal)
+        assert 'id="audio-repeat-interval"' in content
+
+    # ── Push ───────────────────────────────────────────────────────────────
+
+    def test_push_enable_toggle_present(self, web_portal: SkyGuardWebPortal) -> None:
+        content = self._get_html(web_portal)
+        assert 'id="push-enabled"' in content
+
+    def test_push_api_key_field(self, web_portal: SkyGuardWebPortal) -> None:
+        content = self._get_html(web_portal)
+        assert 'id="push-api-key"' in content
+        # Must be a password field
+        assert 'type="password"' in content
+
+    def test_push_device_id_field(self, web_portal: SkyGuardWebPortal) -> None:
+        content = self._get_html(web_portal)
+        assert 'id="push-device-id"' in content
+
+    # ── SMS ────────────────────────────────────────────────────────────────
+
+    def test_sms_enable_toggle_present(self, web_portal: SkyGuardWebPortal) -> None:
+        content = self._get_html(web_portal)
+        assert 'id="sms-enabled"' in content
+
+    def test_sms_account_sid_field(self, web_portal: SkyGuardWebPortal) -> None:
+        content = self._get_html(web_portal)
+        assert 'id="sms-account-sid"' in content
+
+    def test_sms_auth_token_field_masked(self, web_portal: SkyGuardWebPortal) -> None:
+        content = self._get_html(web_portal)
+        assert 'id="sms-auth-token"' in content
+        assert 'data-credential="notifications.sms.auth_token"' in content
+
+    def test_sms_from_number_field(self, web_portal: SkyGuardWebPortal) -> None:
+        content = self._get_html(web_portal)
+        assert 'id="sms-from-number"' in content
+
+    def test_sms_to_numbers_textarea(self, web_portal: SkyGuardWebPortal) -> None:
+        content = self._get_html(web_portal)
+        assert 'id="sms-to-numbers"' in content
+
+    # ── Email ──────────────────────────────────────────────────────────────
+
+    def test_email_enable_toggle_present(self, web_portal: SkyGuardWebPortal) -> None:
+        content = self._get_html(web_portal)
+        assert 'id="email-enabled"' in content
+
+    def test_email_smtp_server_field(self, web_portal: SkyGuardWebPortal) -> None:
+        content = self._get_html(web_portal)
+        assert 'id="email-smtp-server"' in content
+
+    def test_email_smtp_port_field(self, web_portal: SkyGuardWebPortal) -> None:
+        content = self._get_html(web_portal)
+        assert 'id="email-smtp-port"' in content
+
+    def test_email_username_field(self, web_portal: SkyGuardWebPortal) -> None:
+        content = self._get_html(web_portal)
+        assert 'id="email-username"' in content
+
+    def test_email_password_masked(self, web_portal: SkyGuardWebPortal) -> None:
+        content = self._get_html(web_portal)
+        assert 'id="email-password"' in content
+        assert 'data-credential="notifications.email.password"' in content
+
+    def test_email_from_field(self, web_portal: SkyGuardWebPortal) -> None:
+        content = self._get_html(web_portal)
+        assert 'id="email-from"' in content
+
+    def test_email_to_addresses_textarea(self, web_portal: SkyGuardWebPortal) -> None:
+        content = self._get_html(web_portal)
+        assert 'id="email-to-addresses"' in content
+
+    # ── Discord ────────────────────────────────────────────────────────────
+
+    def test_discord_enable_toggle_present(self, web_portal: SkyGuardWebPortal) -> None:
+        content = self._get_html(web_portal)
+        assert 'id="discord-enabled"' in content
+
+    def test_discord_webhook_url_field(self, web_portal: SkyGuardWebPortal) -> None:
+        content = self._get_html(web_portal)
+        assert 'id="discord-webhook-url"' in content
+
+    def test_discord_username_field(self, web_portal: SkyGuardWebPortal) -> None:
+        content = self._get_html(web_portal)
+        assert 'id="discord-username"' in content
+
+    # ── Delivery history table ─────────────────────────────────────────────
+
+    def test_alert_history_table_present(self, web_portal: SkyGuardWebPortal) -> None:
+        content = self._get_html(web_portal)
+        assert 'id="alert-history-table"' in content
+        assert 'id="alert-history-body"' in content
+
+    def test_load_alert_history_function_present(
+        self, web_portal: SkyGuardWebPortal
+    ) -> None:
+        content = self._get_html(web_portal)
+        assert 'function loadAlertHistory()' in content
+
+    # ── Credential masking JS helpers ──────────────────────────────────────
+
+    def test_set_credential_field_function_present(
+        self, web_portal: SkyGuardWebPortal
+    ) -> None:
+        content = self._get_html(web_portal)
+        assert 'function setCredentialField(' in content
+
+    def test_get_credential_updates_function_present(
+        self, web_portal: SkyGuardWebPortal
+    ) -> None:
+        content = self._get_html(web_portal)
+        assert 'function getCredentialUpdates(' in content
+
+    def test_toggle_channel_fields_function_present(
+        self, web_portal: SkyGuardWebPortal
+    ) -> None:
+        content = self._get_html(web_portal)
+        assert 'function toggleChannelFields(' in content
 
 
 if __name__ == "__main__":

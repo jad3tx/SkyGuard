@@ -12,6 +12,7 @@ import signal
 import time
 from datetime import datetime
 from pathlib import Path
+from typing import Optional
 
 # Add the project root to the Python path
 project_root = Path(__file__).parent.parent
@@ -68,17 +69,18 @@ class SkyGuardSystem:
             self.detector = RaptorDetector(self.config['ai'])
             self.detector.load_model()
             
-            # Initialize alert system
+            # Initialize event logger first — AlertSystem needs it for delivery logging
+            self.event_logger = EventLogger(self.config['storage'])
+            self.event_logger.initialize()
+
+            # Initialize alert system, wiring in the event logger for audit trail
             rate_limiting_config = self.config.get('rate_limiting', {})
             self.alert_system = AlertSystem(
                 self.config['notifications'],
-                rate_limiting_config=rate_limiting_config
+                rate_limiting_config=rate_limiting_config,
+                event_logger=self.event_logger,
             )
             self.alert_system.initialize()
-            
-            # Initialize event logger
-            self.event_logger = EventLogger(self.config['storage'])
-            self.event_logger.initialize()
             
             self.logger.info("✅ SkyGuard system initialized successfully")
             self.logger.info("=" * 60)
@@ -223,15 +225,33 @@ class SkyGuardSystem:
             
         return True
     
-    def _handle_raptor_detection(self, detection: dict, frame):
-        """Handle a detected raptor threat."""
-        self.logger.warning(f"Raptor detected! Confidence: {detection['confidence']:.2f}")
-        
-        # Log the event (includes saving annotated detection image)
-        self.event_logger.log_detection(detection, frame)
-        
-        # Send alerts
-        self.alert_system.send_raptor_alert(detection)
+    def _handle_raptor_detection(self, detection: dict, frame) -> None:
+        """Handle a detected raptor threat.
+
+        Logs the detection to the database, retrieves the saved image path,
+        injects it into the detection dict so email alerts can attach it, then
+        fires all enabled alert channels.
+        """
+        self.logger.warning(
+            f"Raptor detected! Confidence: {detection['confidence']:.2f}"
+        )
+
+        # Log the event — returns the DB row ID (or None on failure)
+        detection_id: Optional[int] = self.event_logger.log_detection(detection, frame)
+
+        # Inject the saved image path so _send_email_alert can attach it
+        if detection_id is not None:
+            try:
+                saved_record = self.event_logger.get_detection_by_id(detection_id)
+                if saved_record and saved_record.get('image_path'):
+                    detection['image_path'] = saved_record['image_path']
+            except Exception as e:
+                self.logger.debug(
+                    f"Could not retrieve saved image path for detection {detection_id}: {e}"
+                )
+
+        # Send alerts on all enabled channels
+        self.alert_system.send_raptor_alert(detection, detection_id=detection_id)
     
     
     def _signal_handler(self, signum, frame):

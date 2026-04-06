@@ -73,10 +73,12 @@ def test_image_saved_and_cleanup_after_one_day(tmp_storage_dir: Path) -> None:
     now = time.time()
     older_than_one_day = now - (2 * 24 * 60 * 60)
 
-    # Log old detection
-    assert logger.log_detection(_fake_detection(older_than_one_day), _fake_frame()) is True
+    # Log old detection — log_detection now returns Optional[int] (lastrowid), not bool
+    old_id = logger.log_detection(_fake_detection(older_than_one_day), _fake_frame())
+    assert old_id is not None and old_id > 0
     # Log recent detection
-    assert logger.log_detection(_fake_detection(now), _fake_frame()) is True
+    recent_id = logger.log_detection(_fake_detection(now), _fake_frame())
+    assert recent_id is not None and recent_id > 0
 
     # Perform cleanup
     assert logger.cleanup_old_data() is True
@@ -116,7 +118,8 @@ def test_web_api_serves_detection_image(tmp_storage_dir: Path) -> None:
     logger = portal.event_logger
     assert logger is not None
     ts = time.time()
-    assert logger.log_detection(_fake_detection(ts), _fake_frame()) is True
+    # log_detection returns Optional[int] (lastrowid) per REQ-3 AC3; truthy on success
+    assert logger.log_detection(_fake_detection(ts), _fake_frame()) is not None
 
     # Fetch recent detections
     resp = client.get("/api/detections")

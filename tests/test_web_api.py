@@ -161,9 +161,15 @@ class TestSkyGuardWebPortalAPI:
             assert response.content_type == 'image/jpeg'
     
     def test_api_detection_image_not_found(self, web_portal: SkyGuardWebPortal, mocker: "MockerFixture") -> None:
-        """Test the /api/detections/<id>/image endpoint handles missing image."""
-        mocker.patch.object(web_portal, '_get_detection_image', return_value=None)
-        
+        """Test the /api/detections/<id>/image endpoint returns 404 when no image exists."""
+        # The endpoint calls event_logger.get_detection_by_id(); mock it to return a
+        # detection record with no image_path so the 404 branch is exercised.
+        mocker.patch.object(
+            web_portal.event_logger,
+            'get_detection_by_id',
+            return_value={'id': 1, 'image_path': None},
+        )
+
         with web_portal.app.test_client() as client:
             response = client.get('/api/detections/1/image')
             assert response.status_code == 404
