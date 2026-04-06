@@ -243,45 +243,149 @@ class TestAlertSystem:
         assert hasattr(alert_system, 'discord_enabled')
     
     def test_create_alert_message(self):
-        """Test alert message creation."""
+        """Test alert message creation without species data."""
         config = {'audio': {'enabled': False}}
         alert_system = AlertSystem(config)
-        
+
         detection = {
             'confidence': 0.85,
             'class_name': 'hawk',
-            'timestamp': 1234567890
+            'timestamp': 1234567890,
         }
-        
+
         message = alert_system._create_alert_message(detection)
-        
+
         assert 'SKYGUARD ALERT' in message
-        assert 'HAWK' in message  # The message uses uppercase
+        assert 'HAWK' in message  # Message uses uppercase class_name
         assert '85.0%' in message
-    
-    def test_check_rate_limit(self):
-        """Test rate limiting functionality."""
+        # Species line must NOT appear when species is absent
+        assert 'Species:' not in message
+
+    def test_create_alert_message_with_species(self):
+        """REQ-5: Species data appears in message when present."""
         config = {'audio': {'enabled': False}}
         alert_system = AlertSystem(config)
-        
+
+        detection = {
+            'confidence': 0.88,
+            'class_name': 'bird',
+            'species': 'Sharp-shinned Hawk',
+            'species_confidence': 0.82,
+            'timestamp': 1234567890,
+        }
+
+        message = alert_system._create_alert_message(detection)
+
+        assert 'Sharp-shinned Hawk' in message
+        assert '82.0%' in message
+
+    def test_create_alert_message_species_none_degrades_gracefully(self):
+        """REQ-5: Missing/None species key does not raise."""
+        config = {'audio': {'enabled': False}}
+        alert_system = AlertSystem(config)
+
+        detection = {
+            'confidence': 0.75,
+            'class_name': 'bird',
+            'species': None,
+            'timestamp': 1234567890,
+        }
+        # Must not raise
+        message = alert_system._create_alert_message(detection)
+        assert 'SKYGUARD ALERT' in message
+        assert 'Species:' not in message
+
+    def test_check_rate_limit(self):
+        """Test rate limiting — min_alert_interval stage."""
+        config = {'audio': {'enabled': False}}
+        alert_system = AlertSystem(config)
+
         # First call should pass
         assert alert_system._check_rate_limit('test_alert')
-        
+
         # Immediate second call should be rate limited
         assert not alert_system._check_rate_limit('test_alert')
-    
+
     def test_get_alert_stats(self):
-        """Test alert statistics."""
+        """Test alert statistics include all required keys."""
         config = {'audio': {'enabled': False}}
         alert_system = AlertSystem(config)
-        
+
         stats = alert_system.get_alert_stats()
-        
+
         assert 'total_alerts' in stats
         assert 'last_alert_time' in stats
         assert 'audio_enabled' in stats
         assert 'discord_enabled' in stats
         assert stats['total_alerts'] == 0
+
+    # -----------------------------------------------------------------------
+    # REQ-4: max_alerts_per_hour and cooldown_period tests
+    # -----------------------------------------------------------------------
+
+    def test_hourly_cap_triggers(self):
+        """REQ-4 AC2: _check_rate_limit returns False when hourly cap is reached."""
+        config = {}
+        rate_cfg = {'min_alert_interval': 0, 'max_alerts_per_hour': 3, 'cooldown_period': 300}
+        system = AlertSystem(config, rate_limiting_config=rate_cfg)
+
+        # First 3 calls pass; 4th hits the cap
+        assert system._check_rate_limit('raptor_alert') is True
+        assert system._check_rate_limit('raptor_alert') is True
+        assert system._check_rate_limit('raptor_alert') is True
+        # 4th call: window is full — should be blocked
+        assert system._check_rate_limit('raptor_alert') is False
+
+        stats = system.get_alert_stats()
+        assert stats['alerts_sent_last_hour'] == 3
+
+    def test_cooldown_blocks_sends(self):
+        """REQ-4 AC3: Once cap hit, cooldown_until blocks further sends."""
+        config = {}
+        rate_cfg = {'min_alert_interval': 0, 'max_alerts_per_hour': 2, 'cooldown_period': 600}
+        system = AlertSystem(config, rate_limiting_config=rate_cfg)
+
+        # Use 'raptor_alert' — the same key monitored by get_alert_stats()
+        system._check_rate_limit('raptor_alert')
+        system._check_rate_limit('raptor_alert')
+        # Cap hit — cooldown activated
+        assert system._check_rate_limit('raptor_alert') is False
+
+        # Confirm in_cooldown flag in stats
+        stats = system.get_alert_stats()
+        assert stats['in_cooldown'] is True
+        assert stats['cooldown_period'] == 600.0
+
+    def test_cooldown_expires_and_allows_send(self):
+        """REQ-4 AC3: After cooldown_until passes, sends are allowed again."""
+        import time as _time
+        from collections import deque as _deque
+        config = {}
+        rate_cfg = {'min_alert_interval': 0, 'max_alerts_per_hour': 1, 'cooldown_period': 1}
+        system = AlertSystem(config, rate_limiting_config=rate_cfg)
+
+        system._check_rate_limit('raptor_alert')   # pass — fills window
+        assert system._check_rate_limit('raptor_alert') is False  # cap hit, cooldown set
+
+        # Manually expire the cooldown and clear the window so Stage 3 passes
+        with system._rate_limit_lock:
+            system.cooldown_until['raptor_alert'] = _time.time() - 1
+            system.alert_send_times['raptor_alert'] = _deque()
+
+        assert system._check_rate_limit('raptor_alert') is True
+
+    def test_get_alert_stats_reflects_cooldown(self):
+        """REQ-4 AC5: get_alert_stats includes rate-limiting fields."""
+        config = {}
+        rate_cfg = {'min_alert_interval': 30, 'max_alerts_per_hour': 5, 'cooldown_period': 120}
+        system = AlertSystem(config, rate_limiting_config=rate_cfg)
+
+        stats = system.get_alert_stats()
+        assert stats['max_alerts_per_hour'] == 5
+        assert stats['cooldown_period'] == 120.0
+        assert 'alerts_sent_last_hour' in stats
+        assert 'in_cooldown' in stats
+        assert stats['in_cooldown'] is False
     
     def test_discord_initialization(self):
         """Test Discord webhook initialization."""

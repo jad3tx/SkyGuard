@@ -178,7 +178,20 @@ class EventLogger:
                     metadata TEXT
                 )
             ''')
-            
+
+            # Create alert_deliveries table — persistent audit trail of every channel send
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS alert_deliveries (
+                    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                    timestamp   REAL NOT NULL,
+                    channel     TEXT NOT NULL,
+                    status      TEXT NOT NULL CHECK(status IN ('success','failure','skipped')),
+                    detection_id INTEGER REFERENCES detections(id) ON DELETE SET NULL,
+                    error_message TEXT,
+                    metadata    TEXT
+                )
+            ''')
+
             # Create indexes for better performance
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_detections_timestamp ON detections(timestamp)')
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_detections_class ON detections(class_name)')
@@ -188,6 +201,14 @@ class EventLogger:
                 pass  # Column might not exist in older databases
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_system_events_timestamp ON system_events(timestamp)')
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_system_events_type ON system_events(event_type)')
+            cursor.execute(
+                'CREATE INDEX IF NOT EXISTS idx_alert_deliveries_timestamp '
+                'ON alert_deliveries(timestamp)'
+            )
+            cursor.execute(
+                'CREATE INDEX IF NOT EXISTS idx_alert_deliveries_channel '
+                'ON alert_deliveries(channel)'
+            )
             
             self.connection.commit()
             self.logger.info(f"Database initialized successfully at {self.db_path}")
@@ -196,20 +217,21 @@ class EventLogger:
             self.logger.error(f"Failed to initialize database at {self.db_path}: {e}")
             raise
     
-    def log_detection(self, detection: Dict[str, Any], frame: Optional[np.ndarray] = None) -> bool:
+    def log_detection(self, detection: Dict[str, Any], frame: Optional[np.ndarray] = None) -> Optional[int]:
         """Log a detection event.
-        
+
         Args:
             detection: Detection information dictionary
             frame: Optional frame to save
-            
+
         Returns:
-            True if successful, False otherwise
+            The ``lastrowid`` (integer primary key) of the inserted record on
+            success, or ``None`` on failure.
         """
         try:
             if self.connection is None:
                 self.logger.error("Database not initialized")
-                return False
+                return None
             
             # Save frame if provided
             image_path = None
@@ -265,13 +287,17 @@ class EventLogger:
             ))
             
             self.connection.commit()
-            
-            self.logger.debug(f"Detection logged: {detection['class_name']} (confidence: {detection['confidence']:.2f})")
-            return True
-            
+            inserted_id: int = cursor.lastrowid
+
+            self.logger.debug(
+                f"Detection logged: {detection['class_name']} "
+                f"(confidence: {detection['confidence']:.2f}, id={inserted_id})"
+            )
+            return inserted_id
+
         except Exception as e:
-            self.logger.error(f"Failed to log detection: {e}")
-            return False
+            self.logger.error(f"Failed to log detection: {e}", exc_info=True)
+            return None
     
     def _save_detection_image(self, frame: np.ndarray, detection: Dict[str, Any]) -> str:
         """Save detection image to disk.
@@ -525,7 +551,136 @@ class EventLogger:
             self.logger.error(f"Failed to log system event: {e}")
             return False
     
-    def count_detections(self, start_time: Optional[float] = None, end_time: Optional[float] = None, 
+    def log_alert_delivery(
+        self,
+        channel: str,
+        status: str,
+        detection_id: Optional[int] = None,
+        error_message: Optional[str] = None,
+        metadata: Optional[Dict] = None,
+    ) -> bool:
+        """Record a single alert delivery attempt in the database.
+
+        This method is designed to be safe to call from alert threads — any
+        exception is caught, logged, and ``False`` is returned so callers are
+        never blocked.
+
+        Args:
+            channel: The notification channel name (``'audio'``, ``'push'``,
+                ``'sms'``, ``'email'``, or ``'discord'``).
+            status: Delivery outcome — one of ``'success'``, ``'failure'``,
+                or ``'skipped'``.
+            detection_id: Optional FK to the triggering ``detections.id``.
+            error_message: Human-readable error string on failure (truncated to
+                500 characters).
+            metadata: Optional extra data serialised as JSON.
+
+        Returns:
+            ``True`` if the record was persisted successfully, ``False``
+            otherwise.
+        """
+        try:
+            if not self._ensure_connection():
+                return False
+
+            truncated_error: Optional[str] = (
+                error_message[:500] if error_message else None
+            )
+            cursor = self.connection.cursor()
+            cursor.execute(
+                '''
+                INSERT INTO alert_deliveries
+                    (timestamp, channel, status, detection_id, error_message, metadata)
+                VALUES (?, ?, ?, ?, ?, ?)
+                ''',
+                (
+                    time.time(),
+                    channel,
+                    status,
+                    detection_id,
+                    truncated_error,
+                    json.dumps(metadata or {}),
+                ),
+            )
+            self.connection.commit()
+            self.logger.debug(
+                f"Alert delivery logged: channel={channel} status={status}"
+            )
+            return True
+
+        except Exception as e:
+            self.logger.error(f"Failed to log alert delivery: {e}", exc_info=True)
+            return False
+
+    def get_alert_deliveries(
+        self,
+        limit: int = 50,
+        offset: int = 0,
+        channel: Optional[str] = None,
+        status: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        """Query the alert delivery history.
+
+        Args:
+            limit: Maximum number of records to return.
+            offset: Number of records to skip (for pagination).
+            channel: Optional channel filter (``'audio'``, ``'push'``, etc.).
+            status: Optional status filter (``'success'``, ``'failure'``,
+                ``'skipped'``).
+
+        Returns:
+            List of delivery record dicts with keys: ``id``, ``timestamp``,
+            ``channel``, ``status``, ``detection_id``, ``error_message``,
+            ``metadata``, ``image_path``.
+        """
+        try:
+            if not self._ensure_connection():
+                return []
+
+            cursor = self.connection.cursor()
+            query = (
+                'SELECT ad.id, ad.timestamp, ad.channel, ad.status, '
+                '       ad.detection_id, ad.error_message, ad.metadata, '
+                '       d.image_path '
+                'FROM alert_deliveries ad '
+                'LEFT JOIN detections d ON ad.detection_id = d.id '
+                'WHERE 1=1'
+            )
+            params: List[Any] = []
+
+            if channel is not None:
+                query += ' AND ad.channel = ?'
+                params.append(channel)
+
+            if status is not None:
+                query += ' AND ad.status = ?'
+                params.append(status)
+
+            query += ' ORDER BY ad.timestamp DESC LIMIT ? OFFSET ?'
+            params.extend([limit, offset])
+
+            cursor.execute(query, params)
+            rows = cursor.fetchall()
+
+            result: List[Dict[str, Any]] = []
+            for row in rows:
+                result.append({
+                    'id': row[0],
+                    'timestamp': row[1],
+                    'channel': row[2],
+                    'status': row[3],
+                    'detection_id': row[4],
+                    'error_message': row[5],
+                    'metadata': json.loads(row[6]) if row[6] else {},
+                    'image_path': row[7],
+                })
+            return result
+
+        except Exception as e:
+            self.logger.error(f"Failed to get alert deliveries: {e}", exc_info=True)
+            return []
+
+    def count_detections(self, start_time: Optional[float] = None, end_time: Optional[float] = None,
                         class_name: Optional[str] = None, species_name: Optional[str] = None) -> int:
         """Count detection records from database.
         
@@ -849,10 +1004,18 @@ class EventLogger:
             # Delete old system events
             cursor.execute('DELETE FROM system_events WHERE timestamp < ?', (events_cutoff_time,))
             deleted_events = cursor.rowcount
-            
+
+            # Delete old alert delivery records (same retention window as system events)
+            cursor.execute('DELETE FROM alert_deliveries WHERE timestamp < ?', (events_cutoff_time,))
+            deleted_deliveries = cursor.rowcount
+
             self.connection.commit()
-            
-            self.logger.info(f"Cleaned up {deleted_detections} old detections and {deleted_events} old events")
+
+            self.logger.info(
+                f"Cleaned up {deleted_detections} old detections, "
+                f"{deleted_events} old events, "
+                f"{deleted_deliveries} old alert delivery records"
+            )
             return True
             
         except Exception as e:

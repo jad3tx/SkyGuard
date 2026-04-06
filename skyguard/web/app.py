@@ -255,7 +255,21 @@ class SkyGuardWebPortal:
                         merged_config[key] = {**merged_config[key], **value}
                     else:
                         merged_config[key] = value
-                
+
+                # Security: redact sensitive credential fields so they are never
+                # returned in clear-text over HTTP.  The UI uses "••••••••" as a
+                # sentinel meaning "unchanged — keep the existing stored value".
+                _REDACTED = "••••••••"
+                notif = merged_config.get('notifications', {})
+                for section, key in [
+                    ('email', 'password'),
+                    ('sms', 'auth_token'),
+                    ('push', 'api_key'),
+                ]:
+                    section_cfg = notif.get(section, {})
+                    if section_cfg.get(key):
+                        section_cfg[key] = _REDACTED
+
                 return jsonify(merged_config)
             except Exception as e:
                 self.logger.error(f"Failed to get config: {e}")
@@ -276,7 +290,21 @@ class SkyGuardWebPortal:
                 
                 if not new_config:
                     return jsonify({'error': 'No configuration provided'}), 400
-                
+
+                # Strip redaction sentinels from credential fields so the deep-merge
+                # in ConfigManager.update_config() does not overwrite stored values
+                # with the UI placeholder.
+                _REDACTED = "••••••••"
+                notif = new_config.get('notifications', {})
+                for section, key in [
+                    ('email', 'password'),
+                    ('sms', 'auth_token'),
+                    ('push', 'api_key'),
+                ]:
+                    section_cfg = notif.get(section, {})
+                    if isinstance(section_cfg, dict) and section_cfg.get(key) == _REDACTED:
+                        del section_cfg[key]
+
                 # Validate configuration
                 if self._validate_config(new_config):
                     # Update configuration
@@ -563,6 +591,33 @@ class SkyGuardWebPortal:
             except Exception as e:
                 return jsonify({'error': str(e)}), 500
         
+        @self.app.route('/api/alerts/history')
+        def api_alerts_history():
+            """Return paginated alert delivery history from the database.
+
+            Query params:
+                limit  (int, default 50): Maximum records to return.
+                offset (int, default  0): Records to skip.
+                channel (str, optional): Filter by channel name.
+                status  (str, optional): Filter by delivery status.
+            """
+            try:
+                limit = request.args.get('limit', 50, type=int)
+                offset = request.args.get('offset', 0, type=int)
+                channel = request.args.get('channel', None, type=str)
+                status = request.args.get('status', None, type=str)
+
+                deliveries = self.event_logger.get_alert_deliveries(
+                    limit=limit,
+                    offset=offset,
+                    channel=channel,
+                    status=status,
+                )
+                return jsonify(deliveries)
+            except Exception as e:
+                self.logger.error(f"Failed to fetch alert history: {e}", exc_info=True)
+                return jsonify({'error': str(e)}), 500
+
         @self.app.route('/api/alerts/test')
         def api_test_alerts():
             """Test alert system."""
@@ -709,11 +764,12 @@ class SkyGuardWebPortal:
             self.camera = None
             print("ℹ️ Web portal configured to read camera snapshots (no direct camera access)")
             
-            # Initialize alert system
+            # Initialize alert system — wire in event_logger for delivery audit
             rate_limiting_config = self.config.get('rate_limiting', {})
             self.alert_system = AlertSystem(
                 self.config.get('notifications', {}),
-                rate_limiting_config=rate_limiting_config
+                rate_limiting_config=rate_limiting_config,
+                event_logger=self.event_logger,
             )
             print("✅ Alert system initialized successfully")
             

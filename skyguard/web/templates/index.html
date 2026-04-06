@@ -366,22 +366,197 @@
                         </h2>
                         <div id="notificationSettings" class="accordion-collapse collapse" data-bs-parent="#configAccordion">
                             <div class="accordion-body">
-                                <div class="row g-3" id="discord-config">
-                                    <div class="col-md-8">
-                                        <label for="discord-webhook-url" class="form-label">Discord Webhook URL</label>
-                                        <input type="text" class="form-control" id="discord-webhook-url" 
-                                               placeholder="https://discord.com/api/webhooks/...">
-                                        <small class="form-text text-muted">
-                                            Server Settings → Integrations → Webhooks
-                                        </small>
+                                <p class="text-muted small mb-3">
+                                    <i class="fas fa-lock me-1"></i>
+                                    Passwords and API keys are stored locally and are
+                                    never sent outside your device. Fields showing
+                                    <strong>••••••••</strong> contain a saved value — leave
+                                    them unchanged to keep the existing credential.
+                                </p>
+
+                                <!-- ── Audio ─────────────────────────────────── -->
+                                <div class="card mb-3">
+                                    <div class="card-header d-flex align-items-center">
+                                        <div class="form-check form-switch me-3 mb-0">
+                                            <input class="form-check-input" type="checkbox" id="audio-enabled"
+                                                   onchange="toggleChannelFields('audio-fields', this.checked)">
+                                            <label class="form-check-label mb-0" for="audio-enabled">
+                                                <i class="fas fa-volume-up me-1"></i> <strong>Audio Alerts</strong>
+                                            </label>
+                                        </div>
                                     </div>
-                                    <div class="col-md-4">
-                                        <label for="discord-username" class="form-label">Bot Username (optional)</label>
-                                        <input type="text" class="form-control" id="discord-username" 
-                                               placeholder="SkyGuard">
+                                    <div id="audio-fields" class="card-body">
+                                        <div class="row g-3">
+                                            <div class="col-md-6">
+                                                <label for="audio-sound-file" class="form-label">Sound File Path</label>
+                                                <input type="text" class="form-control" id="audio-sound-file"
+                                                       placeholder="sounds/raptor_alert.wav">
+                                                <small class="form-text text-muted">Relative to SkyGuard directory</small>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <label for="audio-volume" class="form-label">Volume: <span id="audio-volume-value">0.8</span></label>
+                                                <input type="range" class="form-range" id="audio-volume" min="0" max="1" step="0.05"
+                                                       oninput="document.getElementById('audio-volume-value').textContent=this.value">
+                                            </div>
+                                            <div class="col-md-2">
+                                                <label for="audio-repeat-count" class="form-label">Repeat Count</label>
+                                                <input type="number" class="form-control" id="audio-repeat-count" min="1" max="10" value="3">
+                                            </div>
+                                            <div class="col-md-2">
+                                                <label for="audio-repeat-interval" class="form-label">Interval (s)</label>
+                                                <input type="number" class="form-control" id="audio-repeat-interval" min="0.5" step="0.5" value="2.0">
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+
+                                <!-- ── Push Notifications ─────────────────────── -->
+                                <div class="card mb-3">
+                                    <div class="card-header d-flex align-items-center">
+                                        <div class="form-check form-switch me-3 mb-0">
+                                            <input class="form-check-input" type="checkbox" id="push-enabled"
+                                                   onchange="toggleChannelFields('push-fields', this.checked)">
+                                            <label class="form-check-label mb-0" for="push-enabled">
+                                                <i class="fas fa-mobile-alt me-1"></i> <strong>Push Notifications (PushBullet)</strong>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div id="push-fields" class="card-body">
+                                        <div class="row g-3">
+                                            <div class="col-md-6">
+                                                <label for="push-api-key" class="form-label">PushBullet API Key</label>
+                                                <input type="password" class="form-control credential-field" id="push-api-key"
+                                                       placeholder="o.xxxxxxxxxxxxxxxx"
+                                                       data-credential="notifications.push.api_key"
+                                                       autocomplete="new-password">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label for="push-device-id" class="form-label">Device ID</label>
+                                                <input type="text" class="form-control" id="push-device-id"
+                                                       placeholder="ujxxxxxxxxx">
+                                                <small class="form-text text-muted">Found in PushBullet device list</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- ── SMS (Twilio) ───────────────────────────── -->
+                                <div class="card mb-3">
+                                    <div class="card-header d-flex align-items-center">
+                                        <div class="form-check form-switch me-3 mb-0">
+                                            <input class="form-check-input" type="checkbox" id="sms-enabled"
+                                                   onchange="toggleChannelFields('sms-fields', this.checked)">
+                                            <label class="form-check-label mb-0" for="sms-enabled">
+                                                <i class="fas fa-sms me-1"></i> <strong>SMS Alerts (Twilio)</strong>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div id="sms-fields" class="card-body">
+                                        <div class="row g-3">
+                                            <div class="col-md-6">
+                                                <label for="sms-account-sid" class="form-label">Account SID</label>
+                                                <input type="text" class="form-control" id="sms-account-sid"
+                                                       placeholder="ACxxxxxxxxxxxxxxxx">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label for="sms-auth-token" class="form-label">Auth Token</label>
+                                                <input type="password" class="form-control credential-field" id="sms-auth-token"
+                                                       placeholder="••••••••••••••••••••••••••••••••"
+                                                       data-credential="notifications.sms.auth_token"
+                                                       autocomplete="new-password">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label for="sms-from-number" class="form-label">From Number</label>
+                                                <input type="text" class="form-control" id="sms-from-number"
+                                                       placeholder="+15551234567">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label for="sms-to-numbers" class="form-label">To Numbers (one per line)</label>
+                                                <textarea class="form-control" id="sms-to-numbers" rows="2"
+                                                          placeholder="+15559876543&#10;+15550001111"></textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- ── Email (SMTP) ───────────────────────────── -->
+                                <div class="card mb-3">
+                                    <div class="card-header d-flex align-items-center">
+                                        <div class="form-check form-switch me-3 mb-0">
+                                            <input class="form-check-input" type="checkbox" id="email-enabled"
+                                                   onchange="toggleChannelFields('email-fields', this.checked)">
+                                            <label class="form-check-label mb-0" for="email-enabled">
+                                                <i class="fas fa-envelope me-1"></i> <strong>Email Alerts</strong>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div id="email-fields" class="card-body">
+                                        <div class="row g-3">
+                                            <div class="col-md-6">
+                                                <label for="email-smtp-server" class="form-label">SMTP Server</label>
+                                                <input type="text" class="form-control" id="email-smtp-server"
+                                                       placeholder="smtp.gmail.com">
+                                            </div>
+                                            <div class="col-md-2">
+                                                <label for="email-smtp-port" class="form-label">Port</label>
+                                                <input type="number" class="form-control" id="email-smtp-port"
+                                                       value="587" min="1" max="65535">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label for="email-username" class="form-label">Username</label>
+                                                <input type="text" class="form-control" id="email-username"
+                                                       placeholder="you@gmail.com">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label for="email-password" class="form-label">Password / App Password</label>
+                                                <input type="password" class="form-control credential-field" id="email-password"
+                                                       placeholder="••••••••"
+                                                       data-credential="notifications.email.password"
+                                                       autocomplete="new-password">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label for="email-from" class="form-label">From Address</label>
+                                                <input type="email" class="form-control" id="email-from"
+                                                       placeholder="skyguard@yourdomain.com">
+                                            </div>
+                                            <div class="col-12">
+                                                <label for="email-to-addresses" class="form-label">To Addresses (one per line)</label>
+                                                <textarea class="form-control" id="email-to-addresses" rows="2"
+                                                          placeholder="farmer@example.com&#10;spouse@example.com"></textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- ── Discord ────────────────────────────────── -->
+                                <div class="card mb-3">
+                                    <div class="card-header d-flex align-items-center">
+                                        <div class="form-check form-switch me-3 mb-0">
+                                            <input class="form-check-input" type="checkbox" id="discord-enabled"
+                                                   onchange="toggleChannelFields('discord-fields', this.checked)">
+                                            <label class="form-check-label mb-0" for="discord-enabled">
+                                                <i class="fab fa-discord me-1"></i> <strong>Discord Alerts</strong>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div id="discord-fields" class="card-body">
+                                        <div class="row g-3">
+                                            <div class="col-md-8">
+                                                <label for="discord-webhook-url" class="form-label">Webhook URL</label>
+                                                <input type="text" class="form-control" id="discord-webhook-url"
+                                                       placeholder="https://discord.com/api/webhooks/...">
+                                                <small class="form-text text-muted">Server Settings → Integrations → Webhooks</small>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label for="discord-username" class="form-label">Bot Username (optional)</label>
+                                                <input type="text" class="form-control" id="discord-username"
+                                                       placeholder="SkyGuard">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div><!-- /.accordion-body -->
                         </div>
                     </div>
                 </div>
@@ -435,7 +610,7 @@
 
 <!-- Alerts Section -->
 <div id="alerts-section" class="section" style="display: none;">
-    <div class="card">
+    <div class="card mb-4">
         <div class="card-header">
             <h5 class="mb-0">
                 <i class="fas fa-bell"></i> Alert System Management
@@ -464,6 +639,59 @@
                         </button>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delivery History -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+                <i class="fas fa-history"></i> Alert Delivery History
+            </h5>
+            <div class="d-flex gap-2 align-items-center">
+                <select class="form-select form-select-sm" id="alert-history-channel" style="width:140px">
+                    <option value="">All Channels</option>
+                    <option value="audio">Audio</option>
+                    <option value="push">Push</option>
+                    <option value="sms">SMS</option>
+                    <option value="email">Email</option>
+                    <option value="discord">Discord</option>
+                </select>
+                <select class="form-select form-select-sm" id="alert-history-status" style="width:130px">
+                    <option value="">All Statuses</option>
+                    <option value="success">Success</option>
+                    <option value="failure">Failure</option>
+                    <option value="skipped">Skipped</option>
+                </select>
+                <button class="btn btn-sm btn-outline-secondary" onclick="loadAlertHistory()">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive" style="max-height: 480px; overflow-y: auto;">
+                <table class="table table-sm table-hover mb-0" id="alert-history-table">
+                    <thead class="table-light sticky-top">
+                        <tr>
+                            <th>Time</th>
+                            <th>Channel</th>
+                            <th>Status</th>
+                            <th>Detection</th>
+                            <th>Error</th>
+                        </tr>
+                    </thead>
+                    <tbody id="alert-history-body">
+                        <tr>
+                            <td colspan="5" class="text-center py-3">
+                                <div class="spinner-border spinner-border-sm" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                Loading delivery history…
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
@@ -807,8 +1035,12 @@
             const camera = config.camera || {};
             const ai = config.ai || {};
             const notifications = config.notifications || {};
+            const audio   = notifications.audio   || {};
+            const push    = notifications.push    || {};
+            const sms     = notifications.sms     || {};
+            const email   = notifications.email   || {};
             const discord = notifications.discord || {};
-            
+
             setValue('detection-interval', system.detection_interval, 1.0);
             setValue('max-history', system.max_detection_history, 1000);
             setValue('camera-source', camera.source, 0);
@@ -825,11 +1057,50 @@
             setValue('nms-threshold', ai.nms_threshold, 0.4);
             setValue('species-confidence-threshold', ai.species_confidence_threshold, 0.6);
             setValue('detection-log-level', ai.detection_log_level, 'standard');
-            
-            // Discord configuration (always show, no checkbox)
+
+            // ── Audio ──────────────────────────────────────────────────────
+            setValue('audio-enabled', audio.enabled, false);
+            setValue('audio-sound-file', audio.sound_file, 'sounds/raptor_alert.wav');
+            setValue('audio-volume', audio.volume !== undefined ? audio.volume : 0.8);
+            document.getElementById('audio-volume-value') &&
+                (document.getElementById('audio-volume-value').textContent =
+                    audio.volume !== undefined ? audio.volume : 0.8);
+            setValue('audio-repeat-count', audio.repeat_count, 3);
+            setValue('audio-repeat-interval', audio.repeat_interval, 2.0);
+            toggleChannelFields('audio-fields', audio.enabled || false);
+
+            // ── Push ───────────────────────────────────────────────────────
+            setValue('push-enabled', push.enabled, false);
+            setCredentialField('push-api-key', push.api_key);
+            setValue('push-device-id', push.device_id, '');
+            toggleChannelFields('push-fields', push.enabled || false);
+
+            // ── SMS ────────────────────────────────────────────────────────
+            setValue('sms-enabled', sms.enabled, false);
+            setValue('sms-account-sid', sms.account_sid, '');
+            setCredentialField('sms-auth-token', sms.auth_token);
+            setValue('sms-from-number', sms.from_number, '');
+            setValue('sms-to-numbers',
+                Array.isArray(sms.to_numbers) ? sms.to_numbers.join('\n') : (sms.to_numbers || ''));
+            toggleChannelFields('sms-fields', sms.enabled || false);
+
+            // ── Email ──────────────────────────────────────────────────────
+            setValue('email-enabled', email.enabled, false);
+            setValue('email-smtp-server', email.smtp_server, '');
+            setValue('email-smtp-port', email.smtp_port, 587);
+            setValue('email-username', email.username, '');
+            setCredentialField('email-password', email.password);
+            setValue('email-from', email.from_email, '');
+            setValue('email-to-addresses',
+                Array.isArray(email.to_emails) ? email.to_emails.join('\n') : (email.to_emails || ''));
+            toggleChannelFields('email-fields', email.enabled || false);
+
+            // ── Discord ────────────────────────────────────────────────────
+            setValue('discord-enabled', discord.enabled, false);
             setValue('discord-webhook-url', discord.webhook_url, '');
             setValue('discord-username', discord.username, 'SkyGuard');
-            
+            toggleChannelFields('discord-fields', discord.enabled || false);
+
             // Update range value displays
             updateRangeValue('confidence-threshold', 'confidence-value');
             updateRangeValue('nms-threshold', 'nms-value');
@@ -847,6 +1118,61 @@
         const value = document.getElementById(valueId);
         range.addEventListener('input', function() {
             value.textContent = this.value;
+        });
+    }
+
+    // Credential-field helpers ------------------------------------------------
+
+    /**
+     * Populate a credential field.  If the server returned a redacted sentinel
+     * ("••••••••") or any non-empty value, display "••••••••" and mark the
+     * element as unchanged.  Empty values clear the field.
+     */
+    function setCredentialField(id, serverValue) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const SENTINEL = '••••••••';
+        if (serverValue && serverValue !== '') {
+            el.value = SENTINEL;
+            el.dataset.credentialUnchanged = 'true';
+        } else {
+            el.value = '';
+            delete el.dataset.credentialUnchanged;
+        }
+        // Mark field as "changed" once the user edits it
+        el.addEventListener('input', function() {
+            delete this.dataset.credentialUnchanged;
+        }, { once: true });
+    }
+
+    /**
+     * Build a partial object with credential key/value pairs, omitting keys
+     * whose fields are still showing the unchanged sentinel.
+     *
+     * @param {Object} keyToId  Mapping of config key → element ID.
+     * @returns {Object}        Partial object to spread into the config payload.
+     */
+    function getCredentialUpdates(keyToId) {
+        const SENTINEL = '••••••••';
+        const result = {};
+        for (const [key, id] of Object.entries(keyToId)) {
+            const el = document.getElementById(id);
+            if (!el) continue;
+            if (el.dataset.credentialUnchanged === 'true' && el.value === SENTINEL) {
+                // Field unchanged — omit from payload; backend deep-merge preserves it
+                continue;
+            }
+            result[key] = el.value;
+        }
+        return result;
+    }
+
+    /** Show or hide a channel's settings fields based on the toggle state. */
+    function toggleChannelFields(containerId, enabled) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        container.querySelectorAll('input, select, textarea').forEach(function(el) {
+            el.disabled = !enabled;
         });
     }
     
@@ -877,8 +1203,38 @@
                     detection_log_level: document.getElementById('detection-log-level').value
                 },
                 notifications: {
+                    audio: {
+                        enabled: document.getElementById('audio-enabled').checked,
+                        sound_file: document.getElementById('audio-sound-file').value,
+                        volume: parseFloat(document.getElementById('audio-volume').value) || 0.8,
+                        repeat_count: parseInt(document.getElementById('audio-repeat-count').value) || 3,
+                        repeat_interval: parseFloat(document.getElementById('audio-repeat-interval').value) || 2.0
+                    },
+                    push: {
+                        enabled: document.getElementById('push-enabled').checked,
+                        ...getCredentialUpdates({'api_key': 'push-api-key'}),
+                        device_id: document.getElementById('push-device-id').value
+                    },
+                    sms: {
+                        enabled: document.getElementById('sms-enabled').checked,
+                        account_sid: document.getElementById('sms-account-sid').value,
+                        ...getCredentialUpdates({'auth_token': 'sms-auth-token'}),
+                        from_number: document.getElementById('sms-from-number').value,
+                        to_numbers: document.getElementById('sms-to-numbers').value
+                            .split('\n').map(s => s.trim()).filter(Boolean)
+                    },
+                    email: {
+                        enabled: document.getElementById('email-enabled').checked,
+                        smtp_server: document.getElementById('email-smtp-server').value,
+                        smtp_port: parseInt(document.getElementById('email-smtp-port').value) || 587,
+                        username: document.getElementById('email-username').value,
+                        ...getCredentialUpdates({'password': 'email-password'}),
+                        from_email: document.getElementById('email-from').value,
+                        to_emails: document.getElementById('email-to-addresses').value
+                            .split('\n').map(s => s.trim()).filter(Boolean)
+                    },
                     discord: {
-                        enabled: document.getElementById('discord-webhook-url').value.trim().length > 0,
+                        enabled: document.getElementById('discord-enabled').checked,
                         webhook_url: document.getElementById('discord-webhook-url').value,
                         username: document.getElementById('discord-username').value || 'SkyGuard'
                     }
@@ -946,8 +1302,90 @@
     }
     
     async function loadAlertsStatus() {
-        // Implementation for alerts status
-        document.getElementById('alerts-info').innerHTML = '<div class="text-muted">Alerts status loading...</div>';
+        document.getElementById('alerts-info').innerHTML =
+            '<div class="text-muted">Alerts status loading...</div>';
+        // Also refresh the delivery history table
+        await loadAlertHistory();
+    }
+
+    // ── Alert Delivery History ──────────────────────────────────────────────
+
+    /** Fetch and render the alert delivery history table. */
+    async function loadAlertHistory() {
+        const tbody = document.getElementById('alert-history-body');
+        if (!tbody) return;
+
+        const channelEl = document.getElementById('alert-history-channel');
+        const statusEl  = document.getElementById('alert-history-status');
+        const channel = channelEl ? channelEl.value : '';
+        const status  = statusEl  ? statusEl.value  : '';
+
+        let url = '/api/alerts/history?limit=50';
+        if (channel) url += '&channel=' + encodeURIComponent(channel);
+        if (status)  url += '&status='  + encodeURIComponent(status);
+
+        try {
+            const response = await fetch(url);
+            if (!response.ok) {
+                tbody.innerHTML =
+                    `<tr><td colspan="5" class="text-center text-danger">
+                        Failed to load history (HTTP ${response.status})
+                     </td></tr>`;
+                return;
+            }
+            const records = await response.json();
+
+            if (!Array.isArray(records) || records.length === 0) {
+                tbody.innerHTML =
+                    '<tr><td colspan="5" class="text-center text-muted py-3">' +
+                    'No delivery records found.</td></tr>';
+                return;
+            }
+
+            const channelIcons = {
+                audio:   '<i class="fas fa-volume-up me-1"></i>',
+                push:    '<i class="fas fa-mobile-alt me-1"></i>',
+                sms:     '<i class="fas fa-sms me-1"></i>',
+                email:   '<i class="fas fa-envelope me-1"></i>',
+                discord: '<i class="fab fa-discord me-1"></i>',
+            };
+
+            let html = '';
+            records.forEach(function(r) {
+                const icon = channelIcons[r.channel] || '';
+                const badge = r.status === 'success'
+                    ? '<span class="badge bg-success">success</span>'
+                    : r.status === 'failure'
+                        ? '<span class="badge bg-danger">failure</span>'
+                        : '<span class="badge bg-secondary">skipped</span>';
+
+                const detectionLink = r.detection_id
+                    ? `<a href="#" onclick="showSection('detections')" title="Detection #${r.detection_id}">#${r.detection_id}</a>`
+                    : '<span class="text-muted">—</span>';
+
+                const errorCell = r.error_message
+                    ? `<span class="text-danger small" title="${escapeHtml(r.error_message)}">` +
+                      escapeHtml(r.error_message.substring(0, 60)) +
+                      (r.error_message.length > 60 ? '…' : '') + '</span>'
+                    : '<span class="text-muted">—</span>';
+
+                html += `<tr>
+                    <td class="small text-nowrap">${formatTimestamp(r.timestamp)}</td>
+                    <td>${icon}${r.channel}</td>
+                    <td>${badge}</td>
+                    <td>${detectionLink}</td>
+                    <td>${errorCell}</td>
+                </tr>`;
+            });
+            tbody.innerHTML = html;
+
+        } catch (err) {
+            console.error('Failed to load alert history:', err);
+            tbody.innerHTML =
+                `<tr><td colspan="5" class="text-center text-danger">
+                    Error loading history: ${escapeHtml(String(err))}
+                 </td></tr>`;
+        }
     }
     
     // Logs tailing state
@@ -1270,8 +1708,38 @@
                     detection_log_level: getValue('detection-log-level', 'standard')
                 },
                 notifications: {
+                    audio: {
+                        enabled: getValue('audio-enabled', false),
+                        sound_file: getValue('audio-sound-file', 'sounds/raptor_alert.wav'),
+                        volume: getValue('audio-volume', 0.8),
+                        repeat_count: parseInt(getValue('audio-repeat-count', 3)),
+                        repeat_interval: getValue('audio-repeat-interval', 2.0)
+                    },
+                    push: {
+                        enabled: getValue('push-enabled', false),
+                        ...getCredentialUpdates({'api_key': 'push-api-key'}),
+                        device_id: getValue('push-device-id', '')
+                    },
+                    sms: {
+                        enabled: getValue('sms-enabled', false),
+                        account_sid: getValue('sms-account-sid', ''),
+                        ...getCredentialUpdates({'auth_token': 'sms-auth-token'}),
+                        from_number: getValue('sms-from-number', ''),
+                        to_numbers: (getValue('sms-to-numbers', '') || '')
+                            .split('\n').map(s => s.trim()).filter(Boolean)
+                    },
+                    email: {
+                        enabled: getValue('email-enabled', false),
+                        smtp_server: getValue('email-smtp-server', ''),
+                        smtp_port: parseInt(getValue('email-smtp-port', 587)),
+                        username: getValue('email-username', ''),
+                        ...getCredentialUpdates({'password': 'email-password'}),
+                        from_email: getValue('email-from', ''),
+                        to_emails: (getValue('email-to-addresses', '') || '')
+                            .split('\n').map(s => s.trim()).filter(Boolean)
+                    },
                     discord: {
-                        enabled: getValue('discord-webhook-url', '').trim().length > 0,
+                        enabled: getValue('discord-enabled', false),
                         webhook_url: getValue('discord-webhook-url', ''),
                         username: getValue('discord-username', 'SkyGuard')
                     }
