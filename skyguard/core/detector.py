@@ -24,7 +24,7 @@ except ImportError as e:
             "This system requires Raspbian with Desktop/UI and the full opencv-python package.\n\n"
             "To fix this issue:\n"
             "1. Ensure you are running Raspbian with Desktop (not Lite/headless)\n"
-            "2. Install system libraries: sudo apt-get install libgl1-mesa-glx libglib2.0-0 libsm6 libxext6 libxrender-dev libgomp1\n"
+            "2. Install system libraries: sudo apt-get install libgl1 libglib2.0-0 libsm6 libxext6 libxrender-dev libgomp1\n"
             "3. Install opencv-python: pip install opencv-python\n"
             "4. Or run the fix script: ./scripts/fix_opencv.sh\n\n"
             f"Original error: {error_msg}"

@@ -69,8 +69,13 @@ install_system_dependencies() {
     echo -e "${CYAN}   Installing core dependencies...${NC}"
     
     # Build base package list
-    # Include OpenGL libraries required for opencv-python (Desktop version)
-    BASE_PACKAGES="python3 python3-pip python3-venv git wget curl build-essential cmake pkg-config libjpeg-dev libtiff5-dev libpng-dev libavcodec-dev libavformat-dev libswscale-dev libv4l-dev libxvidcore-dev libx264-dev libgl1-mesa-glx libglib2.0-0 libsm6 libxext6 libxrender-dev libgomp1"
+    # Include OpenGL libraries required for opencv-python (Desktop version).
+    # On newer Debian/Raspberry Pi OS releases, libgl1-mesa-glx was replaced by libgl1.
+    GL_PKG="libgl1"
+    if ! apt-cache show "$GL_PKG" >/dev/null 2>&1; then
+        GL_PKG="libgl1-mesa-glx"
+    fi
+    BASE_PACKAGES="python3 python3-pip python3-venv git wget curl build-essential cmake pkg-config libjpeg-dev libtiff5-dev libpng-dev libavcodec-dev libavformat-dev libswscale-dev libv4l-dev libxvidcore-dev libx264-dev $GL_PKG libglib2.0-0 libsm6 libxext6 libxrender-dev libgomp1"
     
     # Try to install version-specific Python dev package first
     PYTHON_DEV_PKG=""
