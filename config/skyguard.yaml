@@ -22,7 +22,7 @@ camera:
   flip_vertical: false
   focus_mode: manual
   focus_value: 15
-  fps: 30
+  fps: 25
   height: 1080
   live_view: false
   rotation: '0'
@@ -80,7 +80,7 @@ storage:
   max_image_size_mb: 5
 system:
   debug_mode: false
-  detection_interval: 2
+  detection_interval: 2.0
   max_detection_history: 1000
   save_detection_frames: false
 training:
