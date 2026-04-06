@@ -292,3 +292,122 @@ class TestAlertStatsDbBacked:
 
         assert stats['failed_alerts'] == 2
         assert stats['total_alerts'] == 3
+
+
+# ---------------------------------------------------------------------------
+# 6. EventLogger.log_detection() return type — REQ-3 AC3
+# ---------------------------------------------------------------------------
+
+
+class TestLogDetectionReturnType:
+    """EventLogger.log_detection() returns Optional[int], not bool (REQ-3 AC3)."""
+
+    def test_log_detection_returns_int_on_success(self, logger: EventLogger) -> None:
+        """log_detection() returns an integer row ID (not True) on success."""
+        import numpy as np
+
+        detection = {
+            'class_name': 'bird',
+            'confidence': 0.85,
+            'bbox': [10, 20, 110, 120],
+            'center': [60, 70],
+            'area': 10000,
+            'timestamp': time.time(),
+        }
+        result = logger.log_detection(detection, frame=None)
+
+        assert result is not None
+        assert isinstance(result, int), (
+            f"Expected int, got {type(result).__name__} ({result!r}). "
+            "log_detection() must return cursor.lastrowid, not a bool."
+        )
+        assert result > 0
+
+    def test_log_detection_consecutive_calls_return_different_ids(
+        self, logger: EventLogger
+    ) -> None:
+        """Each successive log_detection() call returns a unique increasing ID."""
+        detection = {
+            'class_name': 'hawk',
+            'confidence': 0.80,
+            'bbox': [0, 0, 50, 50],
+            'center': [25, 25],
+            'area': 2500,
+            'timestamp': time.time(),
+        }
+        id1 = logger.log_detection(detection, frame=None)
+        id2 = logger.log_detection(detection, frame=None)
+
+        assert isinstance(id1, int) and isinstance(id2, int)
+        assert id2 > id1, "Successive insertions must return increasing row IDs"
+
+    def test_log_detection_id_matches_db_row(self, logger: EventLogger) -> None:
+        """The returned ID can be used to retrieve the same detection from the DB."""
+        detection = {
+            'class_name': 'bird',
+            'confidence': 0.77,
+            'bbox': [5, 10, 55, 60],
+            'center': [30, 35],
+            'area': 2500,
+            'timestamp': time.time(),
+        }
+        row_id = logger.log_detection(detection, frame=None)
+        assert row_id is not None
+
+        record = logger.get_detection_by_id(row_id)
+        assert record is not None
+        assert record['class_name'] == 'bird'
+
+    def test_log_detection_returns_none_when_db_not_initialised(
+        self, tmp_db: dict
+    ) -> None:
+        """log_detection() returns None (not False) when the DB is not open."""
+        el = EventLogger(tmp_db)
+        # Deliberately do NOT call el.initialize()
+        detection = {
+            'class_name': 'bird',
+            'confidence': 0.90,
+            'bbox': [0, 0, 100, 100],
+            'center': [50, 50],
+            'area': 10000,
+            'timestamp': time.time(),
+        }
+        result = el.log_detection(detection, frame=None)
+        assert result is None
+
+
+# ---------------------------------------------------------------------------
+# 7. get_alert_deliveries pagination / offset
+# ---------------------------------------------------------------------------
+
+
+class TestAlertDeliveriesPagination:
+    """get_alert_deliveries() correctly paginates results."""
+
+    def test_offset_skips_records(self, logger: EventLogger) -> None:
+        """offset parameter skips the specified number of records."""
+        for i in range(5):
+            logger.log_alert_delivery(channel='sms', status='success')
+
+        first_two = logger.get_alert_deliveries(limit=2, offset=0)
+        next_two = logger.get_alert_deliveries(limit=2, offset=2)
+
+        assert len(first_two) == 2
+        assert len(next_two) == 2
+        # IDs must differ
+        first_ids = {r['id'] for r in first_two}
+        next_ids = {r['id'] for r in next_two}
+        assert first_ids.isdisjoint(next_ids)
+
+    def test_limit_caps_result_count(self, logger: EventLogger) -> None:
+        """limit parameter caps the number of returned records."""
+        for _ in range(10):
+            logger.log_alert_delivery(channel='email', status='success')
+
+        records = logger.get_alert_deliveries(limit=4)
+        assert len(records) <= 4
+
+    def test_empty_db_returns_empty_list(self, logger: EventLogger) -> None:
+        """get_alert_deliveries returns [] when no records exist."""
+        records = logger.get_alert_deliveries(limit=50)
+        assert records == []

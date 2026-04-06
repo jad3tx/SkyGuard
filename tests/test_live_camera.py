@@ -219,10 +219,12 @@ class TestLiveCameraIntegration:
         with web_portal.app.test_client() as client:
             response = client.get('/')
             content = response.get_data(as_text=True)
-            
-            # Check that camera feed URL is properly referenced
+
+            # Check that camera feed URL is properly referenced in the template.
+            # The sprint revision uses id="recent-capture-image" pointing at
+            # /api/camera/feed; the old live-camera-feed id was removed.
             assert '/api/camera/feed' in content
-            assert 'live-camera-feed' in content
+            assert 'recent-capture-image' in content
     
     def test_camera_controls_initialization(self, web_portal: SkyGuardWebPortal) -> None:
         """Test that camera controls are properly initialized."""
