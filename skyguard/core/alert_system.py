@@ -7,6 +7,7 @@ loop latency is not affected.  Delivery outcomes are persisted to the database
 via an optional :class:`~skyguard.storage.event_logger.EventLogger` reference.
 """
 
+import os
 import logging
 import time
 import threading
@@ -98,6 +99,10 @@ class AlertSystem:
         self.logger: logging.Logger = logging.getLogger(__name__)
         self.event_logger = event_logger
 
+        # Overlay any secrets provided via environment variables so that
+        # credentials never have to be written to the (git-tracked) YAML file.
+        self._apply_secret_env_overrides()
+
         # In-memory counters (still maintained for backward compatibility)
         self.alert_count: int = 0
         self.last_alert_time: float = 0.0
@@ -126,6 +131,30 @@ class AlertSystem:
         self.cooldown_until: Dict[str, float] = {}
         # Lock protecting all rate-limiting mutable state
         self._rate_limit_lock = threading.Lock()
+
+    def _apply_secret_env_overrides(self) -> None:
+        """Overlay notification secrets from environment variables.
+
+        Supported variables (each overrides the matching YAML field when set):
+            SKYGUARD_EMAIL_PASSWORD    -> notifications.email.password
+            SKYGUARD_SMS_AUTH_TOKEN    -> notifications.sms.auth_token
+            SKYGUARD_SMS_ACCOUNT_SID   -> notifications.sms.account_sid
+            SKYGUARD_PUSH_API_KEY      -> notifications.push.api_key
+            SKYGUARD_DISCORD_WEBHOOK   -> notifications.discord.webhook_url
+        """
+        mapping = [
+            ('email', 'password', 'SKYGUARD_EMAIL_PASSWORD'),
+            ('sms', 'auth_token', 'SKYGUARD_SMS_AUTH_TOKEN'),
+            ('sms', 'account_sid', 'SKYGUARD_SMS_ACCOUNT_SID'),
+            ('push', 'api_key', 'SKYGUARD_PUSH_API_KEY'),
+            ('discord', 'webhook_url', 'SKYGUARD_DISCORD_WEBHOOK'),
+        ]
+        for section, key, env_var in mapping:
+            value = os.environ.get(env_var)
+            if value:
+                section_cfg = self.config.setdefault(section, {})
+                if isinstance(section_cfg, dict):
+                    section_cfg[key] = value
 
     # -----------------------------------------------------------------------
     # Initialisation

@@ -130,3 +130,8 @@ images/
 # Backup files
 *.bak
 *.backup
+
+# Active runtime config may contain secrets — keep only the example tracked
+config/skyguard.yaml
+# Persisted Flask session secret
+data/.flask_secret

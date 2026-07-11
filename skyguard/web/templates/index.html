@@ -817,9 +817,9 @@
                                             <i class="fas fa-eye"></i> Detection #${detection.id || 'Unknown'}
                                         </h6>
                                         <p class="card-text">
-                                            <strong>Class:</strong> ${detection.class || 'bird'}<br>
+                                            <strong>Class:</strong> ${escapeHtml(detection.class || 'bird')}<br>
                                             <strong>Confidence:</strong> ${formatConfidence(detection.confidence)}<br>
-                                            ${detection.species ? `<strong>Species:</strong> ${detection.species} (${formatConfidence(detection.species_confidence || 0)})<br>` : ''}
+                                            ${detection.species ? `<strong>Species:</strong> ${escapeHtml(detection.species)} (${formatConfidence(detection.species_confidence || 0)})<br>` : ''}
                                             <strong>Time:</strong> ${formatTimestamp(detection.timestamp)}
                                         </p>
                                     </div>
@@ -979,9 +979,9 @@
                                         <i class="fas fa-eye"></i> Detection #${detection.id}
                                     </h6>
                                     <p class="card-text">
-                                        <strong>Class:</strong> ${detection.class || 'bird'}<br>
+                                        <strong>Class:</strong> ${escapeHtml(detection.class || 'bird')}<br>
                                         <strong>Confidence:</strong> ${formatConfidence(detection.confidence)}<br>
-                                        ${detection.species ? `<strong>Species:</strong> ${detection.species} (${formatConfidence(detection.species_confidence || 0)})<br>` : ''}
+                                        ${detection.species ? `<strong>Species:</strong> ${escapeHtml(detection.species)} (${formatConfidence(detection.species_confidence || 0)})<br>` : ''}
                                         <strong>Time:</strong> ${formatTimestamp(detection.timestamp)}
                                     </p>
                                 </div>
@@ -1241,7 +1241,7 @@
                 }
             };
             
-            const response = await fetch('/api/config', {
+            const response = await apiFetch('/api/config', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -1762,7 +1762,7 @@
                 return;
             }
             
-            const response = await fetch('/api/config', {
+            const response = await apiFetch('/api/config', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'

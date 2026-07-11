@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{% block title %}SkyGuard Web Portal{% endblock %}</title>
     
     <!-- Bootstrap CSS -->
@@ -199,6 +200,11 @@
                                 <i class="fas fa-file-alt"></i> Logs
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/logout">
+                                <i class="fas fa-sign-out-alt"></i> Log out
+                            </a>
+                        </li>
                     </ul>
                 </div>
             </nav>
@@ -231,6 +237,22 @@
     
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // CSRF-aware fetch wrapper. Attaches the per-session token to every
+        // state-changing request and redirects to /login on a 401.
+        const CSRF_TOKEN = (document.querySelector('meta[name="csrf-token"]') || {}).content || '';
+        async function apiFetch(url, options = {}) {
+            options = Object.assign({}, options);
+            const method = (options.method || 'GET').toUpperCase();
+            options.headers = Object.assign({}, options.headers);
+            if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
+                options.headers['X-CSRF-Token'] = CSRF_TOKEN;
+            }
+            const response = await fetch(url, options);
+            if (response.status === 401) { window.location.href = '/login'; }
+            return response;
+        }
+    </script>
     
     <!-- Custom JavaScript -->
     <script>
@@ -374,7 +396,7 @@
                         button.offsetHeight;
                     }
                     
-                    const response = await fetch('/api/system/restart', {method: 'POST'});
+                    const response = await apiFetch('/api/system/restart', {method: 'POST'});
                     const result = await response.json();
                     
                     if (button) {
