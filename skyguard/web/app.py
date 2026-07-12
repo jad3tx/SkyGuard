@@ -14,8 +14,10 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, List, Any, Optional
 
-from flask import Flask, render_template, request, jsonify, send_file
-from flask_cors import CORS
+from flask import (
+    Flask, render_template, request, jsonify, send_file,
+    session, redirect, url_for, abort,
+)
 import cv2
 import numpy as np
 
@@ -28,6 +30,7 @@ from skyguard.storage.event_logger import EventLogger
 from skyguard.core.detector import RaptorDetector
 from skyguard.core.camera import CameraManager
 from skyguard.core.alert_system import AlertSystem
+from skyguard.web import security
 
 
 class SkyGuardWebPortal:
@@ -36,18 +39,31 @@ class SkyGuardWebPortal:
     def __init__(self, config_path: str = "config/skyguard.yaml"):
         """Initialize the web portal."""
         self.app = Flask(__name__)
-        self.app.secret_key = os.urandom(24)
-        CORS(self.app)
-        
-        # Initialize components
-        self.config_manager = ConfigManager(config_path)
-        
-        # Load configuration first
-        self.config = self.config_manager.get_config()
-        
-        # Setup logger
+
+        # Setup logger early so security setup can use it
         import logging
         self.logger = logging.getLogger(__name__)
+
+        # --- Security: stable session key + credentials -------------------
+        # A persisted/env-provided key (sessions survive restarts) replaces
+        # the previous per-boot os.urandom key.
+        self.app.secret_key = security.load_or_create_secret_key()
+        self.app.config.update(
+            SESSION_COOKIE_HTTPONLY=True,
+            SESSION_COOKIE_SAMESITE="Lax",
+        )
+        self._auth_username, self._auth_password_hash = security.resolve_credentials()
+
+        # Same-origin app: no cross-origin access is enabled. (Previously
+        # flask_cors.CORS(app) allowed every origin.)  Register the auth +
+        # CSRF gate that protects every route by default.
+        self._install_security_hooks()
+
+        # Initialize components
+        self.config_manager = ConfigManager(config_path)
+
+        # Load configuration first
+        self.config = self.config_manager.get_config()
         
         # Initialize event logger with config
         self.event_logger = EventLogger(self.config.get('storage', {}))
@@ -70,9 +86,58 @@ class SkyGuardWebPortal:
         # Initialize components
         self._initialize_components()
     
+    def _install_security_hooks(self):
+        """Register the authentication + CSRF gate and make the CSRF token
+        available to templates."""
+
+        # Endpoints reachable without a session (login page/handler + static).
+        public_endpoints = {'login', 'static'}
+
+        @self.app.before_request
+        def _require_auth_and_csrf():
+            if request.endpoint in public_endpoints:
+                return None
+            if not session.get(security.SESSION_AUTH):
+                if request.path.startswith('/api/'):
+                    return jsonify({'error': 'Authentication required'}), 401
+                return redirect(url_for('login', next=request.path))
+            if security.is_mutating(request.method):
+                if not security.csrf_token_valid(session, request):
+                    return jsonify({'error': 'Invalid or missing CSRF token'}), 403
+            return None
+
+        @self.app.context_processor
+        def _inject_csrf():
+            return {'csrf_token': lambda: security.get_or_create_csrf_token(session)}
+
     def _setup_routes(self):
         """Setup Flask routes."""
-        
+
+        @self.app.route('/login', methods=['GET', 'POST'])
+        def login():
+            """Portal login."""
+            if request.method == 'POST':
+                username = (request.form.get('username') or '').strip()
+                password = request.form.get('password') or ''
+                if (username == self._auth_username
+                        and security.verify_password(self._auth_password_hash, password)):
+                    session.clear()
+                    session[security.SESSION_AUTH] = True
+                    session[security.SESSION_USER] = username
+                    security.get_or_create_csrf_token(session)
+                    nxt = request.args.get('next') or url_for('index')
+                    if not nxt.startswith('/'):
+                        nxt = url_for('index')
+                    return redirect(nxt)
+                return render_template('login.html', error='Invalid credentials'), 401
+            return render_template('login.html', error=None)
+
+        @self.app.route('/logout')
+        def logout():
+            """Clear the session."""
+            session.clear()
+            return redirect(url_for('login'))
+
         @self.app.route('/')
         def index():
             """Main dashboard."""
@@ -119,7 +184,8 @@ class SkyGuardWebPortal:
                 }
                 return jsonify(status)
             except Exception as e:
-                return jsonify({'error': str(e)}), 500
+                self.logger.error('Unhandled error at %s: %s', request.path, e, exc_info=True)
+                return jsonify({'error': 'Internal server error'}), 500
         
         @self.app.route('/api/detections')
         def api_detections():
@@ -141,7 +207,8 @@ class SkyGuardWebPortal:
                     'limit': limit
                 })
             except Exception as e:
-                return jsonify({'error': str(e)}), 500
+                self.logger.error('Unhandled error at %s: %s', request.path, e, exc_info=True)
+                return jsonify({'error': 'Internal server error'}), 500
         
         @self.app.route('/api/detections/<int:detection_id>')
         def api_detection_detail(detection_id: int):
@@ -164,7 +231,8 @@ class SkyGuardWebPortal:
                     })
                 return jsonify({'error': 'Detection not found'}), 404
             except Exception as e:
-                return jsonify({'error': str(e)}), 500
+                self.logger.error('Unhandled error at %s: %s', request.path, e, exc_info=True)
+                return jsonify({'error': 'Internal server error'}), 500
         
         @self.app.route('/api/detections/<int:detection_id>/image')
         def api_detection_image(detection_id: int):
@@ -181,7 +249,8 @@ class SkyGuardWebPortal:
                         return send_file(abs_path, mimetype='image/jpeg')
                 return jsonify({'error': 'Image not found'}), 404
             except Exception as e:
-                return jsonify({'error': str(e)}), 500
+                self.logger.error('Unhandled error at %s: %s', request.path, e, exc_info=True)
+                return jsonify({'error': 'Internal server error'}), 500
         
         @self.app.route('/api/detections/<int:detection_id>/segmented')
         def api_detection_segmented_image(detection_id: int):
@@ -206,7 +275,8 @@ class SkyGuardWebPortal:
                         return send_file(abs_path, mimetype='image/jpeg')
                 return jsonify({'error': 'Image not found'}), 404
             except Exception as e:
-                return jsonify({'error': str(e)}), 500
+                self.logger.error('Unhandled error at %s: %s', request.path, e, exc_info=True)
+                return jsonify({'error': 'Internal server error'}), 500
         
         @self.app.route('/api/config')
         def api_get_config():
@@ -273,7 +343,8 @@ class SkyGuardWebPortal:
                 return jsonify(merged_config)
             except Exception as e:
                 self.logger.error(f"Failed to get config: {e}")
-                return jsonify({'error': str(e)}), 500
+                self.logger.error('Unhandled error at %s: %s', request.path, e, exc_info=True)
+                return jsonify({'error': 'Internal server error'}), 500
         
         @self.app.route('/api/config', methods=['POST'])
         def api_update_config():
@@ -323,7 +394,8 @@ class SkyGuardWebPortal:
                 else:
                     return jsonify({'error': 'Invalid configuration'}), 400
             except Exception as e:
-                return jsonify({'error': str(e)}), 500
+                self.logger.error('Unhandled error at %s: %s', request.path, e, exc_info=True)
+                return jsonify({'error': 'Internal server error'}), 500
         
         @self.app.route('/api/camera/test')
         def api_test_camera():
@@ -334,7 +406,8 @@ class SkyGuardWebPortal:
                 else:
                     return jsonify({'error': 'Camera test failed'}), 500
             except Exception as e:
-                return jsonify({'error': str(e)}), 500
+                self.logger.error('Unhandled error at %s: %s', request.path, e, exc_info=True)
+                return jsonify({'error': 'Internal server error'}), 500
         
         @self.app.route('/api/camera/status')
         def api_camera_status():
@@ -409,7 +482,8 @@ class SkyGuardWebPortal:
                         return "Failed to create test image", 500
                 
             except Exception as e:
-                return f"Camera feed error: {str(e)}", 500
+                self.logger.error('Camera feed error: %s', e, exc_info=True)
+                return 'Camera feed error', 500
         
         @self.app.route('/api/camera/capture')
         def api_camera_capture():
@@ -435,7 +509,8 @@ class SkyGuardWebPortal:
                     return "No camera snapshot available", 404
                 
             except Exception as e:
-                return f"Camera capture error: {str(e)}", 500
+                self.logger.error('Camera capture error: %s', e, exc_info=True)
+                return 'Camera capture error', 500
         
         @self.app.route('/api/ai/test')
         def api_test_ai():
@@ -450,7 +525,8 @@ class SkyGuardWebPortal:
                 else:
                     return jsonify({'error': 'AI model test failed'}), 500
             except Exception as e:
-                return jsonify({'error': str(e)}), 500
+                self.logger.error('Unhandled error at %s: %s', request.path, e, exc_info=True)
+                return jsonify({'error': 'Internal server error'}), 500
         
         @self.app.route('/api/ai/stats')
         def api_ai_stats():
@@ -589,7 +665,8 @@ class SkyGuardWebPortal:
                     'recent_detections_count': len(recent_detections)
                 })
             except Exception as e:
-                return jsonify({'error': str(e)}), 500
+                self.logger.error('Unhandled error at %s: %s', request.path, e, exc_info=True)
+                return jsonify({'error': 'Internal server error'}), 500
         
         @self.app.route('/api/alerts/history')
         def api_alerts_history():
@@ -616,7 +693,8 @@ class SkyGuardWebPortal:
                 return jsonify(deliveries)
             except Exception as e:
                 self.logger.error(f"Failed to fetch alert history: {e}", exc_info=True)
-                return jsonify({'error': str(e)}), 500
+                self.logger.error('Unhandled error at %s: %s', request.path, e, exc_info=True)
+                return jsonify({'error': 'Internal server error'}), 500
 
         @self.app.route('/api/alerts/test')
         def api_test_alerts():
@@ -634,16 +712,8 @@ class SkyGuardWebPortal:
                 else:
                     return jsonify({'error': 'Alert system test failed'}), 500
             except Exception as e:
-                return jsonify({'error': str(e)}), 500
-        
-        @self.app.route('/api/system/restart')
-        def api_restart_system():
-            """Restart SkyGuard system."""
-            try:
-                self._restart_system()
-                return jsonify({'message': 'System restart initiated'})
-            except Exception as e:
-                return jsonify({'error': str(e)}), 500
+                self.logger.error('Unhandled error at %s: %s', request.path, e, exc_info=True)
+                return jsonify({'error': 'Internal server error'}), 500
         
         @self.app.route('/api/logs')
         def api_get_logs():
@@ -658,7 +728,8 @@ class SkyGuardWebPortal:
                     'last_timestamp': logs[-1]['timestamp'] if logs else None
                 })
             except Exception as e:
-                return jsonify({'error': str(e)}), 500
+                self.logger.error('Unhandled error at %s: %s', request.path, e, exc_info=True)
+                return jsonify({'error': 'Internal server error'}), 500
         
         @self.app.route('/api/stats')
         def api_get_stats():
@@ -687,7 +758,8 @@ class SkyGuardWebPortal:
                     }
                 })
             except Exception as e:
-                return jsonify({'error': str(e)}), 500
+                self.logger.error('Unhandled error at %s: %s', request.path, e, exc_info=True)
+                return jsonify({'error': 'Internal server error'}), 500
         
         @self.app.route('/api/species/stats')
         def api_species_stats():
@@ -697,7 +769,8 @@ class SkyGuardWebPortal:
                 stats = self.event_logger.get_species_stats(days=days)
                 return jsonify(stats)
             except Exception as e:
-                return jsonify({'error': str(e)}), 500
+                self.logger.error('Unhandled error at %s: %s', request.path, e, exc_info=True)
+                return jsonify({'error': 'Internal server error'}), 500
         
         @self.app.route('/api/system/restart', methods=['POST'])
         def api_system_restart():
@@ -1125,7 +1198,16 @@ class SkyGuardWebPortal:
                     return False
                 if 'detection_log_level' in ai and ai['detection_log_level'] not in ['minimal', 'standard', 'detailed']:
                     return False
-            
+                # Model paths are deserialized via pickle (torch.load) on load,
+                # so confine them to the project models/ directory and reject
+                # absolute/UNC/traversal paths to prevent arbitrary-file loads.
+                for key in ('model_path', 'species_model_path'):
+                    if key in ai and not security.is_allowed_model_path(ai[key]):
+                        self.logger.warning(
+                            "Rejected configuration: unsafe %s=%r", key, ai.get(key)
+                        )
+                        return False
+
             # Validate system settings if provided
             if 'system' in config:
                 system = config['system']
@@ -1346,14 +1428,23 @@ class SkyGuardWebPortal:
             # Read log file (read last N lines efficiently)
             logs = []
             try:
-                # Read file in reverse to get last N lines
+                # Bound both the number of lines and the amount of the file we
+                # read so a very large log cannot exhaust memory.
+                from collections import deque
+                MAX_TAIL_BYTES = 5 * 1024 * 1024
+                safe_limit = max(1, min(int(limit), 5000))
                 with open(log_path, 'r', encoding='utf-8', errors='ignore') as f:
-                    # Read all lines if file is small, otherwise read last portion
-                    lines = f.readlines()
-                    
-                    # Get last N lines
-                    if len(lines) > limit:
-                        lines = lines[-limit:]
+                    try:
+                        f.seek(0, os.SEEK_END)
+                        file_size = f.tell()
+                        if file_size > MAX_TAIL_BYTES:
+                            f.seek(file_size - MAX_TAIL_BYTES)
+                            f.readline()  # discard partial first line
+                        else:
+                            f.seek(0)
+                    except Exception:
+                        f.seek(0)
+                    lines = list(deque(f, maxlen=safe_limit))
                     
                     # Parse each line
                     # Format: YYYY-MM-DD HH:MM:SS - module - LEVEL - message
@@ -1486,8 +1577,23 @@ class SkyGuardWebPortal:
         except:
             return 0
     
-    def run(self, host: str = '0.0.0.0', port: int = 8080, debug: bool = False):
-        """Run the web portal."""
+    def run(self, host: str = '127.0.0.1', port: int = 8080, debug: bool = False):
+        """Run the web portal.
+
+        Defaults to loopback only.  Debug mode (Werkzeug interactive debugger
+        = RCE) is refused on any non-loopback bind address.
+        """
+        if debug and host not in ('127.0.0.1', 'localhost', '::1'):
+            self.logger.error(
+                "Refusing to enable debug mode on non-loopback host %s "
+                "(the Werkzeug debugger allows remote code execution).", host
+            )
+            debug = False
+        if host not in ('127.0.0.1', 'localhost', '::1'):
+            self.logger.warning(
+                "Web portal binding to %s — reachable from the network. "
+                "Ensure a strong SKYGUARD_WEB_PASSWORD is set.", host
+            )
         print(f"🌐 Starting SkyGuard Web Portal on http://{host}:{port}")
         self.app.run(host=host, port=port, debug=debug)
 
@@ -1497,7 +1603,9 @@ def main():
     import argparse
     
     parser = argparse.ArgumentParser(description='SkyGuard Web Portal')
-    parser.add_argument('--host', default='0.0.0.0', help='Host to bind to')
+    parser.add_argument('--host', default='127.0.0.1',
+                        help='Host to bind to (default: 127.0.0.1 loopback; '
+                             'use 0.0.0.0 to expose on the network)')
     parser.add_argument('--port', type=int, default=8080, help='Port to bind to')
     parser.add_argument('--debug', action='store_true', help='Enable debug mode')
     parser.add_argument('--config', default='config/skyguard.yaml', help='Configuration file path')
