@@ -40,8 +40,26 @@ A comprehensive web-based interface for managing and monitoring your SkyGuard ra
 ```bash
 # Install web portal dependencies
 pip install -r requirements-web.txt
+```
 
-# Start the web portal
+### **Set a login password (required)**
+
+The portal requires authentication. Create a `.env` file from the template and
+set a strong password **before** the first start:
+
+```bash
+cp .env.example .env
+chmod 600 .env
+# then edit .env and set SKYGUARD_WEB_PASSWORD=<a strong passphrase>
+```
+
+`.env` is loaded automatically at startup and is gitignored, so your password
+is never committed. If you skip this step, the portal still refuses anonymous
+access — it generates a **random one-time password** and prints it to the
+console (and `logs/web.log`) on every startup, which you must copy to log in.
+
+```bash
+# Start the web portal (loads .env automatically)
 python scripts/start_web_portal.py
 ```
 
@@ -52,11 +70,22 @@ Open your web browser and navigate to:
 http://localhost:8080
 ```
 
+You will be redirected to a **login page**. Sign in with the username
+(default `admin`) and the password you configured. Use the **Log out** link in
+the sidebar to end your session.
+
 ### **Default Configuration**
 
-- **Host**: `0.0.0.0` (accessible from any device on the network)
+- **Host**: `127.0.0.1` (loopback only — not reachable from the network unless
+  you explicitly pass `--host 0.0.0.0`)
 - **Port**: `8080`
-- **Debug Mode**: Disabled by default
+- **Authentication**: Required (session login; see above)
+- **Debug Mode**: Disabled by default, and **refused** on any non-loopback host
+
+> **Note:** The bundled `scripts/start_skyguard.sh` intentionally launches the
+> portal with `--host 0.0.0.0` so you can reach it from a phone or laptop on
+> your LAN. Because that exposes it to the network, a strong
+> `SKYGUARD_WEB_PASSWORD` in `.env` is mandatory in that mode.
 
 ## ⚙️ **Configuration**
 
@@ -66,20 +95,41 @@ http://localhost:8080
 python scripts/start_web_portal.py [OPTIONS]
 
 Options:
-  --host HOST          Host to bind to (default: 0.0.0.0)
+  --host HOST          Host to bind to (default: 127.0.0.1; use 0.0.0.0 to
+                       expose on the local network)
   --port PORT          Port to bind to (default: 8080)
-  --debug              Enable debug mode
+  --debug              Enable debug mode (ignored unless --host is loopback)
   --config CONFIG      Configuration file path
-
+```
 
 ### **Environment Variables**
 
+All security settings are supplied via environment variables (typically through
+the gitignored `.env` file). Every value overrides the matching field in
+`config/skyguard.yaml`.
+
+| Variable | Purpose |
+|----------|---------|
+| `SKYGUARD_WEB_USERNAME` | Portal login username (default `admin`) |
+| `SKYGUARD_WEB_PASSWORD` | Portal login password (hashed at startup) |
+| `SKYGUARD_WEB_PASSWORD_HASH` | Pre-computed werkzeug hash (overrides the plaintext password) |
+| `SKYGUARD_SECRET_KEY` | Flask session signing key (optional; a persistent key is generated at `data/.flask_secret` if unset) |
+| `SKYGUARD_EMAIL_PASSWORD` | SMTP password for email alerts |
+| `SKYGUARD_SMS_ACCOUNT_SID` / `SKYGUARD_SMS_AUTH_TOKEN` | Twilio SMS credentials |
+| `SKYGUARD_PUSH_API_KEY` | Pushbullet API key |
+| `SKYGUARD_DISCORD_WEBHOOK` | Discord webhook URL |
+
 ```bash
-# Set custom configuration
-export SKYGUARD_CONFIG_PATH="config/skyguard.yaml"
-export SKYGUARD_WEB_HOST="0.0.0.0"
-export SKYGUARD_WEB_PORT="8080"
-export SKYGUARD_WEB_DEBUG="false"
+# Example .env contents
+SKYGUARD_WEB_USERNAME=admin
+SKYGUARD_WEB_PASSWORD=a-long-random-passphrase
+SKYGUARD_EMAIL_PASSWORD=your-smtp-app-password
+```
+
+To generate a password hash instead of storing the plaintext:
+
+```bash
+python -c "from werkzeug.security import generate_password_hash as g; print(g('yourpassword'))"
 ```
 
 ## 📱 **Web Interface Guide**
@@ -220,51 +270,82 @@ The interface is optimized for:
 
 ### **Security Features**
 
-- **Local Network Access**: Only accessible from your local network
-- **No Authentication**: Simple setup for local use
-- **HTTPS Support**: Can be configured with SSL certificates
+- **Authentication**: Every route requires a logged-in session. Unauthenticated
+  API calls return `401`; browser requests are redirected to the login page.
+- **Loopback by default**: Binds to `127.0.0.1` unless you explicitly expose it
+  with `--host 0.0.0.0`.
+- **Hashed credentials**: The password is stored only as a werkzeug hash; the
+  plaintext lives solely in your gitignored `.env`.
+- **CSRF protection**: All state-changing requests (config updates, restart)
+  require a per-session CSRF token, sent automatically by the UI.
+- **Same-origin only**: Cross-origin (CORS) access is disabled.
+- **Config safety**: Model paths supplied through the config API are validated
+  (no absolute, UNC, `..`, or non-`models/` paths) to prevent loading arbitrary
+  files. Credential fields are redacted in API responses.
+- **Debug lockout**: The Werkzeug debugger cannot be enabled on a non-loopback
+  bind address.
+- **HTTPS**: Terminate TLS at a reverse proxy (see Deployment) for encrypted
+  access beyond localhost.
 
 ### **API Endpoints**
 
-The web portal provides REST API endpoints:
+All routes below require an authenticated session. Endpoints that change state
+(`POST`) additionally require the `X-CSRF-Token` header; the web UI adds this
+automatically, and scripted clients must first obtain the token from the
+`<meta name="csrf-token">` tag on any page.
 
 ```
+GET  /login                   # Login page
+POST /login                   # Authenticate (username, password)
+GET  /logout                  # End session
+
 GET  /api/status              # System status
 GET  /api/detections          # Recent detections
 GET  /api/detections/{id}     # Specific detection
 GET  /api/detections/{id}/image # Detection image
-GET  /api/config              # Current configuration
-POST /api/config              # Update configuration
+GET  /api/config              # Current configuration (secrets redacted)
+POST /api/config              # Update configuration (CSRF required)
 GET  /api/camera/test         # Test camera
 GET  /api/ai/test             # Test AI model
 GET  /api/alerts/test         # Test alerts
-POST /api/system/restart      # Restart system
+POST /api/system/restart      # Restart system (CSRF required; POST only)
 GET  /api/logs                # System logs
 GET  /api/stats               # System statistics
 ```
+
+> The previous unauthenticated `GET /api/system/restart` route has been removed;
+> restart is now `POST` only and CSRF-protected.
 
 ## 🚀 **Deployment**
 
 ### **Local Development**
 
 ```bash
-# Start with debug mode
+# Debug mode only works on loopback (it is ignored on 0.0.0.0)
 python scripts/start_web_portal.py --debug
 
-# Custom host and port
-python scripts/start_web_portal.py --host 192.168.1.100 --port 9000
+# Expose on the LAN (requires SKYGUARD_WEB_PASSWORD to be set in .env)
+python scripts/start_web_portal.py --host 0.0.0.0 --port 8080
 ```
 
 ### **Production Deployment**
 
-```bash
-# Start as background service
-nohup python scripts/start_web_portal.py > web_portal.log 2>&1 &
+Set your secrets in `.env` first (see Environment Variables), then:
 
-# Or use systemd service
+```bash
+# Start as background service (loads .env automatically)
+nohup python scripts/start_web_portal.py --host 0.0.0.0 > logs/web.log 2>&1 &
+
+# Or use systemd — reference the env file so secrets are available to the unit:
+#   [Service]
+#   EnvironmentFile=/opt/SkyGuard/.env
+#   ExecStart=/opt/SkyGuard/venv/bin/python scripts/start_web_portal.py --host 0.0.0.0
 sudo systemctl start skyguard-web
 sudo systemctl enable skyguard-web
 ```
+
+For anything beyond your trusted LAN, run behind a TLS-terminating reverse
+proxy (below) and keep the app bound to `127.0.0.1`.
 
 ### **Docker Deployment**
 
@@ -278,7 +359,9 @@ RUN pip install -r requirements-web.txt
 
 EXPOSE 8080
 
-CMD ["python", "scripts/start_web_portal.py"]
+# Provide SKYGUARD_WEB_PASSWORD (and any notification secrets) at runtime, e.g.
+#   docker run -e SKYGUARD_WEB_PASSWORD=... -p 8080:8080 skyguard-web
+CMD ["python", "scripts/start_web_portal.py", "--host", "0.0.0.0"]
 ```
 
 ### **Nginx Reverse Proxy**
@@ -314,11 +397,27 @@ python -c "import yaml; yaml.safe_load(open('config/skyguard.yaml'))"
 
 **Can't access from other devices:**
 ```bash
-# Check firewall settings
-sudo ufw allow 8080
-
-# Check if binding to 0.0.0.0
+# The portal binds to 127.0.0.1 by default. To reach it from another device,
+# start it on the LAN interface AND make sure a password is set in .env:
 python scripts/start_web_portal.py --host 0.0.0.0
+
+# Open the firewall for the port
+sudo ufw allow 8080
+```
+
+**Forgot the password / locked out:**
+```bash
+# Set (or reset) it in .env, then restart the portal:
+echo 'SKYGUARD_WEB_PASSWORD=a-new-strong-passphrase' >> .env
+
+# If no password was ever set, a temporary one is printed at startup:
+grep -i "temporary login" logs/web.log
+```
+
+**Getting 401/redirected to /login on API calls:**
+```bash
+# API clients must authenticate (POST /login) and send the session cookie plus
+# the X-CSRF-Token header (from the page's <meta name="csrf-token">) on POSTs.
 ```
 
 **Configuration not saving:**
@@ -377,9 +476,10 @@ system:
 
 ## 🎯 **Next Steps**
 
-1. **Start the web portal**: `python scripts/start_web_portal.py`
-2. **Access the interface**: Open `http://localhost:8080`
-3. **Configure your system**: Use the configuration section
+1. **Set a password**: `cp .env.example .env` and set `SKYGUARD_WEB_PASSWORD`
+2. **Start the web portal**: `python scripts/start_web_portal.py`
+3. **Log in**: Open `http://localhost:8080` and sign in as `admin`
+4. **Configure your system**: Use the configuration section
 4. **Test all components**: Use the quick actions
 5. **Monitor detections**: Check the detection history
 6. **Optimize settings**: Adjust based on your needs

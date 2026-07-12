@@ -14,6 +14,18 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
+# Load environment variables from a project-root .env file if present.
+# This lets security settings (SKYGUARD_WEB_PASSWORD, SKYGUARD_SECRET_KEY,
+# notification secrets, ...) be configured without exporting them in the
+# shell — important because start_skyguard.sh launches this script via
+# `runuser -l`, a fresh login shell that would not inherit exported vars.
+try:
+    from dotenv import load_dotenv
+    load_dotenv(project_root / ".env")
+except ImportError:
+    # python-dotenv is an optional convenience; env vars still work if set.
+    pass
+
 from skyguard.web.app import SkyGuardWebPortal
 
 

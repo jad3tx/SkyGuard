@@ -224,18 +224,33 @@ This project is provided for research and educational purposes only. It is not a
    python -m skyguard.setup.configure
    ```
 
-### Step 6: Start SkyGuard
+### Step 6: Secure and Start SkyGuard
 
-1. **Start the system**
+1. **Set a web portal password** (required — the portal now requires a login)
+   ```bash
+   cp .env.example .env
+   chmod 600 .env
+   # Edit .env and set SKYGUARD_WEB_PASSWORD to a strong passphrase
+   ```
+
+   The bundled start script serves the portal on your local network
+   (`0.0.0.0`), so a strong password matters. If you skip this step, the portal
+   still refuses anonymous access — it prints a random one-time password to
+   `logs/web.log` on each startup that you'd have to copy to log in. Put any
+   notification secrets (SMTP, Twilio, Pushbullet, Discord) in the same `.env`
+   file; see [Environment Variables](docs/WEB_PORTAL.md#environment-variables).
+
+2. **Start the system**
    ```bash
    ./scripts/start_skyguard.sh
    ```
 
    This will start both the detection system and web portal.
 
-2. **Access the web portal**
+3. **Access the web portal**
    - Open your web browser
    - Navigate to: `http://<PI_IP_ADDRESS>:8080`
+   - Sign in with username `admin` and the password you set
    - You should see the SkyGuard dashboard
 
 ### Managing SkyGuard
@@ -380,7 +395,14 @@ SkyGuard is configured through the `config/skyguard.yaml` file. Key settings inc
 - **Storage options**: Database location, image retention
 - **Hardware configuration**: GPIO pins, platform-specific settings
 
-See [CONFIGURATION.md](docs/CONFIGURATION.md) for detailed configuration options.
+> **Credentials & secrets:** Keep the web login password and all notification
+> secrets out of `config/skyguard.yaml`. That file is no longer git-tracked (a
+> scrubbed `config/skyguard.yaml.example` is committed instead), and secrets
+> belong in a gitignored `.env` file, which overrides the YAML at runtime. See
+> [Web Portal → Environment Variables](docs/WEB_PORTAL.md#environment-variables).
+
+See the [Web Portal guide](docs/WEB_PORTAL.md) for detailed configuration and
+security options.
 
 ## 🎮 Usage
 
@@ -391,6 +413,7 @@ Once SkyGuard is installed and running:
 1. **Access the web portal**
    - Open your web browser
    - Navigate to: `http://<PI_IP_ADDRESS>:8080`
+   - Sign in with username `admin` and your `SKYGUARD_WEB_PASSWORD`
    - You'll see the SkyGuard dashboard with:
      - Real-time system status
      - Detection history
@@ -405,7 +428,7 @@ Once SkyGuard is installed and running:
 
 3. **Configure the system**
    - Use the web interface to adjust settings
-   - Or edit `config/skyguard.yaml` directly
+   - Or edit `config/skyguard.yaml` directly (keep secrets in `.env`, not here)
    - Restart SkyGuard after making changes:
      ```bash
      ./scripts/stop_skyguard.sh
@@ -415,6 +438,7 @@ Once SkyGuard is installed and running:
 
 ### Web Portal Features
 
+- **Authentication**: Password-protected login with per-session CSRF protection
 - **Dashboard**: Real-time system status and statistics
 - **Detection Management**: Browse and export detection history
 - **Configuration**: Easy system configuration through web interface
